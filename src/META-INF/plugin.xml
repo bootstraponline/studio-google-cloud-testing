@@ -1,0 +1,49 @@
+<idea-plugin version="2">
+  <id>com.google.gct.testing</id>
+  <name>Google Cloud Testing</name>
+  <version>1.0</version>
+  <vendor>Google</vendor>
+
+  <description>Enables Google Cloud Testing.</description>
+
+  <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
+  <idea-version since-build="107.107"/>
+
+  <application-components>
+  </application-components>
+
+  <project-components>
+  </project-components>
+
+  <depends>org.jetbrains.android</depends>
+  <depends>com.google.gct.login</depends>
+
+  <actions>
+    <action id="GoogleCloudTesting.TestService"
+            class="com.google.gct.testing.ui.GoogleCloudTestingAction"
+            text="Google Cloud Testing">
+      <add-to-group group-id="MainToolBar" anchor="first"  />
+    </action>
+  </actions>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <projectConfigurable instance="com.google.gct.testing.config.GoogleCloudTestingConfigurable"/>
+    <projectService serviceInterface="com.google.gct.testing.config.GoogleCloudTestingSettings"
+                    serviceImplementation="com.google.gct.testing.config.GoogleCloudTestingSettings"/>
+
+    <projectService serviceInterface="com.google.gct.testing.GoogleCloudTestingCustomPersistentConfigurations"
+                    serviceImplementation="com.google.gct.testing.GoogleCloudTestingCustomPersistentConfigurations"/>
+
+    <projectService serviceInterface="com.google.gct.testing.GoogleCloudTestingDefaultPersistentConfigurations"
+                    serviceImplementation="com.google.gct.testing.GoogleCloudTestingDefaultPersistentConfigurations"/>
+  </extensions>
+
+  <extensions defaultExtensionNs="org.jetbrains.android">
+    <additionalRunDebugOptionFactory id="cloudTestRunDebugOptionFactory" order="first" implementation="com.google.gct.testing.CloudTestOptionFactory"/>
+  </extensions>
+
+  <extensionPoints>
+    <extensionPoint name="googleTestingListener" interface="com.google.gct.testing.GoogleTestingListener"/>
+  </extensionPoints>
+
+</idea-plugin>
