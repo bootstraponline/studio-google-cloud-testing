@@ -36,6 +36,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
   private ImmutableList<GoogleCloudTestingConfiguration> defaultConfigurations;
   private List<GoogleCloudTestingConfiguration> customConfigurations;
+  private ActionListener myActionListener;
 
 
   public CloudConfigurationComboBox() {
@@ -65,15 +66,18 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     defaultConfigurations = GoogleCloudTestingConfigurationFactory.getDefaultConfigurationsFromStorage(facet);
     customConfigurations = GoogleCloudTestingConfigurationFactory.getCustomConfigurationsFromStorage(facet);
 
-    addActionListener(new ActionListener() {
+    // Since setFacet can be called multiple times, make sure to remove any previously registered listeners.
+    removeActionListener(myActionListener);
+    
+    myActionListener = new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         List<GoogleCloudTestingConfiguration> copyCustomConfigurations =
           Lists.newArrayList(Iterables.transform(customConfigurations, GoogleCloudTestingConfigurationFactory.CLONE_CONFIGURATIONS));
 
         GoogleCloudTestingConfiguration selectedConfiguration = getComboBox().getSelectedItem() == null
-                                                   ? new GoogleCloudTestingConfiguration(facet)
-                                                   : (GoogleCloudTestingConfiguration) getComboBox().getSelectedItem();
+                                                                ? new GoogleCloudTestingConfiguration(facet)
+                                                                : (GoogleCloudTestingConfiguration)getComboBox().getSelectedItem();
 
         CloudConfigurationChooserDialog dialog =
           new CloudConfigurationChooserDialog(facet.getModule(), copyCustomConfigurations, defaultConfigurations, selectedConfiguration);
@@ -84,17 +88,19 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
           //Persist the edited configurations.
           GoogleCloudTestingPersistentState customState = new GoogleCloudTestingPersistentState();
-          customState.myGoogleCloudTestingPersistentConfigurations =
-            Lists.newArrayList(Iterables.transform(customConfigurations, new Function<GoogleCloudTestingConfiguration, GoogleCloudTestingPersistentConfiguration>() {
-              @Override
-              public GoogleCloudTestingPersistentConfiguration apply(GoogleCloudTestingConfiguration configuration) {
-                return configuration.getPersistentConfiguration();
-              }
-            }));
+          customState.myGoogleCloudTestingPersistentConfigurations = Lists.newArrayList(Iterables.transform(customConfigurations,
+                                                                                                            new Function<GoogleCloudTestingConfiguration, GoogleCloudTestingPersistentConfiguration>() {
+                                                                                                              @Override
+                                                                                                              public GoogleCloudTestingPersistentConfiguration apply(
+                                                                                                                GoogleCloudTestingConfiguration configuration) {
+                                                                                                                return configuration
+                                                                                                                  .getPersistentConfiguration();
+                                                                                                              }
+                                                                                                            }));
           GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule()).loadState(customState);
 
           // Update list in case new configs were added or removed
-          DefaultComboBoxModel model = (DefaultComboBoxModel) getComboBox().getModel();
+          DefaultComboBoxModel model = (DefaultComboBoxModel)getComboBox().getModel();
           model.removeAllElements();
           for (GoogleCloudTestingConfiguration configuration : customConfigurations) {
             model.addElement(configuration);
@@ -111,7 +117,8 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
           getComboBox().updateUI();
         }
       }
-    });
+    };
+    addActionListener(myActionListener);
 
     populate(facet.getModule());
   }
