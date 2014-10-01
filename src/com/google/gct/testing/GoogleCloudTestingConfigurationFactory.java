@@ -19,6 +19,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.dimension.*;
+import com.intellij.openapi.components.StoragePathMacros;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 
@@ -48,7 +49,7 @@ public class GoogleCloudTestingConfigurationFactory {
 
   public static ArrayList<GoogleCloudTestingConfiguration> getCustomConfigurationsFromStorage(AndroidFacet facet) {
     List<GoogleCloudTestingPersistentConfiguration> googleCloudTestingPersistentConfigurations =
-      GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule().getProject()).getState().myGoogleCloudTestingPersistentConfigurations;
+      GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myGoogleCloudTestingPersistentConfigurations;
     return Lists.newArrayList(deserializeConfigurations(googleCloudTestingPersistentConfigurations, true, facet));
   }
 
@@ -62,7 +63,7 @@ public class GoogleCloudTestingConfigurationFactory {
     return ImmutableList.of(allConfiguration);
     //TODO: For now, there are no default configurations to store/read from the persistent storage (i.e., an xml file).
     //List<GoogleCloudTestingPersistentConfiguration> myGoogleCloudTestingPersistentConfigurations =
-    //  GoogleCloudTestingDefaultPersistentConfigurations.getInstance(facet.getModule().getProject()).getState().myGoogleCloudTestingPersistentConfigurations;
+    //  GoogleCloudTestingDefaultPersistentConfigurations.getInstance(facet.getModule()).getState().myGoogleCloudTestingPersistentConfigurations;
     //return ImmutableList.copyOf(deserializeConfigurations(myGoogleCloudTestingPersistentConfigurations, false, facet));
   }
 

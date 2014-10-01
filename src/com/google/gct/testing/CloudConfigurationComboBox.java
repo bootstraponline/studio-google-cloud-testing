@@ -91,7 +91,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
                 return configuration.getPersistentConfiguration();
               }
             }));
-          GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule().getProject()).loadState(customState);
+          GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule()).loadState(customState);
 
           // Update list in case new configs were added or removed
           DefaultComboBoxModel model = (DefaultComboBoxModel) getComboBox().getModel();

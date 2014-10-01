@@ -16,14 +16,15 @@
 package com.google.gct.testing;
 
 import com.intellij.openapi.components.*;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleServiceManager;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "GoogleCloudTestingCustomPersistentConfigurations",
     storages = {
-      @Storage(file = StoragePathMacros.PROJECT_FILE),
-      @Storage(file = StoragePathMacros.PROJECT_CONFIG_DIR + "/gct_custom_configurations.xml", scheme = StorageScheme.DIRECTORY_BASED)
+      @Storage(file = "$MODULE_FILE$")
     }
 )
 public class GoogleCloudTestingCustomPersistentConfigurations implements PersistentStateComponent<GoogleCloudTestingPersistentState> {
@@ -33,8 +34,8 @@ public class GoogleCloudTestingCustomPersistentConfigurations implements Persist
   protected GoogleCloudTestingCustomPersistentConfigurations() {
   }
 
-  public static GoogleCloudTestingCustomPersistentConfigurations getInstance(Project project) {
-    return ServiceManager.getService(project, GoogleCloudTestingCustomPersistentConfigurations.class);
+  public static GoogleCloudTestingCustomPersistentConfigurations getInstance(Module module) {
+    return ModuleServiceManager.getService(module, GoogleCloudTestingCustomPersistentConfigurations.class);
   }
 
   @Nullable
