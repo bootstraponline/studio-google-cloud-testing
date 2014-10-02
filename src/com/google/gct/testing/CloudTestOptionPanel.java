@@ -158,6 +158,7 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
   @Override
   public void setConfiguration(AndroidRunConfigurationBase configuration) {
     this.configuration = configuration;
+    myCloudConfigurationCombo.setConfiguration(configuration);
     updateGoogleCloudVisible(isShown());
   }
 

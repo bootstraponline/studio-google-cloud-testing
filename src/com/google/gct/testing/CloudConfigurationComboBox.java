@@ -23,20 +23,26 @@ import com.intellij.openapi.module.Module;
 import com.intellij.ui.ComboboxWithBrowseButton;
 import com.intellij.ui.JBColor;
 import org.jetbrains.android.facet.AndroidFacet;
+import org.jetbrains.android.run.AndroidRunConfigurationBase;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
-  private static GoogleCloudTestingConfiguration chosenConfiguration;
+  private static Map<AndroidRunConfigurationBase, Map<Module, GoogleCloudTestingConfiguration>> chosenConfigurations =
+    new HashMap<AndroidRunConfigurationBase, Map<Module, GoogleCloudTestingConfiguration>>();
 
+  private AndroidRunConfigurationBase currentConfiguration;
+  private Module currentModule;
   private ImmutableList<GoogleCloudTestingConfiguration> defaultConfigurations;
   private List<GoogleCloudTestingConfiguration> customConfigurations;
-  private ActionListener myActionListener;
+  private ActionListener actionListener;
 
 
   public CloudConfigurationComboBox() {
@@ -44,6 +50,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     getComboBox().addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
+        rememberChosenMatrixConfiguration();
         updateSelectionAppearance();
       }
     });
@@ -62,14 +69,22 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     }
   }
 
+  public void setConfiguration(AndroidRunConfigurationBase configuration) {
+    currentConfiguration = configuration;
+    rememberChosenMatrixConfiguration();
+  }
+
   public void setFacet(final AndroidFacet facet) {
+    rememberChosenMatrixConfiguration();
+
+    currentModule = facet.getModule();
     defaultConfigurations = GoogleCloudTestingConfigurationFactory.getDefaultConfigurationsFromStorage(facet);
     customConfigurations = GoogleCloudTestingConfigurationFactory.getCustomConfigurationsFromStorage(facet);
 
     // Since setFacet can be called multiple times, make sure to remove any previously registered listeners.
-    removeActionListener(myActionListener);
-    
-    myActionListener = new ActionListener() {
+    removeActionListener(actionListener);
+
+    actionListener = new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
         List<GoogleCloudTestingConfiguration> copyCustomConfigurations =
@@ -80,7 +95,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
                                                                 : (GoogleCloudTestingConfiguration)getComboBox().getSelectedItem();
 
         CloudConfigurationChooserDialog dialog =
-          new CloudConfigurationChooserDialog(facet.getModule(), copyCustomConfigurations, defaultConfigurations, selectedConfiguration);
+          new CloudConfigurationChooserDialog(currentModule, copyCustomConfigurations, defaultConfigurations, selectedConfiguration);
 
         dialog.show();
         if (dialog.isOK()) {
@@ -88,16 +103,17 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
           //Persist the edited configurations.
           GoogleCloudTestingPersistentState customState = new GoogleCloudTestingPersistentState();
-          customState.myGoogleCloudTestingPersistentConfigurations = Lists.newArrayList(Iterables.transform(customConfigurations,
-                                                                                                            new Function<GoogleCloudTestingConfiguration, GoogleCloudTestingPersistentConfiguration>() {
-                                                                                                              @Override
-                                                                                                              public GoogleCloudTestingPersistentConfiguration apply(
-                                                                                                                GoogleCloudTestingConfiguration configuration) {
-                                                                                                                return configuration
-                                                                                                                  .getPersistentConfiguration();
-                                                                                                              }
-                                                                                                            }));
-          GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule()).loadState(customState);
+          customState.myGoogleCloudTestingPersistentConfigurations = Lists.newArrayList(
+            Iterables.transform(customConfigurations,
+                                new Function<GoogleCloudTestingConfiguration, GoogleCloudTestingPersistentConfiguration>() {
+                                  @Override
+                                  public GoogleCloudTestingPersistentConfiguration apply(
+                                    GoogleCloudTestingConfiguration configuration) {
+                                    return configuration
+                                      .getPersistentConfiguration();
+                                  }
+                                }));
+          GoogleCloudTestingCustomPersistentConfigurations.getInstance(currentModule).loadState(customState);
 
           // Update list in case new configs were added or removed
           DefaultComboBoxModel model = (DefaultComboBoxModel)getComboBox().getModel();
@@ -118,17 +134,25 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
         }
       }
     };
-    addActionListener(myActionListener);
+    addActionListener(actionListener);
 
-    populate(facet.getModule());
+    populate();
+  }
+
+  private void rememberChosenMatrixConfiguration() {
+    if (currentConfiguration != null && currentModule != null && getComboBox().getSelectedItem() != null) {
+      Map<Module, GoogleCloudTestingConfiguration> configurationMap = chosenConfigurations.get(currentConfiguration);
+      if (configurationMap == null) {
+        configurationMap = new HashMap<Module, GoogleCloudTestingConfiguration>();
+        chosenConfigurations.put(currentConfiguration, configurationMap);
+      }
+      configurationMap.put(currentModule, (GoogleCloudTestingConfiguration)getComboBox().getSelectedItem());
+    }
   }
 
   @Override
   public void dispose() {
-    Object selectedItem = getComboBox().getSelectedItem();
-    if (selectedItem != null) {
-      chosenConfiguration = (GoogleCloudTestingConfiguration) selectedItem;
-    }
+    rememberChosenMatrixConfiguration();
     super.dispose();
   }
 
@@ -151,16 +175,20 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     }
   }
 
-  private void populate(final Module module) {
-    if (module == null || module.isDisposed()) {
+  private void populate() {
+    if (currentModule == null || currentModule.isDisposed()) {
       return;
     }
 
     getComboBox().setModel(new DefaultComboBoxModel(Iterables.toArray(Iterables.concat(customConfigurations, defaultConfigurations),
                                                                       GoogleCloudTestingConfiguration.class)));
 
-    if (chosenConfiguration != null) {
-      getComboBox().setSelectedItem(chosenConfiguration);
+    Map<Module, GoogleCloudTestingConfiguration> configurationMap = chosenConfigurations.get(currentConfiguration);
+    if (configurationMap != null) {
+      GoogleCloudTestingConfiguration previouslyChosenConfiguration = configurationMap.get(currentModule);
+      if (previouslyChosenConfiguration != null) {
+        getComboBox().setSelectedItem(previouslyChosenConfiguration);
+      }
     }
 
     getComboBox().setRenderer(new DefaultListCellRenderer() {
@@ -190,4 +218,5 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
     updateSelectionAppearance();
   }
+
 }
