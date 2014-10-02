@@ -78,7 +78,7 @@ public class CloudTestOptionFactory extends AdditionalRunDebugOptionFactory {
       cloudResultParser = new GoogleCloudTestingResultParser("Cloud Test Run", new GoogleCloudTestListener(runningState));
 
     GoogleCloudTestingConfiguration googleCloudTestingConfiguration = GoogleCloudTestingUtils
-      .getConfigurationByHash(selectedConfigurationId, runningState.getFacet());
+      .getConfigurationById(selectedConfigurationId, runningState.getFacet());
     for (String configurationInstance : googleCloudTestingConfiguration.computeConfigurationInstancesForResultsViewer()) {
       cloudResultParser.getTestRunListener().testConfigurationScheduled(configurationInstance);
     }

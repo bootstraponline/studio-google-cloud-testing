@@ -31,6 +31,11 @@ import java.util.Set;
 
 public class GoogleCloudTestingConfiguration {
 
+  public static final int ALL_ID = Integer.MAX_VALUE;
+
+  private static int nextAvailableID = 1;
+
+  private int id;
   private String name;
   private Icon icon;
   private final AndroidFacet facet;
@@ -44,7 +49,11 @@ public class GoogleCloudTestingConfiguration {
   LanguageDimension languageDimension;
   OrientationDimension orientationDimension;
 
-  public GoogleCloudTestingConfiguration(String name, Icon icon, AndroidFacet facet) {
+  public GoogleCloudTestingConfiguration(int id, String name, Icon icon, AndroidFacet facet) {
+    if (id != ALL_ID && id >= nextAvailableID) {
+      nextAvailableID = id + 1;
+    }
+    this.id = id;
     this.name = name;
     this.icon = icon;
     this.facet = facet;
@@ -52,8 +61,13 @@ public class GoogleCloudTestingConfiguration {
     createDimensions();
   }
 
+  public GoogleCloudTestingConfiguration(String name, Icon icon, AndroidFacet facet) {
+    this(nextAvailableID++, name, icon, facet);
+  }
+
   @VisibleForTesting
-  public GoogleCloudTestingConfiguration(String name, int minSdkVersion, List<String> locales) {
+  GoogleCloudTestingConfiguration(String name, int minSdkVersion, List<String> locales) {
+    id = nextAvailableID++;
     this.name = name;
     facet = null;
     isEditable = true;
@@ -64,6 +78,7 @@ public class GoogleCloudTestingConfiguration {
   }
 
   public GoogleCloudTestingConfiguration(AndroidFacet facet) {
+    id = nextAvailableID++;
     name = "Unnamed";
     icon = GoogleCloudTestingConfigurationFactory.DEFAULT_ICON;
     this.facet = facet;
@@ -82,7 +97,10 @@ public class GoogleCloudTestingConfiguration {
     return name;
   }
 
-  public int getHash() {
+  /**
+   * A single number representation of a matrix configuration.
+   */
+  private int getHash() {
     return (name + FluentIterable.from(getDimensions()).transform(new Function<GoogleCloudTestingDimension, String>() {
       @Override
       public String apply(GoogleCloudTestingDimension dimension) {
@@ -98,6 +116,10 @@ public class GoogleCloudTestingConfiguration {
       sb.append(type.getId());
     }
     return sb.toString();
+  }
+
+  public int getId() {
+    return id;
   }
 
   public String getDisplayName() {
@@ -199,8 +221,6 @@ public class GoogleCloudTestingConfiguration {
 
     StringBuffer bf = new StringBuffer();
 
-    //bf.append("-PmatrixFilter=\"");
-
     boolean firstDim = true;
     for (GoogleCloudTestingDimension dimension : getDimensions()) {
       if(!firstDim) {
@@ -214,11 +234,9 @@ public class GoogleCloudTestingConfiguration {
         bf.append(dimensionRequest);
       }
     }
-    //bf.append("\"");
-
     return bf.toString();
 
-    //String s= "-PmatrixFilter=\"(DEVICE=='nexus5' || DEVICE=='nexus7') && OSVERSION=='jellybean' && LANGUAGE=='english'\"";
+    //String s= "(DEVICE=='nexus5' || DEVICE=='nexus7') && OSVERSION=='jellybean' && LANGUAGE=='english'";
   }
 
   public List<String> computeConfigurationInstancesForResultsViewer() {
@@ -257,11 +275,13 @@ public class GoogleCloudTestingConfiguration {
 
   @Override
   public GoogleCloudTestingConfiguration clone() {
-    return copy("");
+    return copy(null);
   }
 
   public GoogleCloudTestingConfiguration copy(String prefix) {
-    GoogleCloudTestingConfiguration newConfiguration = new GoogleCloudTestingConfiguration(prefix + name, icon, facet);
+    GoogleCloudTestingConfiguration newConfiguration = prefix == null
+                                                       ? new GoogleCloudTestingConfiguration(id, name, icon, facet) //clone
+                                                       : new GoogleCloudTestingConfiguration(prefix + name, icon, facet);
     newConfiguration.deviceDimension.enableAll(deviceDimension.getEnabledTypes());
     newConfiguration.apiDimension.enableAll(apiDimension.getEnabledTypes());
     newConfiguration.languageDimension.enableAll(languageDimension.getEnabledTypes());
@@ -271,6 +291,7 @@ public class GoogleCloudTestingConfiguration {
 
   public GoogleCloudTestingPersistentConfiguration getPersistentConfiguration() {
     GoogleCloudTestingPersistentConfiguration persistentConfiguration = new GoogleCloudTestingPersistentConfiguration();
+    persistentConfiguration.id = id;
     persistentConfiguration.name = name;
     persistentConfiguration.devices = getEnabledTypes(deviceDimension);
     persistentConfiguration.apiLevels = getEnabledTypes(apiDimension);
@@ -294,13 +315,11 @@ public class GoogleCloudTestingConfiguration {
 
     GoogleCloudTestingConfiguration that = (GoogleCloudTestingConfiguration)o;
 
-    if (name != null ? !name.equals(that.name) : that.name != null) return false;
-
-    return getHash() == that.getHash();
+    return id == that.id;
   }
 
   @Override
   public int hashCode() {
-    return name != null ? name.hashCode() : 0;
+    return id;
   }
 }

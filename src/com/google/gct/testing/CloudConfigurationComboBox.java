@@ -156,10 +156,10 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     super.dispose();
   }
 
-  public void selectConfiguration(int hashCode) {
+  public void selectConfiguration(int id) {
     if (customConfigurations != null) {
       for (GoogleCloudTestingConfiguration configuration : customConfigurations) {
-        if (configuration.getHash() == hashCode) {
+        if (configuration.getId() == id) {
           getComboBox().setSelectedItem(configuration);
           return;
         }
@@ -167,7 +167,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     }
     if (defaultConfigurations != null) {
       for (GoogleCloudTestingConfiguration configuration : defaultConfigurations) {
-        if (configuration.getHash() == hashCode) {
+        if (configuration.getId() == id) {
           getComboBox().setSelectedItem(configuration);
           return;
         }

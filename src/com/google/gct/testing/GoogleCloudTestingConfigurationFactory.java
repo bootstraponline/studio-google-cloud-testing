@@ -54,7 +54,8 @@ public class GoogleCloudTestingConfigurationFactory {
   }
 
   public static ImmutableList<GoogleCloudTestingConfiguration> getDefaultConfigurationsFromStorage(AndroidFacet facet) {
-    GoogleCloudTestingConfiguration allConfiguration = new GoogleCloudTestingConfiguration("All", AndroidIcons.Display, facet);
+    GoogleCloudTestingConfiguration allConfiguration =
+      new GoogleCloudTestingConfiguration(GoogleCloudTestingConfiguration.ALL_ID, "All", AndroidIcons.Display, facet);
     allConfiguration.deviceDimension.enableAll();
     allConfiguration.apiDimension.enableAll();
     allConfiguration.languageDimension.enableAll();
@@ -72,7 +73,8 @@ public class GoogleCloudTestingConfigurationFactory {
     List<GoogleCloudTestingConfiguration> googleCloudTestingConfigurations = new LinkedList<GoogleCloudTestingConfiguration>();
     for (GoogleCloudTestingPersistentConfiguration persistentConfiguration : persistentConfigurations) {
       Icon icon = getIcon(persistentConfiguration.name, isEditable);
-      GoogleCloudTestingConfiguration configuration = new GoogleCloudTestingConfiguration(persistentConfiguration.name, icon, facet);
+      GoogleCloudTestingConfiguration configuration =
+        new GoogleCloudTestingConfiguration(persistentConfiguration.id, persistentConfiguration.name, icon, facet);
       configuration.deviceDimension.enable(DeviceDimension.getFullDomain(), persistentConfiguration.devices);
       configuration.apiDimension.enable(ApiDimension.getFullDomain(), persistentConfiguration.apiLevels);
       configuration.languageDimension.enable(LanguageDimension.getFullDomain(), persistentConfiguration.languages);

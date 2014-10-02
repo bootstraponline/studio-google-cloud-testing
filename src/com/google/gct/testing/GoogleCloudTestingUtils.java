@@ -49,14 +49,14 @@ public class GoogleCloudTestingUtils {
     return Boolean.getBoolean(SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS);
   }
 
-  public static GoogleCloudTestingConfiguration getConfigurationByHash(int hashCode, AndroidFacet facet) {
+  public static GoogleCloudTestingConfiguration getConfigurationById(int id, AndroidFacet facet) {
     for (GoogleCloudTestingConfiguration configuration : GoogleCloudTestingConfigurationFactory.getCustomConfigurationsFromStorage(facet)) {
-      if (configuration.getHash() == hashCode) {
+      if (configuration.getId() == id) {
         return configuration;
       }
     }
     for (GoogleCloudTestingConfiguration configuration : GoogleCloudTestingConfigurationFactory.getDefaultConfigurationsFromStorage(facet)) {
-      if (configuration.getHash() == hashCode) {
+      if (configuration.getId() == id) {
         return configuration;
       }
     }

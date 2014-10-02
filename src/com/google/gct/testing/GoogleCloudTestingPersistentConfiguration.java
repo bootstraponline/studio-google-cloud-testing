@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class GoogleCloudTestingPersistentConfiguration {
+  public int id = 1;
   public String name = "";
   public List<String> devices = new LinkedList<String>();
   public List<String> apiLevels = new LinkedList<String>();

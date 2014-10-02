@@ -140,9 +140,6 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
     }
   }
 
-  /**
-   * In the current implementation, the provided {@code id} is the hash code of the string representation of a configuration.
-   */
   @Override
   public void selectConfigurationById(int id) {
     myCloudConfigurationCombo.selectConfiguration(id);
@@ -168,16 +165,13 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
     updateGoogleCloudVisible(isShown());
   }
 
-  /**
-   * In the current implementation, the id of a configuration is the hash code of its string representation.
-   */
   @Override
   public int getSelectedConfigurationId() {
     GoogleCloudTestingConfiguration selection = getSelection();
     if (selection == null) {
       return -1;
     }
-    return selection.getHash();
+    return selection.getId();
   }
 
   @Override
