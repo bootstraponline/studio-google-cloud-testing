@@ -315,7 +315,7 @@ public class GoogleCloudTestingConfiguration {
 
     GoogleCloudTestingConfiguration that = (GoogleCloudTestingConfiguration)o;
 
-    return id == that.id;
+    return getHash() == that.getHash() && id == that.id;
   }
 
   @Override

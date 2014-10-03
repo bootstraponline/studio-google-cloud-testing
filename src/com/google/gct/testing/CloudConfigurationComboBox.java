@@ -29,17 +29,20 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
-  private static Map<AndroidRunConfigurationBase, Map<Module, GoogleCloudTestingConfiguration>> chosenConfigurations =
-    new HashMap<AndroidRunConfigurationBase, Map<Module, GoogleCloudTestingConfiguration>>();
+  private static Set<CloudConfigurationComboBox> configurationBoxes = new HashSet<CloudConfigurationComboBox>();
 
-  private AndroidRunConfigurationBase currentConfiguration;
+  // test run configuration -> module -> matrix configuration ID
+  private static Map<AndroidRunConfigurationBase, Map<Module, Integer>> chosenConfigurations =
+    new HashMap<AndroidRunConfigurationBase, Map<Module, Integer>>();
+
+  private AndroidRunConfigurationBase currentRunConfiguration;
   private Module currentModule;
+  private AndroidFacet currentFacet;
   private ImmutableList<GoogleCloudTestingConfiguration> defaultConfigurations;
   private List<GoogleCloudTestingConfiguration> customConfigurations;
   private ActionListener actionListener;
@@ -54,6 +57,34 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
         updateSelectionAppearance();
       }
     });
+
+    getComboBox().setRenderer(new DefaultListCellRenderer() {
+
+      @Override
+      public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        JLabel label = (JLabel)super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+        if (value instanceof GoogleCloudTestingConfiguration) {
+          final GoogleCloudTestingConfiguration config = (GoogleCloudTestingConfiguration)value;
+
+          label.setText(config.getDisplayName());
+          label.setIcon(config.getIcon());
+          label.setIconTextGap(2);
+          if (config.countCombinations() < 1) {
+            label.setForeground(JBColor.RED);
+            label.setFont(label.getFont().deriveFont(Font.BOLD));
+          } else {
+            label.setForeground(JBColor.BLACK);
+            label.setFont(label.getFont().deriveFont(Font.PLAIN));
+          }
+        }
+
+        return label;
+      }
+    });
+
+    //TODO: Find a way to remove disposed comboboxes from this set to avoid unnecessary memory and CPU usage.
+    configurationBoxes.add(this);
   }
 
   private void updateSelectionAppearance() {
@@ -69,17 +100,18 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     }
   }
 
-  public void setConfiguration(AndroidRunConfigurationBase configuration) {
-    currentConfiguration = configuration;
+  public void setConfiguration(AndroidRunConfigurationBase runConfiguration) {
+    currentRunConfiguration = runConfiguration;
     rememberChosenMatrixConfiguration();
   }
 
-  public void setFacet(final AndroidFacet facet) {
+  public void setFacet(AndroidFacet facet) {
     rememberChosenMatrixConfiguration();
 
-    currentModule = facet.getModule();
-    defaultConfigurations = GoogleCloudTestingConfigurationFactory.getDefaultConfigurationsFromStorage(facet);
-    customConfigurations = GoogleCloudTestingConfigurationFactory.getCustomConfigurationsFromStorage(facet);
+    currentFacet = facet;
+    currentModule = currentFacet.getModule();
+    defaultConfigurations = GoogleCloudTestingConfigurationFactory.getDefaultConfigurationsFromStorage(currentFacet);
+    customConfigurations = GoogleCloudTestingConfigurationFactory.getCustomConfigurationsFromStorage(currentFacet);
 
     // Since setFacet can be called multiple times, make sure to remove any previously registered listeners.
     removeActionListener(actionListener);
@@ -91,7 +123,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
           Lists.newArrayList(Iterables.transform(customConfigurations, GoogleCloudTestingConfigurationFactory.CLONE_CONFIGURATIONS));
 
         GoogleCloudTestingConfiguration selectedConfiguration = getComboBox().getSelectedItem() == null
-                                                                ? new GoogleCloudTestingConfiguration(facet)
+                                                                ? new GoogleCloudTestingConfiguration(currentFacet)
                                                                 : (GoogleCloudTestingConfiguration)getComboBox().getSelectedItem();
 
         CloudConfigurationChooserDialog dialog =
@@ -115,15 +147,9 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
                                 }));
           GoogleCloudTestingCustomPersistentConfigurations.getInstance(currentModule).loadState(customState);
 
-          // Update list in case new configs were added or removed
-          DefaultComboBoxModel model = (DefaultComboBoxModel)getComboBox().getModel();
-          model.removeAllElements();
-          for (GoogleCloudTestingConfiguration configuration : customConfigurations) {
-            model.addElement(configuration);
-          }
-          for (GoogleCloudTestingConfiguration configuration : defaultConfigurations) {
-            model.addElement(configuration);
-          }
+          // Update list in case new configs were added or removed.
+          getComboBox().setModel(new DefaultComboBoxModel(Iterables.toArray(Iterables.concat(customConfigurations, defaultConfigurations),
+                                                                            GoogleCloudTestingConfiguration.class)));
 
           GoogleCloudTestingConfiguration newChosenConfiguration = dialog.getSelectedConfiguration();
           if (newChosenConfiguration != null) {
@@ -131,22 +157,37 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
           }
 
           getComboBox().updateUI();
+
+          updateLinkedComboboxes();
         }
       }
     };
     addActionListener(actionListener);
 
-    populate();
+    updateContent();
+  }
+
+  private void updateLinkedComboboxes() {
+    for (CloudConfigurationComboBox configurationBox : configurationBoxes) {
+      if (!configurationBox.equals(this)
+          && !configurationBox.currentRunConfiguration.equals(currentRunConfiguration)
+          && configurationBox.currentModule.equals(currentModule)
+          && configurationBox.currentFacet != null
+          && !configurationBox.customConfigurations.equals(customConfigurations)) {
+        configurationBox.customConfigurations = customConfigurations;
+        configurationBox.updateContent();
+      }
+    }
   }
 
   private void rememberChosenMatrixConfiguration() {
-    if (currentConfiguration != null && currentModule != null && getComboBox().getSelectedItem() != null) {
-      Map<Module, GoogleCloudTestingConfiguration> configurationMap = chosenConfigurations.get(currentConfiguration);
+    if (currentRunConfiguration != null && currentModule != null && getComboBox().getSelectedItem() != null) {
+      Map<Module, Integer> configurationMap = chosenConfigurations.get(currentRunConfiguration);
       if (configurationMap == null) {
-        configurationMap = new HashMap<Module, GoogleCloudTestingConfiguration>();
-        chosenConfigurations.put(currentConfiguration, configurationMap);
+        configurationMap = new HashMap<Module, Integer>();
+        chosenConfigurations.put(currentRunConfiguration, configurationMap);
       }
-      configurationMap.put(currentModule, (GoogleCloudTestingConfiguration)getComboBox().getSelectedItem());
+      configurationMap.put(currentModule, ((GoogleCloudTestingConfiguration)getComboBox().getSelectedItem()).getId());
     }
   }
 
@@ -175,7 +216,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     }
   }
 
-  private void populate() {
+  private void updateContent() {
     if (currentModule == null || currentModule.isDisposed()) {
       return;
     }
@@ -183,38 +224,13 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     getComboBox().setModel(new DefaultComboBoxModel(Iterables.toArray(Iterables.concat(customConfigurations, defaultConfigurations),
                                                                       GoogleCloudTestingConfiguration.class)));
 
-    Map<Module, GoogleCloudTestingConfiguration> configurationMap = chosenConfigurations.get(currentConfiguration);
+    Map<Module, Integer> configurationMap = chosenConfigurations.get(currentRunConfiguration);
     if (configurationMap != null) {
-      GoogleCloudTestingConfiguration previouslyChosenConfiguration = configurationMap.get(currentModule);
-      if (previouslyChosenConfiguration != null) {
-        getComboBox().setSelectedItem(previouslyChosenConfiguration);
+      Integer configurationId = configurationMap.get(currentModule);
+      if (configurationId != null) {
+        selectConfiguration(configurationId);
       }
     }
-
-    getComboBox().setRenderer(new DefaultListCellRenderer() {
-
-      @Override
-      public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        JLabel label = (JLabel)super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-
-        if (value instanceof GoogleCloudTestingConfiguration) {
-          final GoogleCloudTestingConfiguration config = (GoogleCloudTestingConfiguration)value;
-
-          label.setText(config.getDisplayName());
-          label.setIcon(config.getIcon());
-          label.setIconTextGap(2);
-          if (config.countCombinations() < 1) {
-            label.setForeground(JBColor.RED);
-            label.setFont(label.getFont().deriveFont(Font.BOLD));
-          } else {
-            label.setForeground(JBColor.BLACK);
-            label.setFont(label.getFont().deriveFont(Font.PLAIN));
-          }
-        }
-
-        return label;
-      }
-    });
 
     updateSelectionAppearance();
   }
