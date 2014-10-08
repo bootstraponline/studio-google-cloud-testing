@@ -18,10 +18,10 @@ package com.google.gct.testing.results;
 import com.intellij.execution.testframework.sm.runner.states.AbstractState;
 import org.jetbrains.annotations.NotNull;
 
-public class GoogleCloudTestingTimeoutState extends AbstractState {
+public class GoogleCloudTestingInfrastructureFailureState extends AbstractState {
   private final GoogleCloudTestProxy myTestProxy;
 
-  public GoogleCloudTestingTimeoutState(@NotNull final GoogleCloudTestProxy testProxy) {
+  public GoogleCloudTestingInfrastructureFailureState(@NotNull final GoogleCloudTestProxy testProxy) {
     myTestProxy = testProxy;
   }
 
@@ -52,11 +52,11 @@ public class GoogleCloudTestingTimeoutState extends AbstractState {
 
   @Override
   public Magnitude getMagnitude() {
-    return Magnitude.TIMEOUT_INDEX;
+    return Magnitude.INFRASTRUCTURE_FAILURE_INDEX;
   }
 
   @Override
   public String toString() {
-    return "TIMED OUT";
+    return "INFRASTRUCTURE FAILURE";
   }
 }

@@ -337,8 +337,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
         test.setFinished();
         break;
       case INFRASTRUCTURE_FAILURE:
-        //TODO: Introduce a dedicated state for infrastructure failures instead of using "terminated" state.
-        test.setTerminated();
+        test.setInfrastructureFailed();
         break;
       case TIMED_OUT:
         test.setTimeout();

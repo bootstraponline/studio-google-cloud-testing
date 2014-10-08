@@ -636,8 +636,7 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
       return;
     }
     myState = TerminatedState.INSTANCE;
-    final List<? extends GoogleCloudTestProxy> children = getChildren();
-    for (GoogleCloudTestProxy child : children) {
+    for (GoogleCloudTestProxy child : getChildren()) {
       child.setTerminated();
     }
     fireOnNewPrintable(myState);
@@ -651,9 +650,22 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
       return;
     }
     myState = new GoogleCloudTestingTimeoutState(this);
-    final List<? extends GoogleCloudTestProxy> children = getChildren();
-    for (GoogleCloudTestProxy child : children) {
+    for (GoogleCloudTestProxy child : getChildren()) {
       child.setTimeout();
+    }
+    fireOnNewPrintable(myState);
+  }
+
+  /**
+   * Process' infrastructure has failed.
+   */
+  public void setInfrastructureFailed() {
+    if (myState.isFinal()) {
+      return;
+    }
+    myState = new GoogleCloudTestingInfrastructureFailureState(this);
+    for (GoogleCloudTestProxy child : getChildren()) {
+      child.setInfrastructureFailed();
     }
     fireOnNewPrintable(myState);
   }
@@ -703,10 +715,12 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
       state = SuiteFinishedState.EMPTY_SUITE;
     } else {
       if (isDefect()) {
-        if (containsTimeoutChildren()) {
-          state = new GoogleCloudTestingTimeoutState(this);
-        } else if (containsTerminatedChildren()) {
+        if (containsTerminatedChildren()) { //Terminated has precedence over time out and infrastructure failure.
           state = TerminatedState.INSTANCE;
+        } else if (containsTimeoutChildren()) { //Timeout has precedence over infrastructure failure.
+          state = new GoogleCloudTestingTimeoutState(this);
+        } else if (containsInfrastructureFailureChildren()) {
+          state = new GoogleCloudTestingInfrastructureFailureState(this);
         } else
         if (containsErrorTests()) {
           // Test suit contains errors if at least one of its tests contains error
@@ -715,8 +729,8 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
           // if suite contains failed tests - all suite should be
           // consider as failed
           state = containsFailedTests()
-                   ? SuiteFinishedState.FAILED_SUITE
-                   : SuiteFinishedState.WITH_IGNORED_TESTS_SUITE;
+                  ? SuiteFinishedState.FAILED_SUITE
+                  : SuiteFinishedState.WITH_IGNORED_TESTS_SUITE;
         }
       } else {
         state = SuiteFinishedState.PASSED_SUITE;
@@ -737,6 +751,15 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
   private boolean containsTimeoutChildren() {
     for (GoogleCloudTestProxy child : getChildren()) {
       if (child.getMagnitudeInfo() == TestStateInfo.Magnitude.TIMEOUT_INDEX) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean containsInfrastructureFailureChildren() {
+    for (GoogleCloudTestProxy child : getChildren()) {
+      if (child.getMagnitudeInfo() == TestStateInfo.Magnitude.INFRASTRUCTURE_FAILURE_INDEX) {
         return true;
       }
     }

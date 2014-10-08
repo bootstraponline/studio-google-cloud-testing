@@ -102,8 +102,7 @@ public class CloudResultsAdapter {
         ConfigurationStopReason stopReason = result.isComplete()
                                              ? ConfigurationStopReason.FINISHED
                                              : ConfigurationStopReason.INFRASTRUCTURE_FAILURE;
-        resultParser.getTestRunListener()
-          .stopTestConfiguration(result.getConfigurationInstance().getDisplayString(), stopReason);
+        resultParser.getTestRunListener().stopTestConfiguration(result.getConfigurationInstance().getDisplayString(), stopReason);
       }
     }
 
