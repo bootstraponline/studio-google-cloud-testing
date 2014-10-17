@@ -21,9 +21,6 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.impl.PsiModificationTrackerImpl;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedList;
-import java.util.List;
-
 @State(
     name = "GoogleCloudTestingSettings",
     storages = {
@@ -32,8 +29,6 @@ import java.util.List;
     }
 )
 public class GoogleCloudTestingSettings implements PersistentStateComponent<GoogleCloudTestingConfigurable.GoogleCloudTestingState> {
-
-  private final List<GoogleCloudTestingSettingsListener> listeners = new LinkedList<GoogleCloudTestingSettingsListener>();
 
   private final PsiModificationTrackerImpl myTracker;
 
@@ -63,16 +58,6 @@ public class GoogleCloudTestingSettings implements PersistentStateComponent<Goog
     if (oldState != null) {
       myTracker.incCounter();
     }
-    for (GoogleCloudTestingSettingsListener listener : listeners) {
-      listener.googleCloudTestingSettingsChanged(myGoogleCloudTestingState);
-    }
   }
 
-  public void addChangeListener(GoogleCloudTestingSettingsListener listener) {
-    listeners.add(listener);
-  }
-
-  public boolean removeChangeListener(GoogleCloudTestingSettingsListener listener) {
-    return listeners.remove(listener);
-  }
 }

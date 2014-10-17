@@ -43,7 +43,8 @@ public class CloudTestsLauncher {
 
   public static Bucket createBucket(String projectId, String bucketName) {
     try {
-      Storage.Buckets.Insert insertBucket = getStorage().buckets().insert(projectId, new Bucket().setName(bucketName).setLocation("US"));
+      Bucket bucket = new Bucket().setName(bucketName).setLocation("US");
+      Storage.Buckets.Insert insertBucket = getStorage().buckets().insert(projectId, bucket);
       return insertBucket.execute();
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -84,7 +85,7 @@ public class CloudTestsLauncher {
   }
 
   public static void triggerJenkinsJob(
-    String jenkinsUrl, String cloudProjectName, String applicationName, String bucketName, String testSpecification, String matrixFilter,
+    String jenkinsUrl, String cloudProjectId, String applicationName, String bucketName, String testSpecification, String matrixFilter,
     String appPackage, String testPackage) {
 
     String gsBucketName = "gs://" + bucketName;
@@ -92,7 +93,7 @@ public class CloudTestsLauncher {
 
     String json = "{\"parameter\": " +
                "[ " +
-               "{\"name\": \"CLOUD_PROJECT\",      \"value\": \"" + cloudProjectName + "\"}, " +
+               "{\"name\": \"CLOUD_PROJECT\",      \"value\": \"" + cloudProjectId + "\"}, " +
                "{\"name\": \"APPLICATION\",        \"value\": \"" + applicationName + "\"}, " +
                "{\"name\": \"BUCKET\",             \"value\": \"" + gsBucketName + "\"}, " +
                "{\"name\": \"APP_PACKAGE_ID\",     \"value\": \"" + appPackage + "\"}, " +

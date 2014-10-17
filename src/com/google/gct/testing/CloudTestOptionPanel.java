@@ -18,9 +18,6 @@ package com.google.gct.testing;
 
 import com.android.tools.idea.run.AdditionalRunDebugChangeListener;
 import com.android.tools.idea.run.AdditionalRunDebugOptionPanel;
-import com.google.gct.testing.config.GoogleCloudTestingConfigurable;
-import com.google.gct.testing.config.GoogleCloudTestingSettings;
-import com.google.gct.testing.config.GoogleCloudTestingSettingsListener;
 import com.intellij.execution.Executor;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.icons.AllIcons;
@@ -29,7 +26,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.openapi.actionSystem.impl.PresentationFactory;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.run.AndroidRunConfigurationBase;
@@ -39,16 +35,22 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.LinkedList;
 import java.util.List;
 
 import static com.google.gct.testing.GoogleCloudTestingUtils.createCloudTestOptionGbc;
 
-public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implements GoogleCloudTestingSettingsListener {
+public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel {
 
+  private static final String CLOUD_PROJECT_PROMPT = "Please select a project...";
   public final static String SHOW_GOOGLE_CLOUD_TESTING_OPTION = "show.google.cloud.testing.option";
   public static final String DISPLAY_NAME = "Run tests in Google Cloud";
   public static final int MNEMONIC_INDEX = DISPLAY_NAME.indexOf('G');
+
+  //TODO: Temporary means to "persist" project ids across dialogs.
+  private static String lastChosenCloudProjectId = "";
 
   private final List<AdditionalRunDebugChangeListener> selectionChangeListeners = new LinkedList<AdditionalRunDebugChangeListener>();
   private final List<AdditionalRunDebugChangeListener> isShownChangeListeners = new LinkedList<AdditionalRunDebugChangeListener>();
@@ -64,11 +66,12 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
   private CloudConfigurationComboBox myCloudConfigurationCombo;
 
 
-  public CloudTestOptionPanel(final Project project, boolean isExtendedDeviceChooserDialog) {
+  public CloudTestOptionPanel(final Project project, final boolean isExtendedDeviceChooserDialog) {
     myCloudConfigurationLabel = new JLabel("Matrix configuration:");
     myCloudConfigurationLabel.setDisplayedMnemonic('M');
     myCloudProjectLabel = new JLabel("Google Cloud project:");
     myCloudProjectNameLabel = new JLabel("");
+    updateCloudProjectName(lastChosenCloudProjectId);
     myCloudConfigurationWrapper = new JPanel();
     myCloudConfigurationWrapper.setLayout(new BorderLayout());
     myCloudConfigurationCombo = new CloudConfigurationComboBox();
@@ -76,25 +79,34 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
     myCloudConfigurationCombo.getComboBox().addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        for (AdditionalRunDebugChangeListener listener : selectionChangeListeners) {
-          listener.changed();
-        }
+        notifySelectionChangeListeners();
       }
     });
 
     myCloudConfigurationWrapper.add(myCloudConfigurationCombo, BorderLayout.CENTER);
     myCloudConfigurationLabel.setLabelFor(myCloudConfigurationCombo);
 
-    GoogleCloudTestingSettings googleCloudTestingSettings = GoogleCloudTestingSettings.getInstance(project);
-    //TODO: Should we unregister this listener after the dialog is disposed?
-    // Looks harmless to keep it, but might revisit when implementing extension points.
-    googleCloudTestingSettings.addChangeListener(this);
-    updateCloudProjectName(googleCloudTestingSettings.getState());
-
     AnAction action = new AnAction() {
       @Override
       public void actionPerformed(AnActionEvent e) {
-        ShowSettingsUtil.getInstance().showSettingsDialog(project, "Google Cloud Testing");
+        CloudProjectChooserDialog dialog = new CloudProjectChooserDialog(project, myCloudProjectNameLabel.getText());
+
+        dialog.show();
+
+        if (dialog.isOK()) {
+          updateCloudProjectName(dialog.getSelectedProject());
+          if (isExtendedDeviceChooserDialog) {
+            notifySelectionChangeListeners();
+          } else {
+            // Simulate a change event such that it is picked up by the editor validation mechanisms.
+            for (ItemListener itemListener : myCloudConfigurationCombo.getComboBox().getItemListeners()) {
+              itemListener.itemStateChanged(new ItemEvent(myCloudConfigurationCombo.getComboBox(),
+                                                          ItemEvent.ITEM_STATE_CHANGED,
+                                                          myCloudConfigurationCombo.getComboBox(),
+                                                          ItemEvent.SELECTED));
+            }
+          }
+        }
       }
 
       @Override
@@ -125,9 +137,25 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
     updateGoogleCloudVisible(isShown());
   }
 
-  private void updateCloudProjectName(GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState) {
-    String cloudProjectName = googleCloudTestingState.shouldUseStagingJenkins ? googleCloudTestingState.stagingProjectName : googleCloudTestingState.prodProjectName;
-    myCloudProjectNameLabel.setText(cloudProjectName);
+  private void updateCloudProjectName(String cloudProjectId) {
+    if (cloudProjectId.isEmpty() || cloudProjectId.equals(CLOUD_PROJECT_PROMPT)) {
+      Font currentFont = myCloudProjectNameLabel.getFont();
+      myCloudProjectNameLabel.setFont(new Font("Dialog", Font.BOLD, currentFont.getSize()));
+      myCloudProjectNameLabel.setForeground(Color.RED);
+      myCloudProjectNameLabel.setText(CLOUD_PROJECT_PROMPT);
+    } else {
+      Font currentFont = myCloudProjectNameLabel.getFont();
+      myCloudProjectNameLabel.setFont(new Font("Dialog", Font.PLAIN, currentFont.getSize()));
+      myCloudProjectNameLabel.setForeground(Color.BLACK);
+      myCloudProjectNameLabel.setText(cloudProjectId);
+    }
+    lastChosenCloudProjectId = myCloudProjectNameLabel.getText();
+  }
+
+  private void notifySelectionChangeListeners() {
+    for (AdditionalRunDebugChangeListener listener : selectionChangeListeners) {
+      listener.changed();
+    }
   }
 
   @Override
@@ -141,8 +169,13 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
   }
 
   @Override
-  public void selectConfigurationById(int id) {
+  public void selectMatrixConfigurationById(int id) {
     myCloudConfigurationCombo.selectConfiguration(id);
+  }
+
+  @Override
+  public void selectCloudProjectById(String cloudProjectId) {
+    updateCloudProjectName(cloudProjectId);
   }
 
   @Override
@@ -166,12 +199,17 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
   }
 
   @Override
-  public int getSelectedConfigurationId() {
+  public int getSelectedMatrixConfigurationId() {
     GoogleCloudTestingConfiguration selection = getSelection();
     if (selection == null) {
       return -1;
     }
     return selection.getId();
+  }
+
+  @Override
+  public String getChosenCloudProjectId() {
+    return myCloudProjectNameLabel.getText();
   }
 
   @Override
@@ -190,7 +228,8 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
   @Override
   public boolean isValidSelection() {
     GoogleCloudTestingConfiguration selection = getSelection();
-    return selection != null && selection.countCombinations() > 0;
+    return selection != null && selection.countCombinations() > 0
+           && !myCloudProjectNameLabel.getText().equals(CLOUD_PROJECT_PROMPT);
   }
 
   @Override
@@ -201,6 +240,9 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
     }
     if (selection.countCombinations() < 1) {
       return "Selected matrix configuration is empty";
+    }
+    if (myCloudProjectNameLabel.getText().equals(CLOUD_PROJECT_PROMPT)) {
+      return "Cloud project not specified";
     }
     return "";
   }
@@ -237,8 +279,4 @@ public class CloudTestOptionPanel extends AdditionalRunDebugOptionPanel implemen
     }
   }
 
-  @Override
-  public void googleCloudTestingSettingsChanged(GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState) {
-    updateCloudProjectName(googleCloudTestingState);
-  }
 }

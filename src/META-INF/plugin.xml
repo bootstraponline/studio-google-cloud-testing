@@ -17,6 +17,7 @@
 
   <depends>org.jetbrains.android</depends>
   <depends>com.google.gct.login</depends>
+  <depends>com.google.gct</depends>
 
   <actions>
     <action id="GoogleCloudTesting.TestService"

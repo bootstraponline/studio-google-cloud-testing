@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.google.gct.testing.CloudProjectChooserDialog">
+  <grid id="27dc6" binding="myPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
+    <constraints>
+      <xy x="20" y="20" width="573" height="400"/>
+    </constraints>
+    <properties>
+      <minimumSize width="300" height="50"/>
+      <preferredSize width="300" height="50"/>
+    </properties>
+    <border type="none"/>
+    <children/>
+  </grid>
+  <buttonGroups>
+    <group name="myButtonGroup1">
+      <member id="dc052"/>
+      <member id="4ffff"/>
+      <member id="7fabf"/>
+    </group>
+  </buttonGroups>
+</form>
