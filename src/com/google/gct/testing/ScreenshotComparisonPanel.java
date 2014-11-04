@@ -112,7 +112,10 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     wipePanel = new WipePanel();
     wipePanel.setContentPanel(myPanel);
 
-    getSelectedConfigurationResult().addConfigurationResultListener(this);
+    ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
+    if (selectedConfigurationResult != null) {
+      selectedConfigurationResult.addConfigurationResultListener(this);
+    }
 
     //TODO: Dispose to avoid memory leak.
     init();
@@ -166,9 +169,15 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
         comboBox.addActionListener(new ActionListener() {
           @Override
           public void actionPerformed(ActionEvent e) {
-            getSelectedConfigurationResult().removeConfigurationResultListener(thisPanel);
+            ConfigurationResult currentConfigurationResult = getSelectedConfigurationResult();
+            if (currentConfigurationResult != null) {
+              currentConfigurationResult.removeConfigurationResultListener(thisPanel);
+            }
             selectedConfigurationInstance = computeSelectedConfigurationInstance();
-            getSelectedConfigurationResult().addConfigurationResultListener(thisPanel);
+            currentConfigurationResult = getSelectedConfigurationResult();
+            if (currentConfigurationResult != null) {
+              currentConfigurationResult.addConfigurationResultListener(thisPanel);
+            }
             updateHeaderBar();
             updateImage();
             parent.updateMaxStep();
@@ -205,26 +214,32 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   }
 
   public int getMaxStep() {
-    return getSelectedConfigurationResult().maxScreenshotStep(currentTest);
+    ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
+    return selectedConfigurationResult == null ? 0 : selectedConfigurationResult.maxScreenshotStep(currentTest);
   }
 
   private void updateImage() {
-    currentImage = getSelectedConfigurationResult().getScreenshotForTestAndStep(currentTest, currentStep);
-    if (currentImage != null) {
-      int imageWidth = currentImage.getWidth();
-      int imageHeight = currentImage.getHeight();
-      if (imageWidth > MAX_IMAGE_WIDTH) {
-        imageHeight = imageHeight * MAX_IMAGE_WIDTH / imageWidth;
-        imageWidth = MAX_IMAGE_WIDTH;
-      }
-      if (imageHeight > MAX_IMAGE_HEIGHT) {
-        imageWidth = imageWidth * MAX_IMAGE_HEIGHT / imageHeight;
-        imageHeight = MAX_IMAGE_HEIGHT;
-      }
-      myImageLabel.setIcon(new ImageIcon(currentImage.getScaledInstance(imageWidth, imageHeight, Image.SCALE_SMOOTH)));
-    } else {
+    ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
+    if (selectedConfigurationResult == null) {
       myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+      return;
     }
+    currentImage = selectedConfigurationResult.getScreenshotForTestAndStep(currentTest, currentStep);
+    if (currentImage == null) {
+      myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+      return;
+    }
+    int imageWidth = currentImage.getWidth();
+    int imageHeight = currentImage.getHeight();
+    if (imageWidth > MAX_IMAGE_WIDTH) {
+      imageHeight = imageHeight * MAX_IMAGE_WIDTH / imageWidth;
+      imageWidth = MAX_IMAGE_WIDTH;
+    }
+    if (imageHeight > MAX_IMAGE_HEIGHT) {
+      imageWidth = imageWidth * MAX_IMAGE_HEIGHT / imageHeight;
+      imageHeight = MAX_IMAGE_HEIGHT;
+    }
+    myImageLabel.setIcon(new ImageIcon(currentImage.getScaledInstance(imageWidth, imageHeight, Image.SCALE_SMOOTH)));
   }
 
   private void updateHeaderBar() {
@@ -280,10 +295,12 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
       @Override
       public void saveImage() {
         BufferedImage image = getImage();
-        if (image == null)
+        ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
+        if (selectedConfigurationResult == null || image == null) {
           return;
+        }
 
-        ConfigurationInstance configurationInstance = getSelectedConfigurationResult().getConfigurationInstance();
+        ConfigurationInstance configurationInstance = selectedConfigurationResult.getConfigurationInstance();
         String proposedFileName = configurationInstance.getEncodedString();
         String description = "Save screenshot of " + configurationInstance.getDisplayString();
 

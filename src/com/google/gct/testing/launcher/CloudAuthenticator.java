@@ -20,7 +20,11 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.storage.Storage;
+import com.google.api.services.test.Test;
+import com.google.api.services.test.model.AndroidDeviceCatalog;
 import com.google.gct.login.GoogleLogin;
+
+import java.io.IOException;
 
 public class CloudAuthenticator {
 
@@ -31,8 +35,38 @@ public class CloudAuthenticator {
 
   private static Storage storage;
 
+  private static Test test;
+
 
   public static Storage getStorage() {
+    prepareCredential();
+    if (storage == null) {
+      storage = new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
+    }
+    return storage;
+  }
+
+  public static Test getTest() {
+    prepareCredential();
+    if (test == null) {
+      test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), null)
+        //.setRootUrl("http://snegara0.mtv.corp.google.com:8787/test")
+        .setRootUrl("https://www-googleapis-staging.sandbox.google.com/test")
+        .build();
+    }
+    return test;
+  }
+
+  public static AndroidDeviceCatalog getAndroidDeviceCatalog() {
+    try {
+      return getTest().testEnvironmentCatalog().get("ANDROID").execute().getAndroidDeviceCatalog();
+    }
+    catch (IOException e) {
+      throw new RuntimeException("Error retrieving android device catalog", e);
+    }
+  }
+
+  private static void prepareCredential() {
     if (httpTransport == null) {
       httpTransport = createHttpTransport();
     }
@@ -42,10 +76,6 @@ public class CloudAuthenticator {
       }
       credential = GoogleLogin.getInstance().getCredential();
     }
-    if (storage == null) {
-      storage = new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
-    }
-    return storage;
   }
 
   private static HttpTransport createHttpTransport() {

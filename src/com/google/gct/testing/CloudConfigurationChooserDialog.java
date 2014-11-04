@@ -81,7 +81,6 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   private JPanel myConfigurationDetailsPanel;
   private JPanel myConfigurationEditorPanel;
   private JPanel myConfigurationInfoPanel;
-  private JCheckBox myPreferPhysicalDevicesCheckbox;
   private JLabel myConfigurationInfoLabel;
   private JLabel myDimensionNameLabel;
 

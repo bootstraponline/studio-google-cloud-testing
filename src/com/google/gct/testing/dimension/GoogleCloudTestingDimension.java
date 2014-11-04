@@ -21,14 +21,17 @@ import com.google.common.collect.Sets;
 import com.google.gct.testing.GoogleCloudTestingConfiguration;
 
 import javax.swing.*;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-/**
- * Defines a list of types (e.g., Nexus 5, Nexus 7).
- */
+
 public abstract class GoogleCloudTestingDimension {
+
+  private static final long DISCOVERY_TEST_API_REFRESH_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
+  /**
+   * Map dimension -> last update timestamp.
+   */
+  private static Map<String, Long> lastDiscoveryTestApiUpdateTimestampMap = new HashMap<String, Long>();
 
   /**
    * The list of types that are currently enabled (use List rather than Set for comparison consistency).
@@ -39,6 +42,18 @@ public abstract class GoogleCloudTestingDimension {
 
   public GoogleCloudTestingDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration) {
     myGoogleCloudTestingConfiguration = googleCloudTestingConfiguration;
+  }
+
+  static boolean shouldPollDiscoveryTestApi(String dimension) {
+    Long lastTimestamp = lastDiscoveryTestApiUpdateTimestampMap.get(dimension);
+    if (lastTimestamp == null) {
+      return true;
+    }
+    return System.currentTimeMillis() - lastTimestamp > DISCOVERY_TEST_API_REFRESH_TIMEOUT;
+  }
+
+  static void resetDiscoveryTestApiUpdateTimestamp(String dimension) {
+    lastDiscoveryTestApiUpdateTimestampMap.put(dimension, System.currentTimeMillis());
   }
 
   /**
@@ -156,6 +171,10 @@ public abstract class GoogleCloudTestingDimension {
 
   private void checkIsEditable() {
     Preconditions.checkState(isEditable(), "Cannot change a non-editable dimension!");
+  }
+
+  public boolean shouldBeAlwaysGrouped() {
+    return false;
   }
 
   public String toString() {

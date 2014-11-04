@@ -260,7 +260,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     List<? extends GoogleCloudTestingTypeGroup> supportedGroups = dimension.getSupportedGroups();
     for (GoogleCloudTestingTypeGroup group : supportedGroups) {
       List<GoogleCloudTestingType> types = group.getTypes();
-      if (types.size() == 1) {
+      if (types.size() == 1 && !dimension.shouldBeAlwaysGrouped()) {
         addChildNode(rootNode, types.get(0), dimension);
       } else {
         CheckedTreeNode groupNode = new CheckedTreeNode(group);

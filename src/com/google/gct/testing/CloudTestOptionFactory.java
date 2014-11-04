@@ -47,6 +47,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.event.HyperlinkEvent;
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CloudTestOptionFactory extends AdditionalRunDebugOptionFactory {
@@ -80,7 +81,8 @@ public class CloudTestOptionFactory extends AdditionalRunDebugOptionFactory {
 
     GoogleCloudTestingConfiguration googleCloudTestingConfiguration = GoogleCloudTestingUtils
       .getConfigurationById(selectedConfigurationId, runningState.getFacet());
-    for (String configurationInstance : googleCloudTestingConfiguration.computeConfigurationInstancesForResultsViewer()) {
+    for (String configurationInstance : googleCloudTestingConfiguration.computeConfigurationInstances(
+      ConfigurationInstance.DISPLAY_NAME_DELIMITER)) {
       cloudResultParser.getTestRunListener().testConfigurationScheduled(configurationInstance);
     }
     GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState = GoogleCloudTestingSettings.getInstance(project).getState();
@@ -150,7 +152,8 @@ public class CloudTestOptionFactory extends AdditionalRunDebugOptionFactory {
                                    final GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState,
                                    final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser) {
     if (googleCloudTestingConfiguration != null && googleCloudTestingConfiguration.countCombinations() > 0) {
-      final String matrixFilter = googleCloudTestingConfiguration.prepareJenkinsRequest();
+      final List<String> matrixInstances =
+        googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.ENCODED_NAME_DELIMITER);
       new Thread(new Runnable() {
         @Override
         public void run() {
@@ -168,18 +171,24 @@ public class CloudTestOptionFactory extends AdditionalRunDebugOptionFactory {
           String apkPath = runningState.getFacet().getModule().getModuleFile().getParent().getPath() + "/build/apk/";
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading debug APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
-          CloudTestsLauncher.uploadFile(bucketName, new File(apkPath + moduleName + "-debug-unaligned.apk"));
+          String appApkName = CloudTestsLauncher.uploadFile(bucketName, new File(apkPath + moduleName + "-debug-unaligned.apk")).getName();
 
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading test APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
-          CloudTestsLauncher.uploadFile(bucketName, new File(apkPath + moduleName + "-debug-test-unaligned.apk"));
+          String testApkName =
+            CloudTestsLauncher.uploadFile(bucketName, new File(apkPath + moduleName + "-debug-test-unaligned.apk")).getName();
 
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Triggering Jenkins matrix test...", "\n"),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking test API...", "\n"),
                                                                ProcessOutputTypes.STDOUT);
-          String testSpecification = GoogleCloudTestingUtils.prepareJenkinsTestSpecification(testRunConfiguration);
+          String testSpecification = GoogleCloudTestingUtils.prepareTestSpecification(testRunConfiguration);
+
           CloudTestsLauncher
-            .triggerJenkinsJob(jenkinsUrl, cloudProjectId, moduleName, bucketName, testSpecification, matrixFilter, appPackage,
-                               testPackage);
+            .triggerTestApi(cloudProjectId, moduleName, getApkGcsPath(bucketName, appApkName), getApkGcsPath(bucketName, testApkName),
+                            testSpecification, matrixInstances, appPackage, testPackage);
+
+          //CloudTestsLauncher
+          //  .triggerJenkinsJob(jenkinsUrl, cloudProjectId, moduleName, bucketName, testSpecification, matrixFilter, appPackage,
+          //                     testPackage);
 
           String testRunId = TEST_RUN_ID_PREFIX + bucketName;
           CloudResultsAdapter cloudResultsAdapter =
@@ -196,6 +205,10 @@ public class CloudTestOptionFactory extends AdditionalRunDebugOptionFactory {
         }
       }).start();
     }
+  }
+
+  private String getApkGcsPath(String bucketName, String apkName) {
+    return "gs://" + bucketName + "/" + apkName;
   }
 
   private static void addCloudResultsAdapter(String testRunId, CloudResultsAdapter cloudResultsAdapter) {

@@ -15,47 +15,50 @@
  */
 package com.google.gct.testing.dimension;
 
+import com.google.api.services.test.model.AndroidVersion;
+import com.google.api.services.test.model.Distribution;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.gct.testing.GoogleCloudTestingConfiguration;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 
 import javax.swing.*;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static com.google.common.collect.Iterables.filter;
-import static com.google.common.collect.Lists.newArrayList;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
 
 public class ApiDimension extends GoogleCloudTestingDimension {
 
   public static final String DISPLAY_NAME = "Platform";
 
-  public static final ApiLevel KITKAT_19 =
-    new ApiLevel("KitKat", "4.4.3", 19, ImmutableMap.of("Release date", "October 2013", "Market share", "13.6%"));
-  public static final ApiLevel JELLY_BEAN_18 =
-    new ApiLevel("Jelly Bean", "4.3.1", 18, ImmutableMap.of("Release date", "July 2013", "Market share", "10.3%"));
-  public static final ApiLevel JELLY_BEAN_17 =
-    new ApiLevel("Jelly Bean", "4.2.2", 17, ImmutableMap.of("Release date", "November 2012", "Market share", "19.1%"));
-  public static final ApiLevel JELLY_BEAN_16 =
-    new ApiLevel("Jelly Bean", "4.1.2", 16, ImmutableMap.of("Release date", "July 2012", "Market share", "29.0%"));
-  public static final ApiLevel ICE_CREAM_SANDWICH_15 =
-    new ApiLevel("Ice Cream Sandwich", "4.0.4", 15, ImmutableMap.of("Release date", "December 2011", "Market share", "12.3% (all Ice Cream Sandwich)"));
-  public static final ApiLevel ICE_CREAM_SANDWICH_14 =
-    new ApiLevel("Ice Cream Sandwich", "4.0.2", 14, ImmutableMap.of("Release date", "October 2011", "Market share", "12.3% (all Ice Cream Sandwich)"));
-  public static final ApiLevel GINGERBREAD_10 =
-    new ApiLevel("Gingerbread", "2.3.7", 10, ImmutableMap.of("Release date", "February 2011", "Market share", "14.9% (all Gingerbread)"));
-  public static final ApiLevel GINGERBREAD_9 =
-    new ApiLevel("Gingerbread", "2.3.2", 9, ImmutableMap.of("Release date", "December 2010", "Market share", "14.9% (all Gingerbread)"));
-  public static final ApiLevel FROYO_8 =
-    new ApiLevel("Froyo", "2.2.3", 8, ImmutableMap.of("Release date", "May 2010", "Market share", "0.8%"));
+  //public static final ApiLevel KITKAT_19 =
+  //  new ApiLevel("KitKat", "4.4.3", 19, ImmutableMap.of("Release date", "October 2013", "Market share", "13.6%"));
+  //public static final ApiLevel JELLY_BEAN_18 =
+  //  new ApiLevel("Jelly Bean", "4.3.1", 18, ImmutableMap.of("Release date", "July 2013", "Market share", "10.3%"));
+  //public static final ApiLevel JELLY_BEAN_17 =
+  //  new ApiLevel("Jelly Bean", "4.2.2", 17, ImmutableMap.of("Release date", "November 2012", "Market share", "19.1%"));
+  //public static final ApiLevel JELLY_BEAN_16 =
+  //  new ApiLevel("Jelly Bean", "4.1.2", 16, ImmutableMap.of("Release date", "July 2012", "Market share", "29.0%"));
+  //public static final ApiLevel ICE_CREAM_SANDWICH_15 =
+  //  new ApiLevel("Ice Cream Sandwich", "4.0.4", 15, ImmutableMap.of("Release date", "December 2011", "Market share", "12.3% (all Ice Cream Sandwich)"));
+  //public static final ApiLevel ICE_CREAM_SANDWICH_14 =
+  //  new ApiLevel("Ice Cream Sandwich", "4.0.2", 14, ImmutableMap.of("Release date", "October 2011", "Market share", "12.3% (all Ice Cream Sandwich)"));
+  //public static final ApiLevel GINGERBREAD_10 =
+  //  new ApiLevel("Gingerbread", "2.3.7", 10, ImmutableMap.of("Release date", "February 2011", "Market share", "14.9% (all Gingerbread)"));
+  //public static final ApiLevel GINGERBREAD_9 =
+  //  new ApiLevel("Gingerbread", "2.3.2", 9, ImmutableMap.of("Release date", "December 2010", "Market share", "14.9% (all Gingerbread)"));
+  //public static final ApiLevel FROYO_8 =
+    //  new ApiLevel("Froyo", "2.2.3", 8, ImmutableMap.of("Release date", "May 2010", "Market share", "0.8%"));
+  //
+  //private static final Set<ApiLevel> BACKEND_SUPPORTED_API_VERSIONS =
+  //  ImmutableSet.of(KITKAT_19, JELLY_BEAN_18, JELLY_BEAN_17, JELLY_BEAN_16, ICE_CREAM_SANDWICH_15, ICE_CREAM_SANDWICH_14);
 
-  private static final Set<ApiLevel> BACKEND_SUPPORTED_API_VERSIONS =
-    ImmutableSet.of(KITKAT_19, JELLY_BEAN_18, JELLY_BEAN_17, JELLY_BEAN_16, ICE_CREAM_SANDWICH_15, ICE_CREAM_SANDWICH_14);
+  private static ImmutableList<ApiLevel> FULL_DOMAIN;
 
   private final int minSdkVersion;
 
@@ -89,17 +92,27 @@ public class ApiDimension extends GoogleCloudTestingDimension {
     return Lists.newArrayList(Iterables.filter(getAppSupportedDomain(), new Predicate<GoogleCloudTestingType>() {
       @Override
       public boolean apply(GoogleCloudTestingType type) {
-        return BACKEND_SUPPORTED_API_VERSIONS.contains(type);
+        //return BACKEND_SUPPORTED_API_VERSIONS.contains(type);
+        return true;
       }
     }));
   }
 
   public static List<? extends GoogleCloudTestingType> getFullDomain() {
-    // Sort them in descending order of api version.
-    return Ordering.from(API_LEVEL_COMPARATOR).reverse().sortedCopy(Lists.newArrayList(FROYO_8, GINGERBREAD_9, GINGERBREAD_10,
-                                                                                       ICE_CREAM_SANDWICH_14, ICE_CREAM_SANDWICH_15,
-                                                                                       JELLY_BEAN_16, JELLY_BEAN_17, JELLY_BEAN_18,
-                                                                                       KITKAT_19));
+    if (FULL_DOMAIN == null || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+      List<ApiLevel> apiLevels = new LinkedList<ApiLevel>();
+      for (AndroidVersion version : getAndroidDeviceCatalog().getVersions()) {
+        Map<String, String> details = new HashMap<String, String>();
+        details.put("Release date", version.getReleaseDate());
+        Distribution distribution = version.getDistribution();
+        details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
+        apiLevels.add(new ApiLevel(version.getId(), version.getCodeName(), version.getVersionString(), version.getApiLevel(), details));
+      }
+      // Sort them in descending order of api version.
+      FULL_DOMAIN = ImmutableList.copyOf(Ordering.from(API_LEVEL_COMPARATOR).reverse().sortedCopy(apiLevels));
+      resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
+    }
+    return FULL_DOMAIN;
   }
 
   @Override
@@ -119,11 +132,13 @@ public class ApiDimension extends GoogleCloudTestingDimension {
 
   public static class ApiLevel extends GoogleCloudTestingType {
 
-    String codeName;
-    String osVersion;
-    int apiVersion;
+    private final String id;
+    private final String codeName;
+    private final String osVersion;
+    private final int apiVersion;
 
-    public ApiLevel(String codeName, String osVersion, int apiVersion, Map<String, String> details) {
+    public ApiLevel(String id, String codeName, String osVersion, int apiVersion, Map<String, String> details) {
+      this.id = id;
       this.codeName = codeName;
       this.osVersion = osVersion;
       this.details = details;
@@ -137,7 +152,7 @@ public class ApiDimension extends GoogleCloudTestingDimension {
 
     @Override
     public String getId() {
-      return "" + apiVersion;
+      return id;
     }
   }
 

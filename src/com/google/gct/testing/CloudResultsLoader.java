@@ -199,7 +199,6 @@ public class CloudResultsLoader {
           if (result != null && result.getScreenshots().get(file.getName()) == null) {
             Optional<byte[]> optionalFileBytes = getFileBytes(file);
             if (optionalFileBytes.isPresent()) {
-              //TODO: Strangely, but in Debug mode, reading the image consistently fails with a NegativeArraySizeException.
               BufferedImage image = ImageIO.read(new ByteArrayInputStream(optionalFileBytes.get()));
               image.flush();
               result.addScreenshot(file.getName(), image);

@@ -239,24 +239,33 @@ public class GoogleCloudTestingConfiguration {
     //String s= "(DEVICE=='nexus5' || DEVICE=='nexus7') && OSVERSION=='jellybean' && LANGUAGE=='english'";
   }
 
-  public List<String> computeConfigurationInstancesForResultsViewer() {
+  /**
+   * TODO: Use an enum rather than delimiter to decide what presentation (and delimiter) to use (i.e., id or display name).
+   */
+  public List<String> computeConfigurationInstances(String delimiter) {
     List<String> configurationInstances = new LinkedList<String>();
-    computeConfigurationInstancesForResultsViewerRecursively("", 0, configurationInstances);
+    computeConfigurationInstancesRecursively(delimiter, "", 0, configurationInstances);
     return configurationInstances;
   }
 
-  private void computeConfigurationInstancesForResultsViewerRecursively(
-    String partialConfigurationInstance, int dimensionIndex, List<String> configurationInstances) {
+  private void computeConfigurationInstancesRecursively(
+    String delimiter, String partialConfigurationInstance, int dimensionIndex, List<String> configurationInstances) {
 
     if (dimensionIndex >= getDimensions().size()) {
       configurationInstances.add(partialConfigurationInstance);
       return;
     }
 
-    String separator = dimensionIndex == 0 ? "" : ConfigurationInstance.DISPLAY_NAME_DELIMITER;
+    String separator = dimensionIndex == 0 ? "" : delimiter;
     for (GoogleCloudTestingType type : getDimensions().get(dimensionIndex).getEnabledTypes()) {
-      computeConfigurationInstancesForResultsViewerRecursively(
-        partialConfigurationInstance + separator + type.getResultsViewerDisplayName(), dimensionIndex + 1, configurationInstances);
+      String typeName;
+      if (ConfigurationInstance.DISPLAY_NAME_DELIMITER.equals(delimiter)) {
+        typeName = type.getResultsViewerDisplayName();
+      } else {
+        typeName = type.getId();
+      }
+      computeConfigurationInstancesRecursively(
+        delimiter, partialConfigurationInstance + separator + typeName, dimensionIndex + 1, configurationInstances);
     }
   }
 

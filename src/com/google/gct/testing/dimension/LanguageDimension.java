@@ -16,8 +16,10 @@
 package com.google.gct.testing.dimension;
 
 import com.google.api.client.util.Lists;
+import com.google.api.services.test.model.Locale;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.gct.testing.GoogleCloudTestingConfiguration;
@@ -31,21 +33,24 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
+
 public class LanguageDimension extends GoogleCloudTestingDimension {
 
   public static final String DISPLAY_NAME = "Locale";
 
-
+  private static ImmutableList<Language> FULL_DOMAIN;
   
   //TODO: Make sure we do not "guess" incorrectly.
   private static final Language defaultLanguage = new Language(getLanguage(System.getProperty("user.language")), true);
 
   private final List<Language> supportedLanguages;
 
+
   public LanguageDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration, AndroidFacet facet) {
     super(googleCloudTestingConfiguration);
     final List<String> locales = getLocales(facet);
-    supportedLanguages = Lists.newArrayList(Iterables.filter(AllLanguages.LANGUAGES, new Predicate<Language>() {
+    supportedLanguages = Lists.newArrayList(Iterables.filter(getFullDomain(), new Predicate<Language>() {
       @Override
       public boolean apply(LanguageDimension.Language input) {
         return locales.contains(input.getId());
@@ -58,7 +63,7 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
   @VisibleForTesting
   public LanguageDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration, final List<String> locales) {
     super(googleCloudTestingConfiguration);
-    supportedLanguages = Lists.newArrayList(Iterables.filter(AllLanguages.LANGUAGES, new Predicate<Language>() {
+    supportedLanguages = Lists.newArrayList(Iterables.filter(getFullDomain(), new Predicate<Language>() {
       @Override
       public boolean apply(LanguageDimension.Language input) {
         return locales.contains(input.getId());
@@ -102,12 +107,20 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
     return supportedLanguages;
   }
 
-  public static List<? extends GoogleCloudTestingType> getFullDomain() {
-    return AllLanguages.LANGUAGES;
+  public static List<Language> getFullDomain() {
+    if (FULL_DOMAIN == null || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+      ImmutableList.Builder<Language> fullDomainBuilder = new ImmutableList.Builder<Language>();
+      for (Locale locale : getAndroidDeviceCatalog().getRuntimeConfiguration().getLocales()) {
+        fullDomainBuilder.add(new Language(locale.getId(), locale.getName(), locale.getRegion(), false));
+      }
+      FULL_DOMAIN = fullDomainBuilder.build();
+      resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
+    }
+    return FULL_DOMAIN;
   }
 
   public static Language getLanguage(final String locale) {
-    return Iterables.find(AllLanguages.LANGUAGES, new Predicate<Language>() {
+    return Iterables.find(getFullDomain(), new Predicate<Language>() {
       @Override
       public boolean apply(LanguageDimension.Language input) {
         return input.getId().equals(locale);
@@ -132,21 +145,23 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
 
   public static class Language extends GoogleCloudTestingType {
 
-    private final String locale;
-    String name;
-    boolean isDefault;
+    private final String id;
+    private final String name;
+    private final String region;
+    private final boolean isDefault;
 
     public Language(Language language, boolean isDefault) {
-      this(language.locale, language.name, isDefault);
+      this(language.id, language.name, language.region, isDefault);
     }
 
-    public Language(String locale, String name) {
-      this(locale, name, false);
-    }
+    //public Language(String id, String name, String region) {
+    //  this(id, name, region, false);
+    //}
 
-    public Language(String locale, String name, boolean isDefault) {
-      this.locale = locale;
+    public Language(String id, String name, String region, boolean isDefault) {
+      this.id = id;
       this.name = name;
+      this.region = region;
       this.details = ImmutableMap.of();
       this.isDefault = isDefault;
     }
@@ -164,12 +179,12 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
 
     @Override
     public String getResultsViewerDisplayName() {
-      return name + " (" + locale + ")";
+      return name + (region == null ? "" : " (" + region + ")");
     }
 
     @Override
     public String getId() {
-      return locale;
+      return id;
     }
   }
 }

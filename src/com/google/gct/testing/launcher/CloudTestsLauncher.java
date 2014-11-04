@@ -18,6 +18,9 @@ package com.google.gct.testing.launcher;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
+import com.google.api.services.storage.model.StorageObject;
+import com.google.api.services.test.model.*;
+import com.google.common.collect.Lists;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -34,9 +37,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 
 public class CloudTestsLauncher {
+
+  public static final String TEST_RUNNER_CLASS = "com.google.android.apps.common.testing.testrunner.GoogleInstrumentationTestRunner";
+
 
   public CloudTestsLauncher() {
   }
@@ -51,7 +58,10 @@ public class CloudTestsLauncher {
     }
   }
 
-  public static void uploadFile(String bucketName, File file) {
+  /**
+   * Returns {@code StorageObject} for the uploaded file (i.e., the file in the bucket).
+   */
+  public static StorageObject uploadFile(String bucketName, File file) {
     InputStreamContent mediaContent = null;
     try {
       mediaContent = new InputStreamContent("application/octet-stream", new FileInputStream(file));
@@ -72,7 +82,7 @@ public class CloudTestsLauncher {
       // https://developers.google.com/storage/docs/json_api/v1/buckets#defaultObjectAcl
       insertObject.setName(file.getName());
 
-      insertObject.execute();
+      return insertObject.execute();
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -84,12 +94,46 @@ public class CloudTestsLauncher {
            : s;
   }
 
+  public static void triggerTestApi(String cloudProjectId, String applicationName, String appApkGcsPath, String testApkGcsPath,
+                                    String testSpecification, List<String> matrixInstances, String appPackage, String testPackage) {
+
+    TestExecution testExecution = new TestExecution();
+
+    testExecution.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
+      new AndroidInstrumentationTest()
+        .setAppApk(new FileReference().setGcsPath(appApkGcsPath))
+        .setTestApk(new FileReference().setGcsPath(testApkGcsPath))
+        .setAppPackageId(appPackage)
+        .setTestPackageId(testPackage)
+        .setTestRunnerClass(TEST_RUNNER_CLASS)
+        .setTestTargets(Lists.newArrayList(testSpecification))));
+
+    for (String matrixInstance : matrixInstances) {
+      try {
+        TestExecution currentTestExecution = testExecution.clone();
+        String[] dimensionValues = matrixInstance.split("-");
+        currentTestExecution.setEnvironment(new Environment().setAndroidDevice(
+          new AndroidDevice()
+            .setAndroidModelId(dimensionValues[0])
+            .setAndroidVersionId(dimensionValues[1])
+            .setLocale(dimensionValues[2])
+            .setOrientation(dimensionValues[3])));
+
+        //TODO: Use the ResultStorage of the returned TestExecution to look for the result.
+        TestExecution execution = getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute();
+        System.out.println("Id=" + execution.getId());
+      }
+      catch (IOException e) {
+        throw new RuntimeException("Error triggering test execution through test API", e);
+      }
+    }
+  }
+
   public static void triggerJenkinsJob(
     String jenkinsUrl, String cloudProjectId, String applicationName, String bucketName, String testSpecification, String matrixFilter,
     String appPackage, String testPackage) {
 
     String gsBucketName = "gs://" + bucketName;
-    String testRunnerClass = "com.google.android.apps.common.testing.testrunner.GoogleInstrumentationTestRunner";
 
     String json = "{\"parameter\": " +
                "[ " +
@@ -99,7 +143,7 @@ public class CloudTestsLauncher {
                "{\"name\": \"APP_PACKAGE_ID\",     \"value\": \"" + appPackage + "\"}, " +
                "{\"name\": \"TEST_PACKAGE_ID\",    \"value\": \"" + testPackage + "\"}, " +
                "{\"name\": \"TEST_SPECIFICATION\", \"value\": \"" + testSpecification + "\"}, " +
-               "{\"name\": \"TEST_RUNNER_CLASS\",  \"value\": \"" + testRunnerClass + "\"}, " +
+               "{\"name\": \"TEST_RUNNER_CLASS\",  \"value\": \"" + TEST_RUNNER_CLASS + "\"}, " +
                "{\"name\": \"FILTER\",             \"value\": \"" + matrixFilter + "\"}" +
                "], " +
                "}";

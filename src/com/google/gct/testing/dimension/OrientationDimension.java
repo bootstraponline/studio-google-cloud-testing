@@ -23,12 +23,16 @@ import icons.AndroidIcons;
 import javax.swing.*;
 import java.util.List;
 
+import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
+
 public class OrientationDimension extends GoogleCloudTestingDimension {
 
   public static final String DISPLAY_NAME = "Orientation";
 
-  public static final Orientation PORTRAIT = new Orientation("Portrait");
-  public static final Orientation LANDSCAPE = new Orientation("Landscape");
+  //public static final Orientation PORTRAIT = new Orientation("portrait", "Portrait");
+  //public static final Orientation LANDSCAPE = new Orientation("landscape", "Landscape");
+
+  private static ImmutableList<Orientation> FULL_DOMAIN;
 
   public OrientationDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration) {
     super(googleCloudTestingConfiguration);
@@ -36,11 +40,21 @@ public class OrientationDimension extends GoogleCloudTestingDimension {
 
   @Override
   public List<? extends GoogleCloudTestingType> getAppSupportedDomain() {
-    return ImmutableList.of(PORTRAIT, LANDSCAPE);
+    return getFullDomain();
   }
 
   public static List<? extends GoogleCloudTestingType> getFullDomain() {
-    return ImmutableList.of(PORTRAIT, LANDSCAPE);
+    if (FULL_DOMAIN == null || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+      ImmutableList.Builder<Orientation> fullDomainBuilder = new ImmutableList.Builder<Orientation>();
+      List<com.google.api.services.test.model.Orientation> orientations =
+        getAndroidDeviceCatalog().getRuntimeConfiguration().getOrientations();
+      for (com.google.api.services.test.model.Orientation orientation : orientations) {
+        fullDomainBuilder.add(new Orientation(orientation.getId(), orientation.getName()));
+      }
+      FULL_DOMAIN = fullDomainBuilder.build();
+      resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
+    }
+    return FULL_DOMAIN;
   }
 
   @Override
@@ -60,9 +74,11 @@ public class OrientationDimension extends GoogleCloudTestingDimension {
 
   public static class Orientation extends GoogleCloudTestingType {
 
-    String name;
+    private final String id;
+    private final String name;
 
-    public Orientation(String name) {
+    public Orientation(String id, String name) {
+      this.id = id;
       this.name = name;
       this.details = ImmutableMap.of();
     }
@@ -74,7 +90,7 @@ public class OrientationDimension extends GoogleCloudTestingDimension {
 
     @Override
     public String getId() {
-      return name.toLowerCase();
+      return id;
     }
   }
 }

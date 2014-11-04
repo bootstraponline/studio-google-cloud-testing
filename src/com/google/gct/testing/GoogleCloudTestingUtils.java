@@ -63,7 +63,7 @@ public class GoogleCloudTestingUtils {
     return null;
   }
 
-  public static String prepareJenkinsTestSpecification(AndroidTestRunConfiguration testRunConfiguration) {
+  public static String prepareTestSpecification(AndroidTestRunConfiguration testRunConfiguration) {
     switch (testRunConfiguration.TESTING_TYPE) {
       case AndroidTestRunConfiguration.TEST_METHOD :
         return "class " + testRunConfiguration.CLASS_NAME + "#" + testRunConfiguration.METHOD_NAME;
