@@ -21,15 +21,21 @@ import java.util.List;
 public class GoogleCloudTestingTypeGroup {
 
   private final String name;
+  private final String description;
 
   private final List<GoogleCloudTestingType> types = new LinkedList<GoogleCloudTestingType>();
 
-  public GoogleCloudTestingTypeGroup(String name) {
+  public GoogleCloudTestingTypeGroup(String name, String description) {
     this.name = name;
+    this.description = description;
   }
 
   public String getName() {
     return name;
+  }
+
+  public String getDescription() {
+    return description;
   }
 
   public void addType(GoogleCloudTestingType type) {

@@ -105,6 +105,13 @@ public class DeviceDimension extends GoogleCloudTestingDimension {
     }
 
     @Override
+    public String getGroupDescription() {
+      return form.equals("VIRTUAL")
+             ? "Android OS running on Google Compute Engine."
+             : "An actual physical device managed by Google.";
+    }
+
+    @Override
     public String getConfigurationDialogDisplayName() {
       return manufacturer + " " + name;
     }

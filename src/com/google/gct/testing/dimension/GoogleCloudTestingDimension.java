@@ -75,7 +75,7 @@ public abstract class GoogleCloudTestingDimension {
         }
       }
       if (groupToAddTo == null) {
-        groupToAddTo = new GoogleCloudTestingTypeGroup(type.getGroupName());
+        groupToAddTo = new GoogleCloudTestingTypeGroup(type.getGroupName(), type.getGroupDescription());
         result.add(groupToAddTo);
       }
       groupToAddTo.addType(type);

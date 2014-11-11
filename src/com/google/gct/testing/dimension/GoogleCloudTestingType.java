@@ -39,6 +39,10 @@ public abstract class GoogleCloudTestingType {
     return getId();
   }
 
+  public String getGroupDescription() {
+    return getGroupName();
+  }
+
   public Map<String, String> getDetails() {
     return details;
   }

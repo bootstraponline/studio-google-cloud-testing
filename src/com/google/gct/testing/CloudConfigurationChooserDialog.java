@@ -325,7 +325,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
           @Override
           public void groupSelectionChanged(TwoPanelTreeTypeGroupSelectionEvent e) {
-            myDimensionNameLabel.setText(e.getGroup().getName());
+            myDimensionNameLabel.setText(e.getGroup().getDescription());
             myConfigurationInfoLabel.setText("");
           }
         };
