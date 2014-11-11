@@ -47,7 +47,7 @@ public class ScreenshotComparisonDialog {
 
   private final Project myProject;
   private final AbstractTestProxy testTreeRoot;
-  private final GoogleCloudTestingConfiguration configuration;
+  private final GoogleCloudTestingConfigurationImpl configuration;
   private final ConfigurationInstance configurationInstance;
   @Nullable private final ConfigurationInstance anotherConfigurationInstance;
   private final List<TestName> allTests;
@@ -76,7 +76,7 @@ public class ScreenshotComparisonDialog {
 
   public ScreenshotComparisonDialog(Project project,
                                     AbstractTestProxy testTreeRoot,
-                                    GoogleCloudTestingConfiguration configuration,
+                                    GoogleCloudTestingConfigurationImpl configuration,
                                     ConfigurationInstance configurationInstance,
                                     @Nullable ConfigurationInstance anotherConfigurationInstance,
                                     List<TestName> allTests,

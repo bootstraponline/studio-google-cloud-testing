@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
-import com.google.gct.testing.GoogleCloudTestingConfiguration;
+import com.google.gct.testing.GoogleCloudTestingConfigurationImpl;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 
@@ -62,14 +62,14 @@ public class ApiDimension extends GoogleCloudTestingDimension {
 
   private final int minSdkVersion;
 
-  public ApiDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration, AndroidFacet facet) {
+  public ApiDimension(GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration, AndroidFacet facet) {
     super(googleCloudTestingConfiguration);
     minSdkVersion = facet.getAndroidModuleInfo().getMinSdkVersion().getApiLevel();
     // facet.getManifest().getUsesSdks().get(0).getMinSdkVersion() would read the app's manifest min SDK rather than the global one.
   }
 
   @VisibleForTesting
-  public ApiDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration, int minSdkVersion) {
+  public ApiDimension(GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration, int minSdkVersion) {
     super(googleCloudTestingConfiguration);
     this.minSdkVersion = minSdkVersion;
   }

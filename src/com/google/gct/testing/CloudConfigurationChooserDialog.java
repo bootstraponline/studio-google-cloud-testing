@@ -54,8 +54,8 @@ import static com.google.gct.testing.GoogleCloudTestingUtils.createConfiguration
 public class CloudConfigurationChooserDialog extends DialogWrapper implements ConfigurationChangeListener {
 
   public static final double COST_PER_COMBINATION = 0.3;
-  private final List<GoogleCloudTestingConfiguration> editableConfigurations;
-  private final List<GoogleCloudTestingConfiguration> defaultConfigurations;
+  private final List<GoogleCloudTestingConfigurationImpl> editableConfigurations;
+  private final List<GoogleCloudTestingConfigurationImpl> defaultConfigurations;
   private final MyAddAction myAddAction = new MyAddAction();
   private final MyRemoveAction myRemoveAction = new MyRemoveAction();
   private final MyMoveUpAction myMoveUpAction = new MyMoveUpAction();
@@ -88,14 +88,14 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
   // The configuration that is currently selected in the tree
   @Nullable
-  private GoogleCloudTestingConfiguration selectedConfiguration;
+  private GoogleCloudTestingConfigurationImpl selectedConfiguration;
 
   private final AndroidFacet facet;
 
   public CloudConfigurationChooserDialog(Module module,
-                                         List<GoogleCloudTestingConfiguration> editableConfigurations,
-                                         List<GoogleCloudTestingConfiguration> defaultConfigurations,
-                                         final GoogleCloudTestingConfiguration initiallySelectedConfiguration) {
+                                         List<GoogleCloudTestingConfigurationImpl> editableConfigurations,
+                                         List<GoogleCloudTestingConfigurationImpl> defaultConfigurations,
+                                         final GoogleCloudTestingConfigurationImpl initiallySelectedConfiguration) {
 
     super(module.getProject(), true);
 
@@ -128,7 +128,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
           selectedConfiguration = null;
         } else {
           updateConfigurationControls(true);
-          selectedConfiguration = (GoogleCloudTestingConfiguration) ((DefaultMutableTreeNode)selectedPath.getPath()[2]).getUserObject();
+          selectedConfiguration = (GoogleCloudTestingConfigurationImpl) ((DefaultMutableTreeNode)selectedPath.getPath()[2]).getUserObject();
           myConfigurationName.setText(selectedConfiguration.getName());
           myConfigurationName.setEnabled(selectedConfiguration.isEditable());
         }
@@ -161,8 +161,8 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
           } else if (node == defaultsRoot) {
             append("Defaults", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
             setIcon(AllIcons.General.Settings);
-          } else if (node.getUserObject() instanceof GoogleCloudTestingConfiguration) {
-            GoogleCloudTestingConfiguration config = (GoogleCloudTestingConfiguration) node.getUserObject();
+          } else if (node.getUserObject() instanceof GoogleCloudTestingConfigurationImpl) {
+            GoogleCloudTestingConfigurationImpl config = (GoogleCloudTestingConfigurationImpl) node.getUserObject();
             boolean isInvalidConfiguration = config.countCombinations() < 1;
             boolean oldMySelected = mySelected;
             // This is a trick to avoid using white color for the selected element if it has to be red.
@@ -204,10 +204,10 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     myConfigurationTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     treeModel.insertNodeInto(customRoot, rootNode, 0);
     treeModel.insertNodeInto(defaultsRoot, rootNode, 1);
-    for (GoogleCloudTestingConfiguration configuration : editableConfigurations) {
+    for (GoogleCloudTestingConfigurationImpl configuration : editableConfigurations) {
       addConfigurationToTree(-1, configuration, configuration.equals(initiallySelectedConfiguration));
     }
-    for (GoogleCloudTestingConfiguration configuration : defaultConfigurations) {
+    for (GoogleCloudTestingConfigurationImpl configuration : defaultConfigurations) {
       addConfigurationToTree(-1, configuration, configuration.equals(initiallySelectedConfiguration));
     }
 
@@ -233,7 +233,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   /**
    * Adds the given configuration to the appropriate place in the tree and selects it if desired.
    */
-  private void addConfigurationToTree(int index, GoogleCloudTestingConfiguration configuration, boolean makeSelected) {
+  private void addConfigurationToTree(int index, GoogleCloudTestingConfigurationImpl configuration, boolean makeSelected) {
     configuration.addConfigurationChangeListener(this);
 
     final DefaultMutableTreeNode newChild = new DefaultMutableTreeNode(configuration);
@@ -268,7 +268,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   /**
    * Removes the given configuration from the tree.  We only look under the custom root.
    */
-  private void removeConfigurationFromTree(GoogleCloudTestingConfiguration configuration) {
+  private void removeConfigurationFromTree(GoogleCloudTestingConfigurationImpl configuration) {
     configuration.removeConfigurationChangeListener(this);
     MutableTreeNode toRemove = (MutableTreeNode) TreeUtil.findNodeWithObject(configuration, myConfigurationTree.getModel(), customRoot);
     customRoot.remove(toRemove);
@@ -296,10 +296,10 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     return myToolbarDecorator.createPanel();
   }
 
-  LoadingCache<GoogleCloudTestingConfiguration, TwoPanelTree> dimensionTreeCache = CacheBuilder.newBuilder()
-    .build(new CacheLoader<GoogleCloudTestingConfiguration, TwoPanelTree>() {
+  LoadingCache<GoogleCloudTestingConfigurationImpl, TwoPanelTree> dimensionTreeCache = CacheBuilder.newBuilder()
+    .build(new CacheLoader<GoogleCloudTestingConfigurationImpl, TwoPanelTree>() {
       @Override
-      public TwoPanelTree load(GoogleCloudTestingConfiguration configuration) throws Exception {
+      public TwoPanelTree load(GoogleCloudTestingConfigurationImpl configuration) throws Exception {
         final TwoPanelTree tree = new TwoPanelTree(configuration);
         final TwoPanelTreeSelectionListener treeSelectionListener = new TwoPanelTreeSelectionListener() {
           @Override
@@ -336,7 +336,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     });
 
 
-  private void updateConfigurationDetailsPanel(GoogleCloudTestingConfiguration configuration) {
+  private void updateConfigurationDetailsPanel(GoogleCloudTestingConfigurationImpl configuration) {
 
     myConfigurationEditorPanel.removeAll();
 
@@ -367,7 +367,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
   }
 
-  public GoogleCloudTestingConfiguration getSelectedConfiguration() {
+  public GoogleCloudTestingConfigurationImpl getSelectedConfiguration() {
     return selectedConfiguration;
   }
 
@@ -451,11 +451,11 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
 
     private void doAdd() {
-      GoogleCloudTestingConfiguration newConfiguration = selectedConfiguration != null
+      GoogleCloudTestingConfigurationImpl newConfiguration = selectedConfiguration != null
           ? selectedConfiguration.copy("Copy of ")
-          : new GoogleCloudTestingConfiguration(facet);
+          : new GoogleCloudTestingConfigurationImpl(facet);
 
-      newConfiguration.setIcon(GoogleCloudTestingConfigurationFactory.DEFAULT_ICON);
+      newConfiguration.setIcon(GoogleCloudTestingConfigurationFactoryImpl.DEFAULT_ICON);
       int addIndex = selectedConfiguration == null
                      ? editableConfigurations.size()
                      : editableConfigurations.indexOf(selectedConfiguration) + 1;
@@ -530,7 +530,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
   }
 
-  private void moveConfigurationToIndex(int index, GoogleCloudTestingConfiguration configuration) {
+  private void moveConfigurationToIndex(int index, GoogleCloudTestingConfigurationImpl configuration) {
     editableConfigurations.remove(configuration);
     editableConfigurations.add(index, configuration);
     removeConfigurationFromTree(configuration);

@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing;
 
+import com.android.tools.idea.run.GoogleCloudTestingConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -29,7 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class GoogleCloudTestingConfiguration {
+public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingConfiguration {
 
   public static final int ALL_ID = Integer.MAX_VALUE;
 
@@ -49,7 +50,7 @@ public class GoogleCloudTestingConfiguration {
   LanguageDimension languageDimension;
   OrientationDimension orientationDimension;
 
-  public GoogleCloudTestingConfiguration(int id, String name, Icon icon, AndroidFacet facet) {
+  public GoogleCloudTestingConfigurationImpl(int id, String name, Icon icon, AndroidFacet facet) {
     if (id != ALL_ID && id >= nextAvailableID) {
       nextAvailableID = id + 1;
     }
@@ -61,12 +62,12 @@ public class GoogleCloudTestingConfiguration {
     createDimensions();
   }
 
-  public GoogleCloudTestingConfiguration(String name, Icon icon, AndroidFacet facet) {
+  public GoogleCloudTestingConfigurationImpl(String name, Icon icon, AndroidFacet facet) {
     this(nextAvailableID++, name, icon, facet);
   }
 
   @VisibleForTesting
-  GoogleCloudTestingConfiguration(String name, int minSdkVersion, List<String> locales) {
+  GoogleCloudTestingConfigurationImpl(String name, int minSdkVersion, List<String> locales) {
     id = nextAvailableID++;
     this.name = name;
     facet = null;
@@ -77,10 +78,10 @@ public class GoogleCloudTestingConfiguration {
     orientationDimension = new OrientationDimension(this);
   }
 
-  public GoogleCloudTestingConfiguration(AndroidFacet facet) {
+  public GoogleCloudTestingConfigurationImpl(AndroidFacet facet) {
     id = nextAvailableID++;
     name = "Unnamed";
-    icon = GoogleCloudTestingConfigurationFactory.DEFAULT_ICON;
+    icon = GoogleCloudTestingConfigurationFactoryImpl.DEFAULT_ICON;
     this.facet = facet;
     isEditable = true;
     createDimensions();
@@ -118,10 +119,12 @@ public class GoogleCloudTestingConfiguration {
     return sb.toString();
   }
 
+  @Override
   public int getId() {
     return id;
   }
 
+  @Override
   public String getDisplayName() {
     return name + " (" + countCombinations() + ")";
   }
@@ -171,6 +174,7 @@ public class GoogleCloudTestingConfiguration {
    * Returns the number of different combinations represented
    * by all of the types enabled in this configuration.
    */
+  @Override
   public int countCombinations() {
     int product = 1;
 
@@ -207,7 +211,10 @@ public class GoogleCloudTestingConfiguration {
     return name;
   }
 
-  public Icon getIcon() { return icon; }
+  @Override
+  public Icon getIcon() {
+    return icon;
+  }
 
   public void setIcon(Icon icon) {
     this.icon = icon;
@@ -283,14 +290,14 @@ public class GoogleCloudTestingConfiguration {
   }
 
   @Override
-  public GoogleCloudTestingConfiguration clone() {
+  public GoogleCloudTestingConfigurationImpl clone() {
     return copy(null);
   }
 
-  public GoogleCloudTestingConfiguration copy(String prefix) {
-    GoogleCloudTestingConfiguration newConfiguration = prefix == null
-                                                       ? new GoogleCloudTestingConfiguration(id, name, icon, facet) //clone
-                                                       : new GoogleCloudTestingConfiguration(prefix + name, icon, facet);
+  public GoogleCloudTestingConfigurationImpl copy(String prefix) {
+    GoogleCloudTestingConfigurationImpl newConfiguration = prefix == null
+                                                       ? new GoogleCloudTestingConfigurationImpl(id, name, icon, facet) //clone
+                                                       : new GoogleCloudTestingConfigurationImpl(prefix + name, icon, facet);
     newConfiguration.deviceDimension.enableAll(deviceDimension.getEnabledTypes());
     newConfiguration.apiDimension.enableAll(apiDimension.getEnabledTypes());
     newConfiguration.languageDimension.enableAll(languageDimension.getEnabledTypes());
@@ -322,7 +329,7 @@ public class GoogleCloudTestingConfiguration {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    GoogleCloudTestingConfiguration that = (GoogleCloudTestingConfiguration)o;
+    GoogleCloudTestingConfigurationImpl that = (GoogleCloudTestingConfigurationImpl)o;
 
     return getHash() == that.getHash() && id == that.id;
   }

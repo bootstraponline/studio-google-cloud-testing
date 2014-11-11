@@ -17,7 +17,7 @@ package com.google.gct.testing.dimension;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.gct.testing.GoogleCloudTestingConfiguration;
+import com.google.gct.testing.GoogleCloudTestingConfigurationImpl;
 import icons.AndroidIcons;
 
 import javax.swing.*;
@@ -34,7 +34,7 @@ public class OrientationDimension extends GoogleCloudTestingDimension {
 
   private static ImmutableList<Orientation> FULL_DOMAIN;
 
-  public OrientationDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration) {
+  public OrientationDimension(GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration) {
     super(googleCloudTestingConfiguration);
   }
 

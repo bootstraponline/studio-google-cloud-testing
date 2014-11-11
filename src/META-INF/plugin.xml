@@ -40,7 +40,7 @@
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.android">
-    <additionalRunDebugOptionFactory id="cloudTestRunDebugOptionFactory" order="first" implementation="com.google.gct.testing.CloudTestOptionFactory"/>
+    <googleCloudTestingConfigurationFactory id="myGoogleCloudTestingConfigurationFactory" order="first" implementation="com.google.gct.testing.GoogleCloudTestingConfigurationFactoryImpl"/>
   </extensions>
 
   <extensionPoints>

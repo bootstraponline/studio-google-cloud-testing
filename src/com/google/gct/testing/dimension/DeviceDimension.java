@@ -17,7 +17,7 @@ package com.google.gct.testing.dimension;
 
 import com.google.api.services.test.model.AndroidModel;
 import com.google.common.collect.ImmutableList;
-import com.google.gct.testing.GoogleCloudTestingConfiguration;
+import com.google.gct.testing.GoogleCloudTestingConfigurationImpl;
 import icons.AndroidIcons;
 
 import javax.swing.*;
@@ -41,7 +41,7 @@ public class DeviceDimension extends GoogleCloudTestingDimension {
   private static ImmutableList<Device> FULL_DOMAIN;
 
 
-  public DeviceDimension(GoogleCloudTestingConfiguration googleCloudTestingConfiguration) {
+  public DeviceDimension(GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration) {
     super(googleCloudTestingConfiguration);
   }
 

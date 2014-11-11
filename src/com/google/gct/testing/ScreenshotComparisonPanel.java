@@ -60,7 +60,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   private final ScreenshotComparisonDialog parent;
   private final AbstractTestProxy testTreeRoot;
-  private final GoogleCloudTestingConfiguration configuration;
+  private final GoogleCloudTestingConfigurationImpl configuration;
   private ConfigurationInstance selectedConfigurationInstance;
   private TestName currentTest;
   private int currentStep;
@@ -99,7 +99,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   private BufferedImage currentImage;
 
 
-  public ScreenshotComparisonPanel(ScreenshotComparisonDialog parent, AbstractTestProxy testTreeRoot, GoogleCloudTestingConfiguration configuration,
+  public ScreenshotComparisonPanel(ScreenshotComparisonDialog parent, AbstractTestProxy testTreeRoot, GoogleCloudTestingConfigurationImpl configuration,
                                    ConfigurationInstance configurationInstance, TestName currentTest, int currentStep,
                                    Map<String, ConfigurationResult> results) {
     this.parent = parent;

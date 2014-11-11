@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing;
 
+import com.android.tools.idea.run.GoogleCloudTestingConfiguration;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.popup.Balloon;
@@ -31,7 +32,10 @@ import java.awt.*;
 
 public class GoogleCloudTestingUtils {
 
-  private final static String SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS = "show.google.cloud.testing.timestamps";
+  private static final String SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS = "show.google.cloud.testing.timestamps";
+
+  private static final GoogleCloudTestingConfigurationFactoryImpl TESTING_CONFIGURATION_FACTORY =
+    new GoogleCloudTestingConfigurationFactoryImpl();
 
   //GCT-specific message names.
   public static final String SET_TEST_RUN_ID = "setTestRunId";
@@ -49,15 +53,15 @@ public class GoogleCloudTestingUtils {
     return Boolean.getBoolean(SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS);
   }
 
-  public static GoogleCloudTestingConfiguration getConfigurationById(int id, AndroidFacet facet) {
-    for (GoogleCloudTestingConfiguration configuration : GoogleCloudTestingConfigurationFactory.getCustomConfigurationsFromStorage(facet)) {
+  public static GoogleCloudTestingConfigurationImpl getConfigurationById(int id, AndroidFacet facet) {
+    for (GoogleCloudTestingConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getCustomConfigurationsFromStorage(facet)) {
       if (configuration.getId() == id) {
-        return configuration;
+        return (GoogleCloudTestingConfigurationImpl) configuration;
       }
     }
-    for (GoogleCloudTestingConfiguration configuration : GoogleCloudTestingConfigurationFactory.getDefaultConfigurationsFromStorage(facet)) {
+    for (GoogleCloudTestingConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getDefaultConfigurationsFromStorage(facet)) {
       if (configuration.getId() == id) {
-        return configuration;
+        return (GoogleCloudTestingConfigurationImpl) configuration;
       }
     }
     return null;
