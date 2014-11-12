@@ -711,7 +711,7 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     final AbstractState state;
     if (isLeaf()) {
       state = SuiteFinishedState.EMPTY_LEAF_SUITE;
-    } else if (isEmptySuite()) {
+    } else if (isEmptySuite() && !isDefect()) {
       state = SuiteFinishedState.EMPTY_SUITE;
     } else {
       if (isDefect()) {

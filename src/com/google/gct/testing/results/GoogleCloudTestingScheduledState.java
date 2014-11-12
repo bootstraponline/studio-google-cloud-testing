@@ -18,8 +18,11 @@ package com.google.gct.testing.results;
 import com.intellij.execution.testframework.sm.runner.states.AbstractState;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class GoogleCloudTestingScheduledState extends AbstractState {
   private final GoogleCloudTestProxy myTestProxy;
+  private boolean myDefectFound = false;
 
   public GoogleCloudTestingScheduledState(@NotNull final GoogleCloudTestProxy testProxy) {
     myTestProxy = testProxy;
@@ -42,6 +45,20 @@ public class GoogleCloudTestingScheduledState extends AbstractState {
 
   @Override
   public boolean isDefect() {
+    if (myDefectFound) {
+      return true;
+    }
+
+    //Test suit fails if any of its tests fails
+    final List<? extends GoogleCloudTestProxy> children = myTestProxy.getChildren();
+    for (GoogleCloudTestProxy child : children) {
+      if (child.isDefect()) {
+        myDefectFound = true;
+        return true;
+      }
+    }
+
+    //cannot cache because one of child tests may fail in future
     return false;
   }
 

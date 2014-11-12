@@ -235,8 +235,9 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
 
     GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration = GoogleCloudTestingUtils
       .getConfigurationById(selectedConfigurationId, runningState.getFacet());
-    for (String configurationInstance : googleCloudTestingConfiguration.computeConfigurationInstances(
-      ConfigurationInstance.DISPLAY_NAME_DELIMITER)) {
+    List<String> expectedConfigurationInstances =
+      googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
+    for (String configurationInstance : expectedConfigurationInstances) {
       cloudResultParser.getTestRunListener().testConfigurationScheduled(configurationInstance);
     }
     GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState =
@@ -245,8 +246,8 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
       performTestsInCloud(googleCloudTestingConfiguration, cloudProjectId, runningState, cloudResultParser);
     } else {
       String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingState.fakeBucketName + System.currentTimeMillis();
-      CloudResultsAdapter cloudResultsAdapter = new CloudResultsAdapter(
-        googleCloudTestingState.fakeBucketName, cloudResultParser, googleCloudTestingConfiguration.countCombinations(), testRunId);
+      CloudResultsAdapter cloudResultsAdapter =
+        new CloudResultsAdapter(googleCloudTestingState.fakeBucketName, cloudResultParser, expectedConfigurationInstances, testRunId);
       addGoogleCloudTestingConfiguration(testRunId, googleCloudTestingConfiguration);
       addCloudResultsAdapter(testRunId, cloudResultsAdapter);
       cloudResultsAdapter.startPolling();
@@ -257,8 +258,10 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
   private void performTestsInCloud(final GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration, final String cloudProjectId,
                                    final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser) {
     if (googleCloudTestingConfiguration != null && googleCloudTestingConfiguration.countCombinations() > 0) {
-      final List<String> matrixInstances =
+      final List<String> encodedMatrixInstances =
         googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.ENCODED_NAME_DELIMITER);
+      final List<String> expectedConfigurationInstances =
+        googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
       new Thread(new Runnable() {
         @Override
         public void run() {
@@ -288,11 +291,11 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
 
           CloudTestsLauncher
             .triggerTestApi(cloudProjectId, moduleName, getApkGcsPath(bucketName, appApkName), getApkGcsPath(bucketName, testApkName),
-                            testSpecification, matrixInstances, appPackage, testPackage);
+                            testSpecification, encodedMatrixInstances, appPackage, testPackage);
 
           String testRunId = TEST_RUN_ID_PREFIX + bucketName;
           CloudResultsAdapter cloudResultsAdapter =
-            new CloudResultsAdapter(bucketName, cloudResultParser, googleCloudTestingConfiguration.countCombinations(), testRunId);
+            new CloudResultsAdapter(bucketName, cloudResultParser, expectedConfigurationInstances, testRunId);
           addGoogleCloudTestingConfiguration(testRunId, googleCloudTestingConfiguration);
           addCloudResultsAdapter(testRunId, cloudResultsAdapter);
           cloudResultsAdapter.startPolling();

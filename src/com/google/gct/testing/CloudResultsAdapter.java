@@ -20,10 +20,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopReason;
 
@@ -31,7 +28,7 @@ public class CloudResultsAdapter {
 
   private final CloudResultsLoader loader;
   private final GoogleCloudTestingResultParser resultParser;
-  private final int expectedConfigurationInstances;
+  private final List<String> expectedConfigurationInstances;
   // Indexed by encoded configuration instance name.
   private final Map<String, ConfigurationResult> results = new HashMap<String, ConfigurationResult>();
   // The set of configurations for which we've gotten a result and published it to the parser.
@@ -43,7 +40,8 @@ public class CloudResultsAdapter {
   private final PollingTicker pollingTicker = new PollingTicker();
 
 
-  public CloudResultsAdapter(String bucketName, GoogleCloudTestingResultParser resultParser, int expectedConfigurationInstances, String testRunId) {
+  public CloudResultsAdapter(String bucketName, GoogleCloudTestingResultParser resultParser, List<String> expectedConfigurationInstances,
+                             String testRunId) {
     loader = new CloudResultsLoader(resultParser.getTestRunListener(), bucketName);
     this.resultParser = resultParser;
     this.expectedConfigurationInstances = expectedConfigurationInstances;
@@ -107,20 +105,25 @@ public class CloudResultsAdapter {
     }
 
     // == should be enough, but to be conservative, we use >=
-    return completedConfigurationInstances >= expectedConfigurationInstances;
+    return completedConfigurationInstances >= expectedConfigurationInstances.size();
   }
 
-  private void stopResultProcessing(boolean allResultsArrived) {
+  private void timeoutResultProcessing(boolean allResultsArrived) {
     if (!allResultsArrived) {
-      // Mark all yet unfinished configurations as timed out.
-      for (ConfigurationResult result : results.values()) {
-        if (!markedAsFinishedConfigurations.contains(result)) {
-          resultParser.getTestRunListener()
-            .stopTestConfiguration(result.getConfigurationInstance().getDisplayString(), ConfigurationStopReason.TIMED_OUT);
-        }
+      for (String configurationInstance : expectedConfigurationInstances) {
+        resultParser.getTestRunListener().stopTestConfiguration(configurationInstance, ConfigurationStopReason.TIMED_OUT);
       }
+
+      // Mark all yet unfinished configurations as timed out.
+      //for (ConfigurationResult result : results.values()) {
+      //  if (!markedAsFinishedConfigurations.contains(result)) {
+      //    resultParser.getTestRunListener()
+      //      .stopTestConfiguration(result.getConfigurationInstance().getDisplayString(), ConfigurationStopReason.TIMED_OUT);
+      //  }
+      //}
     }
-    //Flushing stops the parser => stops all scheduled and in-progress nodes in the results viewer.
+    // Flushing stops the parser => stops (terminates) all scheduled and in-progress nodes in the results viewer,
+    // so need to time out them properly before flushing the parser.
     resultParser.flush();
   }
 
@@ -161,7 +164,7 @@ public class CloudResultsAdapter {
         }
       }
       //Stop either because all results arrived or because the polling timed out.
-      stopResultProcessing(allResultsArrived);
+      timeoutResultProcessing(allResultsArrived);
     }
   }
 }
