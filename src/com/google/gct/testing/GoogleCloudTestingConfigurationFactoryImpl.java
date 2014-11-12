@@ -182,18 +182,6 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
 
   @Override
   public String performSanityCheck(Project project, String cloudProjectId) {
-    // Check that all the required fields are populated.
-    //GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState =
-    //  GoogleCloudTestingSettings.getInstance(project).getState();
-    //if (googleCloudTestingState == null
-    //    || googleCloudTestingState.shouldUseStagingJenkins
-    //       && (googleCloudTestingState.stagingJenkinsUrl.isEmpty())
-    //    || !googleCloudTestingState.shouldUseStagingJenkins
-    //       && (googleCloudTestingState.prodJenkinsUrl.isEmpty())) {
-    //
-    //  return "Cloud Test Configuration is incomplete!";
-    //}
-
     // Check that we can properly connect to the backend.
     Buckets buckets = null;
     String message = null;
@@ -254,7 +242,7 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
     GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState =
       GoogleCloudTestingSettings.getInstance(project).getState();
     if (!googleCloudTestingState.shouldUseFakeBucket) {
-      performTestsInCloud(googleCloudTestingConfiguration, cloudProjectId, googleCloudTestingState, runningState, cloudResultParser);
+      performTestsInCloud(googleCloudTestingConfiguration, cloudProjectId, runningState, cloudResultParser);
     } else {
       String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingState.fakeBucketName + System.currentTimeMillis();
       CloudResultsAdapter cloudResultsAdapter = new CloudResultsAdapter(
@@ -267,7 +255,6 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
   }
 
   private void performTestsInCloud(final GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration, final String cloudProjectId,
-                                   final GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState,
                                    final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser) {
     if (googleCloudTestingConfiguration != null && googleCloudTestingConfiguration.countCombinations() > 0) {
       final List<String> matrixInstances =
@@ -278,9 +265,6 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
           AndroidTestRunConfiguration testRunConfiguration = (AndroidTestRunConfiguration) runningState.getConfiguration();
           String moduleName = runningState.getFacet().getModule().getName();
           String bucketName = "build-" + moduleName.toLowerCase() + "-" + System.currentTimeMillis();
-          //String jenkinsUrl = googleCloudTestingState.shouldUseStagingJenkins
-          //                    ? googleCloudTestingState.stagingJenkinsUrl
-          //                    : googleCloudTestingState.prodJenkinsUrl;
           String appPackage = runningState.getFacet().getAndroidModuleInfo().getPackage();
           String testPackage = appPackage + ".test";
 
@@ -305,10 +289,6 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
           CloudTestsLauncher
             .triggerTestApi(cloudProjectId, moduleName, getApkGcsPath(bucketName, appApkName), getApkGcsPath(bucketName, testApkName),
                             testSpecification, matrixInstances, appPackage, testPackage);
-
-          //CloudTestsLauncher
-          //  .triggerJenkinsJob(jenkinsUrl, cloudProjectId, moduleName, bucketName, testSpecification, matrixFilter, appPackage,
-          //                     testPackage);
 
           String testRunId = TEST_RUN_ID_PREFIX + bucketName;
           CloudResultsAdapter cloudResultsAdapter =

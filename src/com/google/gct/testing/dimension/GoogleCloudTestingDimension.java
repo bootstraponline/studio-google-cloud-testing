@@ -184,7 +184,7 @@ public abstract class GoogleCloudTestingDimension {
   public abstract String getDisplayName();
 
   /**
-   * Used to construct Jenkins requests.
+   * Used to construct matrix test requests.
    */
   public abstract String getId();
 

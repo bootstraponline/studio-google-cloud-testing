@@ -223,8 +223,8 @@ public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingCo
   /**
    * Precondition: countCombinations() > 0.
    */
-  public String prepareJenkinsRequest() {
-    Preconditions.checkState(countCombinations() > 0, "There should be at least one combination in a Jenkins request!");
+  public String prepareMatrixTestRequest() {
+    Preconditions.checkState(countCombinations() > 0, "There should be at least one combination in a matrix test request!");
 
     StringBuffer bf = new StringBuffer();
 

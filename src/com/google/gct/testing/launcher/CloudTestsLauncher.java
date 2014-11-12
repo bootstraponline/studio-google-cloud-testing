@@ -129,6 +129,9 @@ public class CloudTestsLauncher {
     }
   }
 
+  /**
+   * Not used, left as an example.
+   */
   public static void triggerJenkinsJob(
     String jenkinsUrl, String cloudProjectId, String applicationName, String bucketName, String testSpecification, String matrixFilter,
     String appPackage, String testPackage) {
@@ -175,6 +178,9 @@ public class CloudTestsLauncher {
     }
   }
 
+  /**
+   * Obsolete...
+   */
   public static void main(String str[]) {
     if (str.length != 10) {
       System.out.println("Please provide 10 arguments: " +

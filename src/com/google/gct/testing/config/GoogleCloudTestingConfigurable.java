@@ -33,9 +33,6 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
   private JPanel panel;
   private JCheckBox useFakeBucketCheckbox = new JCheckBox();
   private JTextField fakeBucketNameField = new JTextField();
-  private JCheckBox useStagingJenkinsCheckbox = new JCheckBox();
-  private JTextField stagingJenkinsUrlField = new JTextField();
-  private JTextField prodJenkinsUrlField = new JTextField();
 
   public GoogleCloudTestingConfigurable(Project project) {
     this.project = project;
@@ -61,25 +58,7 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
     useFakeBucketCheckbox.setText("Use fake bucket:");
     content.add(useFakeBucketCheckbox, createGbc(0, 1));
     content.add(fakeBucketNameField, createGbc(1, 1));
-
-    content.add(new JLabel(" "), createGbc(0, 2));
-    useStagingJenkinsCheckbox.setText("Use staging");
-    content.add(useStagingJenkinsCheckbox, createGbc(0, 3));
-
-    content.add(new JLabel("Staging:"), createGbc(0, 4, 1, 1.0));
-    content.add(createLabelTextField("Jenkins URL:    ", stagingJenkinsUrlField), createGbc(1, 4));
-
-    content.add(new JLabel("Production:"), createGbc(0, 5, 1, 1.0));
-    content.add(createLabelTextField("Jenkins URL:    ", prodJenkinsUrlField), createGbc(1, 5));
-
     return panel;
-  }
-
-  private JPanel createLabelTextField(String label, JTextField textField) {
-    JPanel stagingJenkinsUrlPanel = new JPanel(new BorderLayout());
-    stagingJenkinsUrlPanel.add(new JLabel(label), BorderLayout.WEST);
-    stagingJenkinsUrlPanel.add(textField, BorderLayout.CENTER);
-    return stagingJenkinsUrlPanel;
   }
 
   private static GridBagConstraints createGbc(int x, int y, int gridheight, double weighty) {
@@ -108,14 +87,8 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
     GoogleCloudTestingState state = getSavedSettings().getState();
     String stateFakeBucketName = state == null ? "" : state.fakeBucketName;
     boolean stateShouldUseFakeBucket = state == null ? false : state.shouldUseFakeBucket;
-    boolean stateShouldUseStagingJenkins = state == null ? false : state.shouldUseStagingJenkins;
-    String stateStagingJenkinsUrl = state == null ? "" : state.stagingJenkinsUrl;
-    String stateProdJenkinsUrl = state == null ? "" : state.prodJenkinsUrl;
     return !stateFakeBucketName.equals(fakeBucketNameField.getText())
-           || stateShouldUseFakeBucket != useFakeBucketCheckbox.isSelected()
-           || stateShouldUseStagingJenkins != useStagingJenkinsCheckbox.isSelected()
-           || !stateStagingJenkinsUrl.equals(stagingJenkinsUrlField.getText())
-           || !stateProdJenkinsUrl.equals(prodJenkinsUrlField.getText());
+           || stateShouldUseFakeBucket != useFakeBucketCheckbox.isSelected();
   }
 
   @Override
@@ -123,9 +96,6 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
     GoogleCloudTestingState state = new GoogleCloudTestingState();
     state.fakeBucketName = fakeBucketNameField.getText();
     state.shouldUseFakeBucket = useFakeBucketCheckbox.isSelected();
-    state.shouldUseStagingJenkins = useStagingJenkinsCheckbox.isSelected();
-    state.stagingJenkinsUrl = stagingJenkinsUrlField.getText();
-    state.prodJenkinsUrl = prodJenkinsUrlField.getText();
     getSavedSettings().loadState(state);
   }
 
@@ -134,9 +104,6 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
     GoogleCloudTestingState state = getSavedSettings().getState();
     fakeBucketNameField.setText(state == null ? "" : state.fakeBucketName);
     useFakeBucketCheckbox.setSelected(state == null ? false : state.shouldUseFakeBucket);
-    useStagingJenkinsCheckbox.setSelected(state == null ? false : state.shouldUseStagingJenkins);
-    stagingJenkinsUrlField.setText(state == null ? "" : state.stagingJenkinsUrl);
-    prodJenkinsUrlField.setText(state == null ? "" : state.prodJenkinsUrl);
   }
 
   private GoogleCloudTestingSettings getSavedSettings() {
@@ -148,9 +115,6 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
     panel = null;
     useFakeBucketCheckbox = null;
     fakeBucketNameField = null;
-    useStagingJenkinsCheckbox = null;
-    stagingJenkinsUrlField = null;
-    prodJenkinsUrlField = null;
   }
 
   @NotNull
@@ -168,8 +132,5 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
   public static class GoogleCloudTestingState {
     public String fakeBucketName = "";
     public boolean shouldUseFakeBucket = false;
-    public boolean shouldUseStagingJenkins = false;
-    public String stagingJenkinsUrl = "";
-    public String prodJenkinsUrl = "";
   }
 }

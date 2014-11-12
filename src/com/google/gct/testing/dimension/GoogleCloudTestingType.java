@@ -31,7 +31,7 @@ public abstract class GoogleCloudTestingType {
   }
 
   /**
-   * Used to construct Jenkins requests.
+   * Used to construct matrix test requests.
    */
   public abstract String getId();
 
