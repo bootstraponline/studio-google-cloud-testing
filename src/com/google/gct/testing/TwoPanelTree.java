@@ -79,7 +79,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   public TwoPanelTree(GoogleCloudTestingConfigurationImpl configuration) {
     this.configuration = configuration;
     myPanel = new JPanel(new BorderLayout());
-    myPanel.setPreferredSize(new Dimension(UIUtil.isUnderDarcula() ? 535 : 520, 240));
+    myPanel.setPreferredSize(new Dimension(520, 240));
     mySplitterPanel = new JPanel(new BorderLayout());
     mySplitterPanel.setBorder(BorderFactory.createLineBorder(UIUtil.getBorderColor()));
     mySplitter = new Splitter(false);

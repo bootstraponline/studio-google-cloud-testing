@@ -32,6 +32,7 @@ import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.*;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.IconUtil;
+import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
@@ -99,6 +100,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
     super(module.getProject(), true);
 
+    myConfigurationInfoPanel.setPreferredSize(new Dimension(470, UIUtil.isUnderDarcula() ? 166 : 169));
     // Note that we are editing the list we were given.
     // This could be dangerous.
     this.editableConfigurations = editableConfigurations;
@@ -170,7 +172,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
               mySelected = false;
             }
             append(config.getDisplayName(), isInvalidConfiguration
-                                            ? new SimpleTextAttributes(SimpleTextAttributes.STYLE_BOLD, Color.RED)
+                                            ? new SimpleTextAttributes(SimpleTextAttributes.STYLE_BOLD, JBColor.RED)
                                             : SimpleTextAttributes.REGULAR_ATTRIBUTES);
             mySelected = oldMySelected;
             setIcon(config.getIcon());
