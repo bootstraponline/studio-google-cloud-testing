@@ -94,23 +94,22 @@ public class CloudTestsLauncher {
            : s;
   }
 
-  public static void triggerTestApi(String cloudProjectId, String applicationName, String appApkGcsPath, String testApkGcsPath,
-                                    String testSpecification, List<String> matrixInstances, String appPackage, String testPackage) {
+  public static void triggerTestApi(String cloudProjectId, String applicationName, String bucketGcsPath, String appApkGcsPath,
+                                    String testApkGcsPath, String testSpecification, List<String> matrixInstances, String appPackage,
+                                    String testPackage) {
 
     TestExecution testExecution = new TestExecution();
 
     testExecution.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
-      new AndroidInstrumentationTest()
-        .setAppApk(new FileReference().setGcsPath(appApkGcsPath))
-        .setTestApk(new FileReference().setGcsPath(testApkGcsPath))
-        .setAppPackageId(appPackage)
-        .setTestPackageId(testPackage)
-        .setTestRunnerClass(TEST_RUNNER_CLASS)
-        .setTestTargets(Lists.newArrayList(testSpecification))));
+      new AndroidInstrumentationTest().setAppApk(new FileReference().setGcsPath(appApkGcsPath))
+        .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
+        .setTestRunnerClass(TEST_RUNNER_CLASS).setTestTargets(Lists.newArrayList(testSpecification))));
 
     for (String matrixInstance : matrixInstances) {
       try {
         TestExecution currentTestExecution = testExecution.clone();
+        currentTestExecution.setResultStorage(
+          new ResultStorage().setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath)));
         String[] dimensionValues = matrixInstance.split("-");
         currentTestExecution.setEnvironment(new Environment().setAndroidDevice(
           new AndroidDevice()

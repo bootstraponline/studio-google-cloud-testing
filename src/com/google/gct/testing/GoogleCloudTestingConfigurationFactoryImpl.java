@@ -290,8 +290,8 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
           String testSpecification = GoogleCloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
           CloudTestsLauncher
-            .triggerTestApi(cloudProjectId, moduleName, getApkGcsPath(bucketName, appApkName), getApkGcsPath(bucketName, testApkName),
-                            testSpecification, encodedMatrixInstances, appPackage, testPackage);
+            .triggerTestApi(cloudProjectId, moduleName, getBucketGcsPath(bucketName), getApkGcsPath(bucketName, appApkName),
+                            getApkGcsPath(bucketName, testApkName), testSpecification, encodedMatrixInstances, appPackage, testPackage);
 
           String testRunId = TEST_RUN_ID_PREFIX + bucketName;
           CloudResultsAdapter cloudResultsAdapter =
@@ -308,6 +308,10 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
         }
       }).start();
     }
+  }
+
+  private String getBucketGcsPath(String bucketName) {
+    return "gs://" + bucketName;
   }
 
   private String getApkGcsPath(String bucketName, String apkName) {
