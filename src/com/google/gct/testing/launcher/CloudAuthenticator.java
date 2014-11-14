@@ -49,9 +49,10 @@ public class CloudAuthenticator {
   public static Test getTest() {
     prepareCredential();
     if (test == null) {
-      test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), null)
+      test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
         //.setRootUrl("http://snegara0.mtv.corp.google.com:8787/test")
-        .setRootUrl("https://www-googleapis-staging.sandbox.google.com/test")
+        //.setRootUrl("https://www-googleapis-staging.sandbox.google.com/test")
+        .setRootUrl("https://www-googleapis-test.sandbox.google.com/test")
         .build();
     }
     return test;
