@@ -18,6 +18,7 @@ package com.google.gct.testing;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
+import com.google.api.services.test.model.TestExecution;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -38,6 +39,7 @@ import java.util.Set;
 
 import static com.google.gct.testing.BucketFileMetadata.Type.*;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 public class CloudResultsLoader {
   private static final Function<StorageObject, BucketFileMetadata> TO_BUCKET_FILE = new Function<StorageObject, BucketFileMetadata>() {
@@ -83,15 +85,20 @@ public class CloudResultsLoader {
     }
   };
 
+  private final String cloudProjectId;
   private final IGoogleCloudTestRunListener testRunListener;
   private final String bucketName;
+  private final Map<String, TestExecution> testExecutions;
 
   private final Map<String, String> configurationProgress = new HashMap<String, String>();
 
 
-  public CloudResultsLoader(IGoogleCloudTestRunListener testRunListener, String bucketName) {
+  public CloudResultsLoader(String cloudProjectId, IGoogleCloudTestRunListener testRunListener, String bucketName,
+                            Map<String, TestExecution> testExecutions) {
+    this.cloudProjectId = cloudProjectId;
     this.testRunListener = testRunListener;
     this.bucketName = bucketName;
+    this.testExecutions = testExecutions;
   }
 
   //TODO: Check file size after loading it and load the missing parts, if any (i.e., keep loading until the file's size does not change).
@@ -131,6 +138,8 @@ public class CloudResultsLoader {
   public boolean updateResults(Map<String, ConfigurationResult> results) {
     newDataReceived = false;
     try {
+      updateResultsFromApiStatus(results);
+
       Storage.Objects.List objects = getStorage().objects().list(bucketName);
       List<StorageObject> storageObjects = objects.execute().getItems();
 
@@ -159,6 +168,44 @@ public class CloudResultsLoader {
       throw new RuntimeException("Failed updating the results from the bucket!", e);
     }
     return newDataReceived;
+  }
+
+  private void updateResultsFromApiStatus(Map<String, ConfigurationResult> results) {
+    if (testExecutions == null) { //Could happen for the fake bucket.
+      return;
+    }
+    for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
+      try {
+        String executionState =
+          getTest().projects().testExecutions().get(cloudProjectId, testExecutionEntry.getValue().getId()).execute().getState();
+        if (executionState.equals("ERROR")) {
+          String encodedConfigurationInstance = testExecutionEntry.getKey();
+
+          //TODO: Should read the error details from Test API when they are supported.
+          String progressLine = "Infrastructure Failure: reason unknown\n";
+
+          String previousProgressLine = configurationProgress.get(encodedConfigurationInstance);
+          if (!progressLine.equals(previousProgressLine)) {
+            newDataReceived = true;
+            configurationProgress.put(encodedConfigurationInstance, progressLine);
+            testRunListener.testConfigurationProgress(
+              ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), progressLine);
+
+            ConfigurationResult configurationResult = results.get(encodedConfigurationInstance);
+            if (configurationResult == null) {
+              configurationResult = new ConfigurationResult(encodedConfigurationInstance);
+              configurationResult.setInfrastructureFailure(true);
+              results.put(encodedConfigurationInstance, configurationResult);
+            } else {
+              configurationResult.setInfrastructureFailure(true);
+            }
+          }
+        }
+      }
+      catch (IOException e) {
+        // Suppress, not a critical problem.
+      }
+    }
   }
 
   private void loadResultFiles(Map<String, ConfigurationResult> results) {

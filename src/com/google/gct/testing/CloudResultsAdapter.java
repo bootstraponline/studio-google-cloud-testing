@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing;
 
+import com.google.api.services.test.model.TestExecution;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -26,9 +27,12 @@ import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopRe
 
 public class CloudResultsAdapter {
 
+  private final String cloudProjectId;
   private final CloudResultsLoader loader;
   private final GoogleCloudTestingResultParser resultParser;
   private final List<String> expectedConfigurationInstances;
+  // Indexed by encoded configuration instance name. Is null for a fake bucket since we bypass Test API.
+  private final Map<String, TestExecution> testExecutions;
   // Indexed by encoded configuration instance name.
   private final Map<String, ConfigurationResult> results = new HashMap<String, ConfigurationResult>();
   // The set of configurations for which we've gotten a result and published it to the parser.
@@ -40,13 +44,15 @@ public class CloudResultsAdapter {
   private final PollingTicker pollingTicker = new PollingTicker();
 
 
-  public CloudResultsAdapter(String bucketName, GoogleCloudTestingResultParser resultParser, List<String> expectedConfigurationInstances,
-                             String testRunId) {
-    loader = new CloudResultsLoader(resultParser.getTestRunListener(), bucketName);
+  public CloudResultsAdapter(String cloudProjectId, String bucketName, GoogleCloudTestingResultParser resultParser,
+                             List<String> expectedConfigurationInstances, String testRunId, Map<String, TestExecution> testExecutions) {
+    this.cloudProjectId = cloudProjectId;
+    loader = new CloudResultsLoader(cloudProjectId, resultParser.getTestRunListener(), bucketName, testExecutions);
     this.resultParser = resultParser;
     this.expectedConfigurationInstances = expectedConfigurationInstances;
     // Update the tree's root node with the index of the adapter that communicates with the tree through this parser.
     resultParser.getTestRunListener().setTestRunId(testRunId);
+    this.testExecutions = testExecutions;
   }
 
   public void startPolling() {

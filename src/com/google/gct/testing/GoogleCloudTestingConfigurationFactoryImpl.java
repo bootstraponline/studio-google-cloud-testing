@@ -19,6 +19,7 @@ import com.android.tools.idea.run.GoogleCloudTestingConfiguration;
 import com.android.tools.idea.run.GoogleCloudTestingConfigurationFactory;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
+import com.google.api.services.test.model.TestExecution;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -247,7 +248,8 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
     } else {
       String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingState.fakeBucketName + System.currentTimeMillis();
       CloudResultsAdapter cloudResultsAdapter =
-        new CloudResultsAdapter(googleCloudTestingState.fakeBucketName, cloudResultParser, expectedConfigurationInstances, testRunId);
+        new CloudResultsAdapter(cloudProjectId, googleCloudTestingState.fakeBucketName, cloudResultParser, expectedConfigurationInstances,
+                                testRunId, null);
       addGoogleCloudTestingConfiguration(testRunId, googleCloudTestingConfiguration);
       addCloudResultsAdapter(testRunId, cloudResultsAdapter);
       cloudResultsAdapter.startPolling();
@@ -275,7 +277,7 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
             prepareProgressString("Creating Cloud Storage bucket " + bucketName + "...", ""), ProcessOutputTypes.STDOUT);
           CloudTestsLauncher.createBucket(cloudProjectId, bucketName);
 
-          String apkPath = runningState.getFacet().getModule().getModuleFile().getParent().getPath() + "/build/apk/";
+          String apkPath = getPathToApks(runningState);
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading debug APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
           String appApkName = CloudTestsLauncher.uploadFile(bucketName, new File(apkPath + moduleName + "-debug-unaligned.apk")).getName();
@@ -289,13 +291,14 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
                                                                ProcessOutputTypes.STDOUT);
           String testSpecification = GoogleCloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
-          CloudTestsLauncher
+          Map<String, TestExecution> testExecutions = CloudTestsLauncher
             .triggerTestApi(cloudProjectId, moduleName, getBucketGcsPath(bucketName), getApkGcsPath(bucketName, appApkName),
                             getApkGcsPath(bucketName, testApkName), testSpecification, encodedMatrixInstances, appPackage, testPackage);
 
           String testRunId = TEST_RUN_ID_PREFIX + bucketName;
           CloudResultsAdapter cloudResultsAdapter =
-            new CloudResultsAdapter(bucketName, cloudResultParser, expectedConfigurationInstances, testRunId);
+            new CloudResultsAdapter(cloudProjectId, bucketName, cloudResultParser, expectedConfigurationInstances, testRunId,
+                                    testExecutions);
           addGoogleCloudTestingConfiguration(testRunId, googleCloudTestingConfiguration);
           addCloudResultsAdapter(testRunId, cloudResultsAdapter);
           cloudResultsAdapter.startPolling();
@@ -308,6 +311,17 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
         }
       }).start();
     }
+  }
+
+  private String getPathToApks(AndroidRunningState runningState) {
+    String buildPath = runningState.getFacet().getModule().getModuleFile().getParent().getPath() + "/build";
+    File buildFolder = new File(buildPath);
+    for (String subFolder : buildFolder.list()) {
+      if (subFolder.equals("apk")) {
+        return buildPath + "/apk/";
+      }
+    }
+    return buildPath + "/outputs/apk/";
   }
 
   private String getBucketGcsPath(String bucketName) {

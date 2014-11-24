@@ -34,7 +34,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
@@ -94,10 +96,12 @@ public class CloudTestsLauncher {
            : s;
   }
 
-  public static void triggerTestApi(String cloudProjectId, String applicationName, String bucketGcsPath, String appApkGcsPath,
-                                    String testApkGcsPath, String testSpecification, List<String> matrixInstances, String appPackage,
-                                    String testPackage) {
+  public static Map<String, TestExecution> triggerTestApi(
+    String cloudProjectId, String applicationName, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath,
+    String testSpecification, List<String> matrixInstances, String appPackage, String testPackage) {
 
+    // Indexed by encoded configuration instance name.
+    Map<String, TestExecution> testExecutions = new HashMap<String, TestExecution>();
     TestExecution testExecution = new TestExecution();
 
     testExecution.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
@@ -118,14 +122,14 @@ public class CloudTestsLauncher {
             .setLocale(dimensionValues[2])
             .setOrientation(dimensionValues[3])));
 
-        //TODO: Use the ResultStorage of the returned TestExecution to look for the result.
-        TestExecution execution = getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute();
-        System.out.println("Id=" + execution.getId());
+        TestExecution execution =
+          testExecutions.put(matrixInstance, getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute());
       }
       catch (IOException e) {
         throw new RuntimeException("Error triggering test execution through test API", e);
       }
     }
+    return testExecutions;
   }
 
   /**
