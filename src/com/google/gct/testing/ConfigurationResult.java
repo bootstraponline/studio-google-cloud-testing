@@ -22,6 +22,8 @@ import com.google.common.collect.Ordering;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,8 +31,7 @@ import java.util.Map;
 
 public class ConfigurationResult {
 
-  // Screenshots can be delimited with either "#" or "%23"
-  public static final String SCREENSHOT_FILENAME_DELIMITER = "(#|%23)";
+  public static final String SCREENSHOT_FILENAME_DELIMITER = "-";
 
   private final ConfigurationInstance configurationInstance;
 
@@ -106,11 +107,26 @@ public class ConfigurationResult {
   }
 
   private static String[] getFileNameParts(String fileName) {
-    String[] fileNameParts = fileName.split(SCREENSHOT_FILENAME_DELIMITER);
-    if (fileNameParts.length != 4) {
+    String[] originalNameParts;
+    try {
+      originalNameParts = URLDecoder.decode(fileName, "UTF-8").split(SCREENSHOT_FILENAME_DELIMITER);
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new RuntimeException("Unsupported encoding!", e);
+    }
+    if (originalNameParts.length < 4) {
       throw new IllegalStateException("Screenshot file name is not formatted properly: " + fileName);
     }
-    return fileNameParts;
+    // Since a screenshot name may contain screenshot filename delimiter, concatenate the corresponding parts.
+    String[] nameParts = new String[4];
+    nameParts[0] = originalNameParts[0];
+    nameParts[1] = originalNameParts[1];
+    nameParts[2] = originalNameParts[2];
+    for (int i = 3; i < originalNameParts.length - 1; i++) {
+      nameParts[2] += "-" + originalNameParts[i];
+    }
+    nameParts[3] = originalNameParts[originalNameParts.length - 1];
+    return nameParts;
   }
 
   public Map<String, BufferedImage> getScreenshots() {
