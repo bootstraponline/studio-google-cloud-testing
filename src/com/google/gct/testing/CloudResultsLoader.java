@@ -176,14 +176,11 @@ public class CloudResultsLoader {
     }
     for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
       try {
-        String executionState =
-          getTest().projects().testExecutions().get(cloudProjectId, testExecutionEntry.getValue().getId()).execute().getState();
-        if (executionState.equals("ERROR")) {
+        TestExecution testExecution =
+          getTest().projects().testExecutions().get(cloudProjectId, testExecutionEntry.getValue().getId()).execute();
+        if (testExecution.getState().equals("ERROR")) {
+          String progressLine = "Infrastructure Failure: " + testExecution.getTestDetails().getErrorDetails() + "\n";
           String encodedConfigurationInstance = testExecutionEntry.getKey();
-
-          //TODO: Should read the error details from Test API when they are supported.
-          String progressLine = "Infrastructure Failure: reason unknown\n";
-
           String previousProgressLine = configurationProgress.get(encodedConfigurationInstance);
           if (!progressLine.equals(previousProgressLine)) {
             newDataReceived = true;
