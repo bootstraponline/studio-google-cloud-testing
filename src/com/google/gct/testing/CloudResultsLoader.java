@@ -32,10 +32,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.google.gct.testing.BucketFileMetadata.Type.*;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
@@ -231,30 +228,85 @@ public class CloudResultsLoader {
   }
 
   public void loadScreenshots(Map<String, ConfigurationResult> results) {
+    List<StorageObject> storageObjects = null;
     try {
       Storage.Objects.List objects = getStorage().objects().list(bucketName);
-      List<StorageObject> storageObjects = objects.execute().getItems();
+      storageObjects = objects.execute().getItems();
+    }
+    catch (IOException e) {
+      throw new RuntimeException("Failed to retrieve bucket objects: ", e);
+    }
 
-      Iterable<BucketFileMetadata> files = Iterables.transform(storageObjects, TO_BUCKET_FILE);
-
-      for (BucketFileMetadata file : files) {
-        if (file.getType() == SCREENSHOT) {
-          ConfigurationResult result = results.get(file.getEncodedConfigurationInstance());
-          if (result != null && result.getScreenshots().get(file.getName()) == null) {
-            Optional<byte[]> optionalFileBytes = getFileBytes(file);
-            if (optionalFileBytes.isPresent()) {
-              BufferedImage image = ImageIO.read(new ByteArrayInputStream(optionalFileBytes.get()));
-              image.flush();
-              result.addScreenshot(file.getName(), image);
-              // Mark that the new data was received as the last statement to ensure that no failures can follow after that
-              // (to avoid infinite failure mode).
-              newDataReceived = true;
-            }
-          }
+    Iterable<BucketFileMetadata> files = Iterables.transform(storageObjects, TO_BUCKET_FILE);
+    ArrayList<ScreenshotDownloadThread> downloadThreads = new ArrayList<ScreenshotDownloadThread>();
+    for (BucketFileMetadata file : files) {
+      if (file.getType() == SCREENSHOT) {
+        ConfigurationResult result = results.get(file.getEncodedConfigurationInstance());
+        if (result != null && result.getScreenshots().get(file.getName()) == null) {
+          downloadThreads.add(new ScreenshotDownloadThread(file, result));
         }
       }
-    } catch (Exception e) {
-      System.out.println("Failed to load screenshots: " + e.getMessage());
+    }
+
+    // TODO: Replace with a pool of worker threads.
+    final int capParallelThreads = 10;
+    int currentParallelTreads = 0;
+    for (int i = 0; i < downloadThreads.size(); i++) {
+      downloadThreads.get(i).start();
+      currentParallelTreads++;
+      if (currentParallelTreads == capParallelThreads) {
+        // Join the existing threads before proceeding to avoid going over the limit.
+        for (int j = i - currentParallelTreads + 1; j <= i; j++){
+          try {
+            downloadThreads.get(j).join();
+          }
+          catch (InterruptedException e) {
+            //ignore
+          }
+        }
+        currentParallelTreads = 0;
+      }
+    }
+
+    // Join any remaining threads.
+    for (int i = downloadThreads.size() - currentParallelTreads; i < downloadThreads.size(); i++){
+      try {
+        downloadThreads.get(i).join();
+      }
+      catch (InterruptedException e) {
+        //ignore
+      }
+    }
+  }
+
+  private class ScreenshotDownloadThread extends Thread {
+
+    private final BucketFileMetadata file;
+    private final ConfigurationResult result;
+
+    private ScreenshotDownloadThread(BucketFileMetadata file, ConfigurationResult result) {
+      this.file = file;
+      this.result = result;
+    }
+
+    @Override
+    public void run() {
+      Optional<byte[]> optionalFileBytes = getFileBytes(file);
+      if (optionalFileBytes.isPresent()) {
+        BufferedImage image = null;
+        try {
+          image = ImageIO.read(new ByteArrayInputStream(optionalFileBytes.get()));
+        }
+        catch (IOException e) {
+          System.out.println("Failed to create an image for screenshot: " + e.getMessage());
+          return;
+        }
+        image.flush();
+        result.addScreenshot(file.getName(), image);
+        // Mark that the new data was received as the last statement to ensure that no failures can follow after that
+        // (to avoid infinite failure mode).
+        newDataReceived = true;
+      }
     }
   }
 
