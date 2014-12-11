@@ -72,8 +72,8 @@ public class CloudTestsLauncher {
       throw new RuntimeException(e);
     }
 
-    // Not strictly necessary, but allows optimization in the cloud.
-    // mediaContent.setLength(OBJECT_SIZE);
+    // Setting the size of the uploaded file is extremely important! It reduces upload times by two orders of magnitude!
+    mediaContent.setLength(file.length());
 
     try {
       Storage.Objects.Insert insertObject = getStorage().objects().insert(bucketName, null, mediaContent);
