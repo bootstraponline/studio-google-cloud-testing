@@ -39,6 +39,8 @@ import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 public class CloudResultsLoader {
+  public static final String INFRASTRUCTURE_FAILURE_PREFIX = "Infrastructure Failure:";
+
   private static final Function<StorageObject, BucketFileMetadata> TO_BUCKET_FILE = new Function<StorageObject, BucketFileMetadata>() {
     @Override
     public BucketFileMetadata apply(StorageObject input) {
@@ -60,6 +62,7 @@ public class CloudResultsLoader {
   // e.g., new progress status, results file, or screenshot.
   private boolean newDataReceived = false;
 
+  // Is used to support fake buckets only (does not handle cumulative progress).
   private final Function<BucketFileMetadata, BucketFileMetadata> UPDATE_CONFIGURATION_PROGRESS =
     new Function<BucketFileMetadata, BucketFileMetadata>() {
     @Override
@@ -69,7 +72,7 @@ public class CloudResultsLoader {
         if (optionalBytes.isPresent()) {
           String progressLine = new String(optionalBytes.get());
           String encodedConfigurationInstance = file.getEncodedConfigurationInstance();
-          String previousProgressLine = configurationProgress.get(encodedConfigurationInstance);
+          String previousProgressLine = getPreviousProgress(encodedConfigurationInstance);
           if (!progressLine.equals(previousProgressLine)) {
             newDataReceived = true;
             configurationProgress.put(encodedConfigurationInstance, progressLine);
@@ -87,6 +90,7 @@ public class CloudResultsLoader {
   private final String bucketName;
   private final Map<String, TestExecution> testExecutions;
 
+  // Encoded configuration instance -> progress accumulated so far.
   private final Map<String, String> configurationProgress = new HashMap<String, String>();
 
 
@@ -135,29 +139,30 @@ public class CloudResultsLoader {
   public boolean updateResults(Map<String, ConfigurationResult> results) {
     newDataReceived = false;
     try {
-      updateResultsFromApiStatus(results);
+      if (testExecutions == null) { // The obsolete logic kept for handling fake buckets.
+        Storage.Objects.List objects = getStorage().objects().list(bucketName);
+        List<StorageObject> storageObjects = objects.execute().getItems();
 
-      Storage.Objects.List objects = getStorage().objects().list(bucketName);
-      List<StorageObject> storageObjects = objects.execute().getItems();
+        Iterable<BucketFileMetadata> files =
+          Iterables.transform(storageObjects, Functions.compose(UPDATE_CONFIGURATION_PROGRESS, TO_BUCKET_FILE));
 
-      Iterable<BucketFileMetadata> files =
-        Iterables.transform(storageObjects, Functions.compose(UPDATE_CONFIGURATION_PROGRESS, TO_BUCKET_FILE));
+        Set<String> finishedConfigurations =
+          Sets.newHashSet(Iterables.filter(Iterables.transform(files, TO_COMPLETED_CONFIGURATION_OR_NULL), Predicates.notNull()));
 
-      Set<String> finishedConfigurations =
-        Sets.newHashSet(Iterables.filter(Iterables.transform(files, TO_COMPLETED_CONFIGURATION_OR_NULL), Predicates.notNull()));
-
-      for (BucketFileMetadata file : files) {
-        if (file.getType() == PROGRESS) {
-          String encodedConfigurationInstance = file.getEncodedConfigurationInstance();
-          ConfigurationResult result = results.get(encodedConfigurationInstance);
-          if (result == null) {
-            result = new ConfigurationResult(encodedConfigurationInstance);
-            results.put(encodedConfigurationInstance, result);
+        for (BucketFileMetadata file : files) {
+          if (file.getType() == PROGRESS) {
+            String encodedConfigurationInstance = file.getEncodedConfigurationInstance();
+            ConfigurationResult result = results.get(encodedConfigurationInstance);
+            if (result == null) {
+              result = new ConfigurationResult(encodedConfigurationInstance);
+              results.put(encodedConfigurationInstance, result);
+            }
+            result.setComplete(finishedConfigurations.contains(encodedConfigurationInstance));
+            result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
           }
-          result.setComplete(finishedConfigurations.contains(encodedConfigurationInstance));
-          result.setInfrastructureFailure(configurationProgress.get(encodedConfigurationInstance) != null &&
-                                          configurationProgress.get(encodedConfigurationInstance).startsWith("Infrastructure Failure:"));
         }
+      } else {
+        updateResultsFromApi(results);
       }
       loadResultFiles(results);
       loadScreenshots(results);
@@ -167,39 +172,58 @@ public class CloudResultsLoader {
     return newDataReceived;
   }
 
-  private void updateResultsFromApiStatus(Map<String, ConfigurationResult> results) {
-    if (testExecutions == null) { //Could happen for the fake bucket.
-      return;
-    }
+  private void updateResultsFromApi(Map<String, ConfigurationResult> results) {
     for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
       try {
         TestExecution testExecution =
           getTest().projects().testExecutions().get(cloudProjectId, testExecutionEntry.getValue().getId()).execute();
-        if (testExecution.getState().equals("ERROR")) {
-          String progressLine = "Infrastructure Failure: " + testExecution.getTestDetails().getErrorDetails() + "\n";
+        String testExecutionState = testExecution.getState();
+        if (!testExecutionState.equals("QUEUED")) {
           String encodedConfigurationInstance = testExecutionEntry.getKey();
-          String previousProgressLine = configurationProgress.get(encodedConfigurationInstance);
-          if (!progressLine.equals(previousProgressLine)) {
-            newDataReceived = true;
-            configurationProgress.put(encodedConfigurationInstance, progressLine);
-            testRunListener.testConfigurationProgress(
-              ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), progressLine);
-
-            ConfigurationResult configurationResult = results.get(encodedConfigurationInstance);
-            if (configurationResult == null) {
-              configurationResult = new ConfigurationResult(encodedConfigurationInstance);
-              configurationResult.setInfrastructureFailure(true);
-              results.put(encodedConfigurationInstance, configurationResult);
-            } else {
-              configurationResult.setInfrastructureFailure(true);
+          if (testExecutionState.equals("ERROR")) {
+            String newProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
+            String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+            if (!previousProgress.endsWith(newProgress)) {
+              newDataReceived = true;
+              configurationProgress.put(encodedConfigurationInstance, previousProgress + newProgress);
+              testRunListener.testConfigurationProgress(
+                ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), newProgress);
+            }
+          } else if (testExecutionState.equals("IN_PROGRESS")) {
+            String newProgress = testExecution.getTestDetails().getProgressDetails();
+            String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+            if (newProgress != null && !newProgress.equals(previousProgress)) {
+              newDataReceived = true;
+              configurationProgress.put(encodedConfigurationInstance, newProgress);
+              String diffProgress = newProgress.substring(previousProgress.length());
+              testRunListener.testConfigurationProgress(
+                ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), diffProgress);
             }
           }
+
+          ConfigurationResult result = results.get(encodedConfigurationInstance);
+          if (result == null) {
+            result = new ConfigurationResult(encodedConfigurationInstance);
+            results.put(encodedConfigurationInstance, result);
+          }
+          result.setComplete(testExecutionState.equals("FINISHED"));
+          result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
         }
       }
       catch (IOException e) {
-        // Suppress, not a critical problem.
+        throw new RuntimeException("Failed to update results from API: ", e);
       }
     }
+  }
+
+  private static boolean isInfrastructureFailure(String progress) {
+    String[] progressLines = progress.split("\n");
+    return progressLines[progressLines.length - 1].startsWith(INFRASTRUCTURE_FAILURE_PREFIX);
+  }
+
+  private String getPreviousProgress(String encodedConfigurationInstance) {
+    String progress = configurationProgress.get(encodedConfigurationInstance);
+    return progress == null ? "" : progress;
   }
 
   private void loadResultFiles(Map<String, ConfigurationResult> results) {

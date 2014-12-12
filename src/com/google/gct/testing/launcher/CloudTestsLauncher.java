@@ -122,8 +122,8 @@ public class CloudTestsLauncher {
             .setLocale(dimensionValues[2])
             .setOrientation(dimensionValues[3])));
 
-        TestExecution execution =
-          testExecutions.put(matrixInstance, getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute());
+        TestExecution triggeredExecution = getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute();
+        testExecutions.put(matrixInstance, triggeredExecution);
       }
       catch (IOException e) {
         throw new RuntimeException("Error triggering test execution through test API", e);

@@ -15,9 +15,6 @@
  */
 package com.google.gct.testing.ui;
 
-import com.google.gct.testing.launcher.ExperimentalCloudAuthenticator;
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -44,8 +41,8 @@ public class GoogleCloudTestingAction extends AnAction implements CustomComponen
       //String response = ExperimentalCloudAuthenticator.callTestApi("test_devtools", "v1", "projects.testMatrices.list", "projectId", "12345");
       //new Notification("Cloud API", "test_devtools v1 projects.testMatrices.list myProjectId", response, NotificationType.INFORMATION,
       //                 null).notify(e.getProject());
-      String response = ExperimentalCloudAuthenticator.callTestApi();
-      new Notification("Cloud API", "testExecutions.list", response, NotificationType.INFORMATION, null).notify(e.getProject());
+      //String response = ExperimentalCloudAuthenticator.callTestApi();
+      //new Notification("Cloud API", "testExecutions.list", response, NotificationType.INFORMATION, null).notify(e.getProject());
     }
     catch (Exception exception) {
       throw new RuntimeException("Failed to perform the API call", exception);

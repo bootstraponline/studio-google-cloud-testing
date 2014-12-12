@@ -50,10 +50,17 @@ public class CloudAuthenticator {
     prepareCredential();
     if (test == null) {
       test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
-        //.setRootUrl("http://snegara0.mtv.corp.google.com:8787/test")
-        .setRootUrl("https://www.googleapis.com/test") // prod
-        //.setRootUrl("https://www-googleapis-staging.sandbox.google.com/test") // staging
-        //.setRootUrl("https://www-googleapis-test.sandbox.google.com/test") // test
+        //.setRootUrl("http://snegara0.mtv.corp.google.com:8788") // final distributed local
+        //.setRootUrl("http://snegara0.mtv.corp.google.com:8787/test") // classic local
+        //.setRootUrl("https://test-devtools.googleapis.com") // final distributed prod
+        //.setRootUrl("https://test.googleapis.com") // initial distributed prod
+        //.setRootUrl("https://www.googleapis.com/test") // classic prod
+        //.setRootUrl("https://staging-test-devtools.sandbox.google.com") // final distributed staging
+        //.setRootUrl("https://test-staging.sandbox.google.com") // initial distributed staging
+        .setRootUrl("https://www-googleapis-staging.sandbox.google.com/test") // classic staging
+        //.setRootUrl("https://test-test-devtools.googleapis.com") // final distributed test
+        //.setRootUrl("https://test-test.sandbox.googleapis.com") // initial distributed test
+        //.setRootUrl("https://www-googleapis-test.sandbox.google.com/test") // classic test
         .build();
     }
     return test;
