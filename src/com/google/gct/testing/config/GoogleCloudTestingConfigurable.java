@@ -17,6 +17,7 @@ package com.google.gct.testing.config;
 
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.options.OptionalConfigurable;
 import com.intellij.openapi.options.SearchableConfigurable;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nls;
@@ -26,7 +27,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 
-public class GoogleCloudTestingConfigurable implements SearchableConfigurable, Configurable.NoScroll {
+public class GoogleCloudTestingConfigurable implements OptionalConfigurable, SearchableConfigurable, Configurable.NoScroll {
+
+  public final static String SHOW_GOOGLE_CLOUD_TESTING_SETTINGS = "show.google.cloud.testing.settings";
 
   private final Project project;
 
@@ -127,6 +130,11 @@ public class GoogleCloudTestingConfigurable implements SearchableConfigurable, C
   @Override
   public Runnable enableSearch(String option) {
     return null;
+  }
+
+  @Override
+  public boolean needDisplay() {
+    return Boolean.getBoolean(SHOW_GOOGLE_CLOUD_TESTING_SETTINGS);
   }
 
   public static class GoogleCloudTestingState {
