@@ -142,7 +142,8 @@ public class CloudResultsAdapter {
 
   class PollingTicker implements Runnable {
     private static final long INITIAL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-    private static final long DYNAMIC_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+    //TODO: Reduce back to 5 minutes after we get incremental results for test execution.
+    private static final long DYNAMIC_TIMEOUT = 30 * 60 * 1000; // 30 minutes
     private static final int POLLING_INTERVAL = 3 * 1000; // 3 seconds
 
     private long stopTime;
