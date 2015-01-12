@@ -20,6 +20,7 @@ import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.test.model.*;
+import com.google.api.services.toolresults.model.History;
 import com.google.common.collect.Lists;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -38,8 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
+import static com.google.gct.testing.launcher.CloudAuthenticator.*;
 
 
 public class CloudTestsLauncher {
@@ -109,11 +109,15 @@ public class CloudTestsLauncher {
         .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
         .setTestRunnerClass(TEST_RUNNER_CLASS).setTestTargets(Lists.newArrayList(testSpecification))));
 
+    String historyId = getHistoryId(cloudProjectId, applicationName);
+
     for (String matrixInstance : matrixInstances) {
       try {
         TestExecution currentTestExecution = testExecution.clone();
         currentTestExecution.setResultStorage(
-          new ResultStorage().setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath)));
+          new ResultStorage()
+            .setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath))
+            .setToolResultsHistoryId(historyId));
         String[] dimensionValues = matrixInstance.split("-");
         currentTestExecution.setEnvironment(new Environment().setAndroidDevice(
           new AndroidDevice()
@@ -130,6 +134,26 @@ public class CloudTestsLauncher {
       }
     }
     return testExecutions;
+  }
+
+  private static String getHistoryId(String cloudProjectId, String applicationName) {
+    String historyName = applicationName + " (Android Studio)";
+    try {
+      List<History> histories =
+        getToolresults().projects().histories().list(cloudProjectId).setFilterByDisplayName(historyName).execute().getHistories();
+      if (histories != null && !histories.isEmpty()) {
+        return histories.get(0).getHistoryId();
+      }
+    } catch (IOException e) {
+      // Ignore, just create a new history.
+    }
+    try {
+      return getToolresults().projects().histories().create(cloudProjectId,
+                                                            new History().setDisplayName(historyName)).execute().getHistoryId();
+    }
+    catch (IOException e) {
+      throw new RuntimeException("Could not create a history for test execution!", e);
+    }
   }
 
   /**

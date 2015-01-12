@@ -22,6 +22,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.test.Test;
 import com.google.api.services.test.model.AndroidDeviceCatalog;
+import com.google.api.services.toolresults.Toolresults;
 import com.google.gct.login.GoogleLogin;
 
 import java.io.IOException;
@@ -36,6 +37,8 @@ public class CloudAuthenticator {
   private static Storage storage;
 
   private static Test test;
+
+  private static Toolresults toolresults;
 
 
   public static Storage getStorage() {
@@ -73,6 +76,14 @@ public class CloudAuthenticator {
     catch (IOException e) {
       throw new RuntimeException("Error retrieving android device catalog", e);
     }
+  }
+
+  public static Toolresults getToolresults() {
+    prepareCredential();
+    if (toolresults == null) {
+      toolresults = new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
+    }
+    return toolresults;
   }
 
   private static void prepareCredential() {
