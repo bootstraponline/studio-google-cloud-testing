@@ -16,8 +16,12 @@
 package com.google.gct.testing;
 
 import com.android.tools.idea.run.GoogleCloudTestingConfiguration;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationListener;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.wm.StatusBar;
@@ -26,11 +30,16 @@ import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 
 public class GoogleCloudTestingUtils {
+
+  private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/a/google.com/forum/#!newtopic/cloud-test-lab-users-external'";
 
   private static final String SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS = "show.google.cloud.testing.timestamps";
 
@@ -82,7 +91,7 @@ public class GoogleCloudTestingUtils {
     }
   }
 
-  public static void showMessage(final Project project, final String message, final MessageType type, final int delaySeconds) {
+  public static void showBalloonMessage(final Project project, final String message, final MessageType type, final int delaySeconds) {
     SwingUtilities.invokeLater(new Runnable() {
       @Override
       public void run() {
@@ -91,6 +100,30 @@ public class GoogleCloudTestingUtils {
           .show(RelativePoint.getCenterOf(statusBar.getComponent()), Balloon.Position.atRight);
       }
     });
+  }
+
+  public static void showErrorMessage(@Nullable Project project, String errorDialogTitle, String errorMessage) {
+    int newLineIndex = errorMessage.indexOf("\n");
+    String userErrorMessage = newLineIndex != -1 ? errorMessage.substring(0, newLineIndex) : errorMessage;
+    String detailedErrorMessage = newLineIndex != -1
+                                  ? "<html><a href=" + GOOGLE_GROUP_URL
+                                    + ">Report this issue</a> (please copy/paste the text below into the form)<br><br>"
+                                    + errorMessage.substring(newLineIndex + 1).replace("\n", "<br>") + "</html>"
+                                  : "No details...";
+    showCascadingErrorMessages(project, errorDialogTitle, userErrorMessage, detailedErrorMessage);
+  }
+
+  private static void showCascadingErrorMessages(@Nullable final Project project, final String errorDialogTitle, String userErrorMessage,
+                                                 final String detailedErrorMessage) {
+
+    new Notification(errorDialogTitle, "", String.format("<b>%s</b> <a href=''>Details</a>", userErrorMessage), NotificationType.ERROR,
+      new NotificationListener.Adapter() {
+        @Override
+        protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
+          notification.expire();
+          Messages.showDialog(project, detailedErrorMessage, errorDialogTitle, new String[]{Messages.CANCEL_BUTTON}, 0, null);
+        }
+      }).notify((project == null || project.isDefault()) ? null : project);
   }
 
   public static GridBagConstraints createConfigurationChooserGbc(int x, int y) {

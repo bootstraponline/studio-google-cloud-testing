@@ -16,6 +16,7 @@
 package com.google.gct.testing.dimension;
 
 import com.google.api.client.util.Lists;
+import com.google.api.services.test.model.AndroidDeviceCatalog;
 import com.google.api.services.test.model.Locale;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
@@ -30,6 +31,7 @@ import org.jetbrains.android.facet.AndroidFacet;
 import javax.swing.*;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,8 +43,13 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
 
   private static ImmutableList<Language> FULL_DOMAIN;
 
-  //TODO: Make sure we do not "guess" incorrectly.
-  private static final Language defaultLanguage = new Language(getLanguage(System.getProperty("user.language")), true);
+  private static final Language defaultLanguage;
+
+  static {
+    //TODO: Make sure we do not "guess" incorrectly the user's language.
+    Language userLanguage = getLanguage(System.getProperty("user.language"));
+    defaultLanguage = userLanguage != null ? new Language(userLanguage, true) : null;
+  }
 
   private final List<Language> supportedLanguages;
 
@@ -56,8 +63,10 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
         return locales.contains(input.getId());
       }
     }));
-    supportedLanguages.remove(defaultLanguage);
-    supportedLanguages.add(0, defaultLanguage);
+    if (defaultLanguage != null) {
+      supportedLanguages.remove(defaultLanguage);
+      supportedLanguages.add(0, defaultLanguage);
+    }
   }
 
   @VisibleForTesting
@@ -69,8 +78,10 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
         return locales.contains(input.getId());
       }
     }));
-    supportedLanguages.remove(defaultLanguage);
-    supportedLanguages.add(0, defaultLanguage);
+    if (defaultLanguage != null) {
+      supportedLanguages.remove(defaultLanguage);
+      supportedLanguages.add(0, defaultLanguage);
+    }
   }
 
   private List<String> getLocales(AndroidFacet facet) {
@@ -108,10 +119,13 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
   }
 
   public static List<Language> getFullDomain() {
-    if (FULL_DOMAIN == null || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+    if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Language> fullDomainBuilder = new ImmutableList.Builder<Language>();
-      for (Locale locale : getAndroidDeviceCatalog().getRuntimeConfiguration().getLocales()) {
-        fullDomainBuilder.add(new Language(locale.getId(), locale.getName(), locale.getRegion(), false));
+      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
+      if (androidDeviceCatalog != null) {
+        for (Locale locale : androidDeviceCatalog.getRuntimeConfiguration().getLocales()) {
+          fullDomainBuilder.add(new Language(locale.getId(), locale.getName(), locale.getRegion(), false));
+        }
       }
       FULL_DOMAIN = fullDomainBuilder.build();
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
@@ -120,12 +134,16 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
   }
 
   public static Language getLanguage(final String locale) {
-    return Iterables.find(getFullDomain(), new Predicate<Language>() {
-      @Override
-      public boolean apply(LanguageDimension.Language input) {
-        return input.getId().equals(locale);
-      }
-    });
+    try {
+      return Iterables.find(getFullDomain(), new Predicate<Language>() {
+        @Override
+        public boolean apply(LanguageDimension.Language input) {
+          return input.getId().equals(locale);
+        }
+      });
+    } catch (NoSuchElementException e) {
+      return null;
+    }
   }
 
   @Override

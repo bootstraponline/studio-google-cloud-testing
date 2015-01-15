@@ -24,6 +24,7 @@ import com.google.api.services.test.Test;
 import com.google.api.services.test.model.AndroidDeviceCatalog;
 import com.google.api.services.toolresults.Toolresults;
 import com.google.gct.login.GoogleLogin;
+import com.google.gct.testing.GoogleCloudTestingUtils;
 
 import java.io.IOException;
 
@@ -39,6 +40,8 @@ public class CloudAuthenticator {
   private static Test test;
 
   private static Toolresults toolresults;
+
+  private static long lastDiscoveryServiceInvocationTimestamp = -1;
 
 
   public static Storage getStorage() {
@@ -70,11 +73,29 @@ public class CloudAuthenticator {
   }
 
   public static AndroidDeviceCatalog getAndroidDeviceCatalog() {
+    long currentTimestamp = System.currentTimeMillis();
     try {
-      return getTest().testEnvironmentCatalog().get("ANDROID").execute().getAndroidDeviceCatalog();
+      AndroidDeviceCatalog catalog = getTest().testEnvironmentCatalog().get("ANDROID").execute().getAndroidDeviceCatalog();
+      if (catalog.getVersions().isEmpty() || catalog.getModels().isEmpty() || catalog.getRuntimeConfiguration().getLocales().isEmpty()
+        || catalog.getRuntimeConfiguration().getOrientations().isEmpty()) {
+        showDeviceCatalogError("Android device catalog is empty for some dimensions", currentTimestamp);
+      }
+      return catalog;
     }
-    catch (IOException e) {
-      throw new RuntimeException("Error retrieving android device catalog", e);
+    catch (Exception e) {
+      showDeviceCatalogError("Exception while getting Android device catalog\n\n" + e.getMessage(), currentTimestamp);
+      return null;
+    } finally {
+      lastDiscoveryServiceInvocationTimestamp = currentTimestamp;
+    }
+  }
+
+  private static void showDeviceCatalogError(String errorMessageSuffix, long currentTimestamp) {
+    // The error should be reported just once per burst of invocations.
+    if (currentTimestamp - lastDiscoveryServiceInvocationTimestamp > 1000l) { // If more than a second has passed.
+      GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving android device catalog",
+                                               "Failed to retrieve available cloud devices! Please try again later.\n" +
+                                               errorMessageSuffix);
     }
   }
 

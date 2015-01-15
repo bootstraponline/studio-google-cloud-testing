@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing.dimension;
 
+import com.google.api.services.test.model.AndroidDeviceCatalog;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gct.testing.GoogleCloudTestingConfigurationImpl;
@@ -44,12 +45,15 @@ public class OrientationDimension extends GoogleCloudTestingDimension {
   }
 
   public static List<? extends GoogleCloudTestingType> getFullDomain() {
-    if (FULL_DOMAIN == null || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+    if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Orientation> fullDomainBuilder = new ImmutableList.Builder<Orientation>();
-      List<com.google.api.services.test.model.Orientation> orientations =
-        getAndroidDeviceCatalog().getRuntimeConfiguration().getOrientations();
-      for (com.google.api.services.test.model.Orientation orientation : orientations) {
-        fullDomainBuilder.add(new Orientation(orientation.getId(), orientation.getName()));
+      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
+      if (androidDeviceCatalog != null) {
+        List<com.google.api.services.test.model.Orientation> orientations =
+          androidDeviceCatalog.getRuntimeConfiguration().getOrientations();
+        for (com.google.api.services.test.model.Orientation orientation : orientations) {
+          fullDomainBuilder.add(new Orientation(orientation.getId(), orientation.getName()));
+        }
       }
       FULL_DOMAIN = fullDomainBuilder.build();
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);

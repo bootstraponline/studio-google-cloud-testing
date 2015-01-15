@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing.dimension;
 
+import com.google.api.services.test.model.AndroidDeviceCatalog;
 import com.google.api.services.test.model.AndroidVersion;
 import com.google.api.services.test.model.Distribution;
 import com.google.common.annotations.VisibleForTesting;
@@ -99,14 +100,17 @@ public class ApiDimension extends GoogleCloudTestingDimension {
   }
 
   public static List<? extends GoogleCloudTestingType> getFullDomain() {
-    if (FULL_DOMAIN == null || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+    if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       List<ApiLevel> apiLevels = new LinkedList<ApiLevel>();
-      for (AndroidVersion version : getAndroidDeviceCatalog().getVersions()) {
-        Map<String, String> details = new HashMap<String, String>();
-        details.put("Release date", version.getReleaseDate());
-        Distribution distribution = version.getDistribution();
-        details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
-        apiLevels.add(new ApiLevel(version.getId(), version.getCodeName(), version.getVersionString(), version.getApiLevel(), details));
+      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
+      if (androidDeviceCatalog != null) {
+        for (AndroidVersion version : androidDeviceCatalog.getVersions()) {
+          Map<String, String> details = new HashMap<String, String>();
+          details.put("Release date", version.getReleaseDate());
+          Distribution distribution = version.getDistribution();
+          details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
+          apiLevels.add(new ApiLevel(version.getId(), version.getCodeName(), version.getVersionString(), version.getApiLevel(), details));
+        }
       }
       // Sort them in descending order of api version.
       FULL_DOMAIN = ImmutableList.copyOf(Ordering.from(API_LEVEL_COMPARATOR).reverse().sortedCopy(apiLevels));

@@ -174,9 +174,10 @@ public class CloudResultsLoader {
 
   private void updateResultsFromApi(Map<String, ConfigurationResult> results) {
     for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
+      String testExecutionId = testExecutionEntry.getValue().getId();
       try {
         TestExecution testExecution =
-          getTest().projects().testExecutions().get(cloudProjectId, testExecutionEntry.getValue().getId()).execute();
+          getTest().projects().testExecutions().get(cloudProjectId, testExecutionId).execute();
         String testExecutionState = testExecution.getState();
         if (!testExecutionState.equals("QUEUED")) {
           String encodedConfigurationInstance = testExecutionEntry.getKey();
@@ -209,9 +210,11 @@ public class CloudResultsLoader {
           result.setComplete(testExecutionState.equals("FINISHED"));
           result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
         }
-      }
-      catch (IOException e) {
-        throw new RuntimeException("Failed to update results from API: ", e);
+      } catch (Exception e) {
+        GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving matrix test results",
+                                                 "Failed to retrieve results of a cloud test execution!\n" +
+                                                 "Exception while updating results for test execution " + testExecutionId + "\n\n"
+                                                 + e.getMessage());
       }
     }
   }

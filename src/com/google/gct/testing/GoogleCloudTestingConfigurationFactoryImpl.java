@@ -38,11 +38,7 @@ import com.intellij.execution.ExecutionResult;
 import com.intellij.execution.Executor;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.ui.ConsoleView;
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationListener;
-import com.intellij.notification.NotificationType;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import icons.AndroidIcons;
@@ -50,10 +46,8 @@ import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.run.AndroidRunningState;
 import org.jetbrains.android.run.testing.AndroidTestConsoleProperties;
 import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
 import java.io.File;
 import java.util.*;
 
@@ -194,23 +188,16 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
       // ignore
     } finally {
       if (buckets == null) {
-        return "Failed to authorize to Google Cloud project, message= " + message;
+        return "Failed to authorize to Google Cloud project! Please select a project you are authorized to use.\n"
+          + "Exception while performing a pre-trigger sanity check\n\n" + message;
       }
     }
-
     return null;
   }
 
   @Override
   public void displaySanityCheckError(String errorMessage, final Project project) {
-    new Notification("Cloud Test Configuration Invalid", "", String.format("<b>%s</b> <a href=''>Fix it.</a>", errorMessage),
-                     NotificationType.ERROR,
-                     new NotificationListener.Adapter() {
-                       @Override
-                       protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-                         ShowSettingsUtil.getInstance().showSettingsDialog(project, "Google Cloud Testing");        }
-                     })
-      .notify(project.isDefault() ? null : project);
+    GoogleCloudTestingUtils.showErrorMessage(project, "Cloud test configuration is invalid", errorMessage);
   }
 
   @Override

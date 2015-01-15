@@ -22,6 +22,7 @@ import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.test.model.*;
 import com.google.api.services.toolresults.model.History;
 import com.google.common.collect.Lists;
+import com.google.gct.testing.GoogleCloudTestingUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -129,8 +130,10 @@ public class CloudTestsLauncher {
         TestExecution triggeredExecution = getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute();
         testExecutions.put(matrixInstance, triggeredExecution);
       }
-      catch (IOException e) {
-        throw new RuntimeException("Error triggering test execution through test API", e);
+      catch (Exception e) {
+        GoogleCloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test",
+                                                 "Failed to trigger a cloud test execution!\n" +
+                                                 "Exception while triggering a test execution\n\n" + e.getMessage());
       }
     }
     return testExecutions;
@@ -144,15 +147,18 @@ public class CloudTestsLauncher {
       if (histories != null && !histories.isEmpty()) {
         return histories.get(0).getHistoryId();
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       // Ignore, just create a new history.
     }
     try {
       return getToolresults().projects().histories().create(cloudProjectId,
                                                             new History().setDisplayName(historyName)).execute().getHistoryId();
     }
-    catch (IOException e) {
-      throw new RuntimeException("Could not create a history for test execution!", e);
+    catch (Exception e) {
+      GoogleCloudTestingUtils.showErrorMessage(null, "Error creating history id",
+                                               "Failed to create history id for test execution!\n" +
+                                               "Exception while creating a test execution history id\n\n" + e.getMessage());
+      return "";
     }
   }
 

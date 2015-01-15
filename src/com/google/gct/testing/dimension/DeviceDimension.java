@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing.dimension;
 
+import com.google.api.services.test.model.AndroidDeviceCatalog;
 import com.google.api.services.test.model.AndroidModel;
 import com.google.common.collect.ImmutableList;
 import com.google.gct.testing.GoogleCloudTestingConfigurationImpl;
@@ -51,12 +52,15 @@ public class DeviceDimension extends GoogleCloudTestingDimension {
   }
 
   public static List<? extends GoogleCloudTestingType> getFullDomain() {
-    if (FULL_DOMAIN == null || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+    if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Device> fullDomainBuilder = new ImmutableList.Builder<Device>();
-      for (AndroidModel model : getAndroidDeviceCatalog().getModels()) {
-        Map<String, String> details = new HashMap<String, String>();
-        details.put("Display", model.getScreenX() + "x" + model.getScreenY());
-        fullDomainBuilder.add(new Device(model.getId(), model.getName(), model.getManufacturer(), model.getForm(), details));
+      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
+      if (androidDeviceCatalog != null) {
+        for (AndroidModel model : androidDeviceCatalog.getModels()) {
+          Map<String, String> details = new HashMap<String, String>();
+          details.put("Display", model.getScreenX() + "x" + model.getScreenY());
+          fullDomainBuilder.add(new Device(model.getId(), model.getName(), model.getManufacturer(), model.getForm(), details));
+        }
       }
       FULL_DOMAIN = fullDomainBuilder.build();
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
