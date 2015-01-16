@@ -26,8 +26,6 @@ import com.google.api.services.toolresults.Toolresults;
 import com.google.gct.login.GoogleLogin;
 import com.google.gct.testing.GoogleCloudTestingUtils;
 
-import java.io.IOException;
-
 public class CloudAuthenticator {
 
   /** Global instance of the HTTP transport. */
@@ -50,6 +48,11 @@ public class CloudAuthenticator {
       storage = new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
     }
     return storage;
+  }
+
+  public static void recreateTest(String backendUrl) {
+    prepareCredential();
+    test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(backendUrl).build();
   }
 
   public static Test getTest() {

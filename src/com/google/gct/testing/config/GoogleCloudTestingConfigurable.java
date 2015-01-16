@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing.config;
 
+import com.google.gct.testing.launcher.CloudAuthenticator;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.OptionalConfigurable;
@@ -36,6 +37,14 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
   private JPanel panel;
   private JCheckBox useFakeBucketCheckbox = new JCheckBox();
   private JTextField fakeBucketNameField = new JTextField();
+  private JRadioButton useProd = new JRadioButton("Prod");
+  private JTextField prodUrlField = new JTextField("https://test-devtools.googleapis.com");
+  private JRadioButton useStaging = new JRadioButton("Staging");
+  private JTextField stagingUrlField = new JTextField("https://www-googleapis-staging.sandbox.google.com/test");
+  private JRadioButton useTest = new JRadioButton("Test");
+  private JTextField testUrlField = new JTextField("https://www-googleapis-test.sandbox.google.com/test");
+  private JRadioButton useCustom = new JRadioButton("Custom");
+  private JTextField customUrlField = new JTextField("");
 
   public GoogleCloudTestingConfigurable(Project project) {
     this.project = project;
@@ -61,6 +70,27 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     useFakeBucketCheckbox.setText("Use fake bucket:");
     content.add(useFakeBucketCheckbox, createGbc(0, 1));
     content.add(fakeBucketNameField, createGbc(1, 1));
+
+    ButtonGroup urlGroup = new ButtonGroup();
+    urlGroup.add(useProd);
+    urlGroup.add(useStaging);
+    urlGroup.add(useTest);
+    urlGroup.add(useCustom);
+
+    prodUrlField.setEditable(false);
+    stagingUrlField.setEditable(false);
+    testUrlField.setEditable(false);
+
+    content.add(new JLabel("Backend URL to use for test requests:"), createGbc(0, 2));
+    content.add(useProd, createGbc(0, 3));
+    content.add(prodUrlField, createGbc(1, 3));
+    content.add(useStaging, createGbc(0, 4));
+    content.add(stagingUrlField, createGbc(1, 4));
+    content.add(useTest, createGbc(0, 5));
+    content.add(testUrlField, createGbc(1, 5));
+    content.add(useCustom, createGbc(0, 6));
+    content.add(customUrlField, createGbc(1, 6));
+
     return panel;
   }
 
@@ -90,8 +120,12 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     GoogleCloudTestingState state = getSavedSettings().getState();
     String stateFakeBucketName = state == null ? "" : state.fakeBucketName;
     boolean stateShouldUseFakeBucket = state == null ? false : state.shouldUseFakeBucket;
+    int urlChoice = state == null ? 0 : state.urlChoice;
+    String customUrl = state == null ? "" : state.customUrl;
     return !stateFakeBucketName.equals(fakeBucketNameField.getText())
-           || stateShouldUseFakeBucket != useFakeBucketCheckbox.isSelected();
+           || stateShouldUseFakeBucket != useFakeBucketCheckbox.isSelected()
+           || urlChoice != getUrlChoice()
+           || !customUrl.equals(customUrlField.getText());
   }
 
   @Override
@@ -99,7 +133,11 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     GoogleCloudTestingState state = new GoogleCloudTestingState();
     state.fakeBucketName = fakeBucketNameField.getText();
     state.shouldUseFakeBucket = useFakeBucketCheckbox.isSelected();
+    state.urlChoice = getUrlChoice();
+    state.backendUrl = getBackendUrl();
+    state.customUrl = customUrlField.getText();
     getSavedSettings().loadState(state);
+    CloudAuthenticator.recreateTest(getBackendUrl());
   }
 
   @Override
@@ -107,6 +145,60 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     GoogleCloudTestingState state = getSavedSettings().getState();
     fakeBucketNameField.setText(state == null ? "" : state.fakeBucketName);
     useFakeBucketCheckbox.setSelected(state == null ? false : state.shouldUseFakeBucket);
+    setUrlChoice(state == null ? 0 : state.urlChoice);
+    customUrlField.setText(state == null ? "" : state.customUrl);
+    CloudAuthenticator.recreateTest(getBackendUrl());
+  }
+
+  private int getUrlChoice() {
+    if (useProd.isSelected()) {
+      return 0;
+    }
+    if (useStaging.isSelected()) {
+      return 1;
+    }
+    if (useTest.isSelected()) {
+      return 2;
+    }
+    if (useCustom.isSelected()) {
+      return 3;
+    }
+    throw new RuntimeException("No URL option is selected!");
+  }
+
+  private String getBackendUrl() {
+    if (useProd.isSelected()) {
+      return prodUrlField.getText();
+    }
+    if (useStaging.isSelected()) {
+      return stagingUrlField.getText();
+    }
+    if (useTest.isSelected()) {
+      return testUrlField.getText();
+    }
+    if (useCustom.isSelected()) {
+      return customUrlField.getText();
+    }
+    throw new RuntimeException("No URL option is selected!");
+  }
+
+  private void setUrlChoice(int urlChoice) {
+    switch(urlChoice) {
+      case 0 :
+        useProd.setSelected(true);
+        break;
+      case 1:
+        useStaging.setSelected(true);
+        break;
+      case 2:
+        useTest.setSelected(true);
+        break;
+      case 3:
+        useCustom.setSelected(true);
+        break;
+      default:
+        throw new RuntimeException("Unsupported URL choice: " + urlChoice);
+    }
   }
 
   private GoogleCloudTestingSettings getSavedSettings() {
@@ -118,6 +210,14 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     panel = null;
     useFakeBucketCheckbox = null;
     fakeBucketNameField = null;
+    useProd = null;
+    prodUrlField = null;
+    useStaging = null;
+    stagingUrlField = null;
+    useTest = null;
+    testUrlField = null;
+    useCustom = null;
+    customUrlField = null;
   }
 
   @NotNull
@@ -140,5 +240,8 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
   public static class GoogleCloudTestingState {
     public String fakeBucketName = "";
     public boolean shouldUseFakeBucket = false;
+    public int urlChoice = 0;
+    public String backendUrl = "";
+    public String customUrl = "";
   }
 }
