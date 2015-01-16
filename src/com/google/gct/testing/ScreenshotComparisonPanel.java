@@ -37,6 +37,8 @@ import javax.swing.border.MatteBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.LinkedList;
@@ -229,6 +231,21 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
       myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
       return;
     }
+
+    //TODO: This is a temporary rotation hack that should be removed after the backend produces correct landscape screenshots.
+    if (selectedConfigurationInstance.getEncodedString().endsWith("landscape")
+        && currentImage.getHeight() > currentImage.getWidth()) { // Rotate landscape screenshots that are indeed mis-rotated.
+
+      AffineTransform transform = new AffineTransform();
+      transform.translate(currentImage.getHeight() / 2, currentImage.getWidth() / 2);
+      transform.rotate(-Math.PI / 2);
+      //transform.scale(0.5, 0.5);
+      transform.translate(-currentImage.getWidth() / 2, -currentImage.getHeight() / 2);
+      //transform.rotate(-Math.PI / 2, currentImage.getWidth() / 2, currentImage.getHeight() / 2);
+      AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+      currentImage = op.filter(currentImage, null);
+    }
+
     int imageWidth = currentImage.getWidth();
     int imageHeight = currentImage.getHeight();
     if (imageWidth > MAX_IMAGE_WIDTH) {
