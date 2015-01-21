@@ -70,13 +70,13 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   private JBList list;
 
   // The configuration which we need to keep in sync with this view
-  private GoogleCloudTestingConfigurationImpl configuration;
+  private CloudTestConfigurationImpl configuration;
 
   // Listeners
   List<TwoPanelTreeSelectionListener> listeners = new LinkedList<TwoPanelTreeSelectionListener>();
   private JLabel myConfigurationCountLabel;
 
-  public TwoPanelTree(GoogleCloudTestingConfigurationImpl configuration) {
+  public TwoPanelTree(CloudTestConfigurationImpl configuration) {
     this.configuration = configuration;
     myPanel = new JPanel(new BorderLayout());
     myPanel.setPreferredSize(new Dimension(520, 240));

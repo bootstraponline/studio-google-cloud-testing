@@ -18,7 +18,7 @@ package com.google.gct.testing.dimension;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.google.gct.testing.GoogleCloudTestingConfigurationImpl;
+import com.google.gct.testing.CloudTestConfigurationImpl;
 
 import javax.swing.*;
 import java.util.*;
@@ -37,10 +37,10 @@ public abstract class GoogleCloudTestingDimension {
    * The list of types that are currently enabled (use List rather than Set for comparison consistency).
    */
   private List<GoogleCloudTestingType> enabledTypes = new LinkedList<GoogleCloudTestingType>();
-  private GoogleCloudTestingConfigurationImpl myGoogleCloudTestingConfiguration;
+  private CloudTestConfigurationImpl myGoogleCloudTestingConfiguration;
   private Icon icon;
 
-  public GoogleCloudTestingDimension(GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration) {
+  public GoogleCloudTestingDimension(CloudTestConfigurationImpl googleCloudTestingConfiguration) {
     myGoogleCloudTestingConfiguration = googleCloudTestingConfiguration;
   }
 

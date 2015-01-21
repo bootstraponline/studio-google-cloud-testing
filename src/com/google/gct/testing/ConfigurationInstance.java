@@ -59,7 +59,7 @@ public class ConfigurationInstance {
   private static ConfigurationInstance parse(Function<GoogleCloudTestingType, String> typeToNameFunction, String delimiter, String input) {
     ConfigurationInstance result= new ConfigurationInstance();
     ArrayList<GoogleCloudTestingType> allTypes = Lists.newArrayList(Iterables.concat(
-      GoogleCloudTestingConfigurationFactoryImpl.getAllDimensionTypes().values()));
+      CloudTestConfigurationProviderImpl.getAllDimensionTypes().values()));
 
     ImmutableMap<String,GoogleCloudTestingType> nameToTypeMap = Maps.uniqueIndex(allTypes, typeToNameFunction);
 
@@ -71,7 +71,7 @@ public class ConfigurationInstance {
 
   private static void recordType(ConfigurationInstance result, GoogleCloudTestingType type) {
     String dimensionName = null;
-    for (Map.Entry<String, List<? extends GoogleCloudTestingType>> entry : GoogleCloudTestingConfigurationFactoryImpl.getAllDimensionTypes().entrySet()) {
+    for (Map.Entry<String, List<? extends GoogleCloudTestingType>> entry : CloudTestConfigurationProviderImpl.getAllDimensionTypes().entrySet()) {
       if (entry.getValue().contains(type)) {
         dimensionName = entry.getKey();
         break;

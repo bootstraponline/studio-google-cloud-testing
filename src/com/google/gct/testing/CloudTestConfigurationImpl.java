@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.GoogleCloudTestingConfiguration;
+import com.android.tools.idea.run.CloudTestConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingConfiguration {
+public class CloudTestConfigurationImpl extends CloudTestConfiguration {
 
   public static final int ALL_ID = Integer.MAX_VALUE;
 
@@ -50,7 +50,7 @@ public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingCo
   LanguageDimension languageDimension;
   OrientationDimension orientationDimension;
 
-  public GoogleCloudTestingConfigurationImpl(int id, String name, Icon icon, AndroidFacet facet) {
+  public CloudTestConfigurationImpl(int id, String name, Icon icon, AndroidFacet facet) {
     if (id != ALL_ID && id >= nextAvailableID) {
       nextAvailableID = id + 1;
     }
@@ -62,12 +62,12 @@ public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingCo
     createDimensions();
   }
 
-  public GoogleCloudTestingConfigurationImpl(String name, Icon icon, AndroidFacet facet) {
+  public CloudTestConfigurationImpl(String name, Icon icon, AndroidFacet facet) {
     this(nextAvailableID++, name, icon, facet);
   }
 
   @VisibleForTesting
-  GoogleCloudTestingConfigurationImpl(String name, int minSdkVersion, List<String> locales) {
+  CloudTestConfigurationImpl(String name, int minSdkVersion, List<String> locales) {
     id = nextAvailableID++;
     this.name = name;
     facet = null;
@@ -78,10 +78,10 @@ public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingCo
     orientationDimension = new OrientationDimension(this);
   }
 
-  public GoogleCloudTestingConfigurationImpl(AndroidFacet facet) {
+  public CloudTestConfigurationImpl(AndroidFacet facet) {
     id = nextAvailableID++;
     name = "Unnamed";
-    icon = GoogleCloudTestingConfigurationFactoryImpl.DEFAULT_ICON;
+    icon = CloudTestConfigurationProviderImpl.DEFAULT_ICON;
     this.facet = facet;
     isEditable = true;
     createDimensions();
@@ -291,14 +291,14 @@ public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingCo
   }
 
   @Override
-  public GoogleCloudTestingConfigurationImpl clone() {
+  public CloudTestConfigurationImpl clone() {
     return copy(null);
   }
 
-  public GoogleCloudTestingConfigurationImpl copy(String prefix) {
-    GoogleCloudTestingConfigurationImpl newConfiguration = prefix == null
-                                                       ? new GoogleCloudTestingConfigurationImpl(id, name, icon, facet) //clone
-                                                       : new GoogleCloudTestingConfigurationImpl(prefix + name, icon, facet);
+  public CloudTestConfigurationImpl copy(String prefix) {
+    CloudTestConfigurationImpl newConfiguration = prefix == null
+                                                       ? new CloudTestConfigurationImpl(id, name, icon, facet) //clone
+                                                       : new CloudTestConfigurationImpl(prefix + name, icon, facet);
     newConfiguration.deviceDimension.enableAll(deviceDimension.getEnabledTypes());
     newConfiguration.apiDimension.enableAll(apiDimension.getEnabledTypes());
     newConfiguration.languageDimension.enableAll(languageDimension.getEnabledTypes());
@@ -330,7 +330,7 @@ public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingCo
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    GoogleCloudTestingConfigurationImpl that = (GoogleCloudTestingConfigurationImpl)o;
+    CloudTestConfigurationImpl that = (CloudTestConfigurationImpl)o;
 
     return getHash() == that.getHash() && id == that.id;
   }

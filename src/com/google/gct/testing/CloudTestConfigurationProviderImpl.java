@@ -15,8 +15,8 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.GoogleCloudTestingConfiguration;
-import com.android.tools.idea.run.GoogleCloudTestingConfigurationFactory;
+import com.android.tools.idea.run.CloudTestConfiguration;
+import com.android.tools.idea.run.CloudTestConfigurationProvider;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
 import com.google.api.services.test.model.TestExecution;
@@ -52,31 +52,31 @@ import javax.swing.*;
 import java.io.File;
 import java.util.*;
 
-public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTestingConfigurationFactory {
+public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationProvider {
 
   private static final String TEST_RUN_ID_PREFIX = "GoogleCloudTest:";
-  private static final Map<String, GoogleCloudTestingConfigurationImpl> testRunIdToCloudConfiguration = new HashMap<String, GoogleCloudTestingConfigurationImpl>();
+  private static final Map<String, CloudTestConfigurationImpl> testRunIdToCloudConfiguration = new HashMap<String, CloudTestConfigurationImpl>();
   private static final Map<String, CloudResultsAdapter> testRunIdToCloudResultsAdapter = new HashMap<String, CloudResultsAdapter>();
 
   public static final Icon DEFAULT_ICON = AndroidIcons.AndroidFile;
 
-  private GoogleCloudTestingConfiguration dialogSelectedConfiguration;
+  private CloudTestConfiguration dialogSelectedConfiguration;
   private String dialogSelectedProjectId;
 
 
-  public static final Function<GoogleCloudTestingConfiguration, GoogleCloudTestingConfigurationImpl> CLONE_CONFIGURATIONS =
-    new Function<GoogleCloudTestingConfiguration, GoogleCloudTestingConfigurationImpl>() {
+  public static final Function<CloudTestConfiguration, CloudTestConfigurationImpl> CLONE_CONFIGURATIONS =
+    new Function<CloudTestConfiguration, CloudTestConfigurationImpl>() {
       @Override
-      public GoogleCloudTestingConfigurationImpl apply(GoogleCloudTestingConfiguration configuration) {
-        return ((GoogleCloudTestingConfigurationImpl) configuration).clone();
+      public CloudTestConfigurationImpl apply(CloudTestConfiguration configuration) {
+        return ((CloudTestConfigurationImpl) configuration).clone();
       }
     };
 
-  public static final Function<GoogleCloudTestingConfiguration, GoogleCloudTestingConfigurationImpl> CAST_CONFIGURATIONS =
-    new Function<GoogleCloudTestingConfiguration, GoogleCloudTestingConfigurationImpl>() {
+  public static final Function<CloudTestConfiguration, CloudTestConfigurationImpl> CAST_CONFIGURATIONS =
+    new Function<CloudTestConfiguration, CloudTestConfigurationImpl>() {
       @Override
-      public GoogleCloudTestingConfigurationImpl apply(GoogleCloudTestingConfiguration configuration) {
-        return (GoogleCloudTestingConfigurationImpl) configuration;
+      public CloudTestConfigurationImpl apply(CloudTestConfiguration configuration) {
+        return (CloudTestConfigurationImpl) configuration;
       }
     };
 
@@ -90,16 +90,16 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
   }
 
   @Override
-  public ArrayList<? extends GoogleCloudTestingConfiguration> getTestingConfigurations(AndroidFacet facet) {
+  public List<? extends CloudTestConfiguration> getTestingConfigurations(AndroidFacet facet) {
     List<GoogleCloudTestingPersistentConfiguration> googleCloudTestingPersistentConfigurations =
       GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myGoogleCloudTestingPersistentConfigurations;
     return Lists.newArrayList(Iterables.concat(deserializeConfigurations(googleCloudTestingPersistentConfigurations, true, facet),
                                                getDefaultConfigurations(facet)));
   }
 
-  private List<? extends GoogleCloudTestingConfiguration> getDefaultConfigurations(AndroidFacet facet) {
-    GoogleCloudTestingConfigurationImpl allConfiguration =
-      new GoogleCloudTestingConfigurationImpl(GoogleCloudTestingConfigurationImpl.ALL_ID, "All", AndroidIcons.Display, facet);
+  private List<? extends CloudTestConfiguration> getDefaultConfigurations(AndroidFacet facet) {
+    CloudTestConfigurationImpl allConfiguration =
+      new CloudTestConfigurationImpl(CloudTestConfigurationImpl.ALL_ID, "All", AndroidIcons.Display, facet);
     allConfiguration.deviceDimension.enableAll();
     allConfiguration.apiDimension.enableAll();
     allConfiguration.languageDimension.enableAll();
@@ -114,34 +114,34 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
 
   @Override
   public boolean openMatrixConfigurationDialog(AndroidFacet currentFacet,
-                                            List<? extends GoogleCloudTestingConfiguration> testingConfigurations,
-                                            GoogleCloudTestingConfiguration selectedConfiguration) {
+                                            List<? extends CloudTestConfiguration> testingConfigurations,
+                                            CloudTestConfiguration selectedConfiguration) {
 
     Module currentModule = currentFacet.getModule();
 
-    List<GoogleCloudTestingConfigurationImpl> castDefaultConfigurations =
-      Lists.newArrayList(Iterables.transform(Iterables.filter(testingConfigurations, new Predicate<GoogleCloudTestingConfiguration>(){
+    List<CloudTestConfigurationImpl> castDefaultConfigurations =
+      Lists.newArrayList(Iterables.transform(Iterables.filter(testingConfigurations, new Predicate<CloudTestConfiguration>(){
         @Override
-        public boolean apply(GoogleCloudTestingConfiguration testingConfiguration) {
+        public boolean apply(CloudTestConfiguration testingConfiguration) {
           return !testingConfiguration.isEditable();
         }
       }), CAST_CONFIGURATIONS));
 
-    List<GoogleCloudTestingConfigurationImpl> copyCustomConfigurations =
-      Lists.newArrayList(Iterables.transform(Iterables.filter(testingConfigurations, new Predicate<GoogleCloudTestingConfiguration>(){
+    List<CloudTestConfigurationImpl> copyCustomConfigurations =
+      Lists.newArrayList(Iterables.transform(Iterables.filter(testingConfigurations, new Predicate<CloudTestConfiguration>(){
         @Override
-        public boolean apply(GoogleCloudTestingConfiguration testingConfiguration) {
+        public boolean apply(CloudTestConfiguration testingConfiguration) {
           return testingConfiguration.isEditable();
         }
       }), CLONE_CONFIGURATIONS));
 
     if (selectedConfiguration == null) {
-      selectedConfiguration = new GoogleCloudTestingConfigurationImpl(currentFacet);
+      selectedConfiguration = new CloudTestConfigurationImpl(currentFacet);
     }
 
     CloudConfigurationChooserDialog dialog =
       new CloudConfigurationChooserDialog(currentModule, copyCustomConfigurations, castDefaultConfigurations,
-                                          (GoogleCloudTestingConfigurationImpl) selectedConfiguration);
+                                          (CloudTestConfigurationImpl) selectedConfiguration);
 
     dialog.show();
     if (dialog.isOK()) {
@@ -149,9 +149,9 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
       GoogleCloudTestingPersistentState customState = new GoogleCloudTestingPersistentState();
       customState.myGoogleCloudTestingPersistentConfigurations = Lists.newArrayList(
         Iterables.transform(copyCustomConfigurations,
-                            new Function<GoogleCloudTestingConfigurationImpl, GoogleCloudTestingPersistentConfiguration>() {
+                            new Function<CloudTestConfigurationImpl, GoogleCloudTestingPersistentConfiguration>() {
                               @Override
-                              public GoogleCloudTestingPersistentConfiguration apply(GoogleCloudTestingConfigurationImpl configuration) {
+                              public GoogleCloudTestingPersistentConfiguration apply(CloudTestConfigurationImpl configuration) {
                                 return configuration.getPersistentConfiguration();
                               }
                             }));
@@ -164,7 +164,7 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
   }
 
   @Override
-  public GoogleCloudTestingConfiguration getDialogSelectedConfiguration() {
+  public CloudTestConfiguration getDialogSelectedConfiguration() {
     return dialogSelectedConfiguration;
   }
 
@@ -232,7 +232,7 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
     GoogleCloudTestingResultParser
       cloudResultParser = new GoogleCloudTestingResultParser("Cloud Test Run", new GoogleCloudTestListener(runningState));
 
-    GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration = GoogleCloudTestingUtils
+    CloudTestConfigurationImpl googleCloudTestingConfiguration = GoogleCloudTestingUtils
       .getConfigurationById(selectedConfigurationId, runningState.getFacet());
     List<String> expectedConfigurationInstances =
       googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
@@ -255,7 +255,7 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
     return new DefaultExecutionResult(console, runningState.getProcessHandler());
   }
 
-  private void performTestsInCloud(final GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration, final String cloudProjectId,
+  private void performTestsInCloud(final CloudTestConfigurationImpl googleCloudTestingConfiguration, final String cloudProjectId,
                                    final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser) {
     if (googleCloudTestingConfiguration != null && googleCloudTestingConfiguration.countCombinations() > 0) {
       final List<String> encodedMatrixInstances =
@@ -338,14 +338,14 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
   }
 
   private static void addGoogleCloudTestingConfiguration(
-    String testRunId, GoogleCloudTestingConfigurationImpl googleCloudTestingConfiguration) {
+    String testRunId, CloudTestConfigurationImpl googleCloudTestingConfiguration) {
     if (testRunIdToCloudConfiguration.get(testRunId) != null) {
       throw new IllegalStateException("Cannot add more than one cloud configuration for test run id: " + testRunId);
     }
     testRunIdToCloudConfiguration.put(testRunId, googleCloudTestingConfiguration);
   }
 
-  public static GoogleCloudTestingConfigurationImpl getSelectedGoogleCloudTestingConfiguration(String testRunId) {
+  public static CloudTestConfigurationImpl getSelectedGoogleCloudTestingConfiguration(String testRunId) {
     return testRunIdToCloudConfiguration.get(testRunId);
   }
 
@@ -353,13 +353,13 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
     return testRunIdToCloudResultsAdapter.get(testRunId);
   }
 
-  public static List<GoogleCloudTestingConfigurationImpl> deserializeConfigurations(
+  public static List<CloudTestConfigurationImpl> deserializeConfigurations(
     final List<GoogleCloudTestingPersistentConfiguration> persistentConfigurations, boolean isEditable, AndroidFacet facet) {
-    List<GoogleCloudTestingConfigurationImpl> googleCloudTestingConfigurations = new LinkedList<GoogleCloudTestingConfigurationImpl>();
+    List<CloudTestConfigurationImpl> googleCloudTestingConfigurations = new LinkedList<CloudTestConfigurationImpl>();
     for (GoogleCloudTestingPersistentConfiguration persistentConfiguration : persistentConfigurations) {
       Icon icon = getIcon(persistentConfiguration.name, isEditable);
-      GoogleCloudTestingConfigurationImpl configuration =
-        new GoogleCloudTestingConfigurationImpl(persistentConfiguration.id, persistentConfiguration.name, icon, facet);
+      CloudTestConfigurationImpl configuration =
+        new CloudTestConfigurationImpl(persistentConfiguration.id, persistentConfiguration.name, icon, facet);
       configuration.deviceDimension.enable(DeviceDimension.getFullDomain(), persistentConfiguration.devices);
       configuration.apiDimension.enable(ApiDimension.getFullDomain(), persistentConfiguration.apiLevels);
       configuration.languageDimension.enable(LanguageDimension.getFullDomain(), persistentConfiguration.languages);
