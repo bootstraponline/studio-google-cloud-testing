@@ -29,9 +29,7 @@ import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 
 import javax.swing.*;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,6 +61,12 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
         return locales.contains(input.getId());
       }
     }));
+    Collections.sort(supportedLanguages, new Comparator<Language>() {
+      @Override
+      public int compare(Language lang1, Language lang2) {
+        return lang1.getResultsViewerDisplayName().compareTo(lang2.getResultsViewerDisplayName());
+      }
+    });
     if (defaultLanguage != null) {
       supportedLanguages.remove(defaultLanguage);
       supportedLanguages.add(0, defaultLanguage);
