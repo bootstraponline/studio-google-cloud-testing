@@ -199,6 +199,7 @@ public class GoogleCloudTestingConfigurationImpl implements GoogleCloudTestingCo
     return product;
   }
 
+  @Override
   public boolean isEditable() {
     return isEditable;
   }

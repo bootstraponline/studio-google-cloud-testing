@@ -63,12 +63,7 @@ public class GoogleCloudTestingUtils {
   }
 
   public static GoogleCloudTestingConfigurationImpl getConfigurationById(int id, AndroidFacet facet) {
-    for (GoogleCloudTestingConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getCustomConfigurationsFromStorage(facet)) {
-      if (configuration.getId() == id) {
-        return (GoogleCloudTestingConfigurationImpl) configuration;
-      }
-    }
-    for (GoogleCloudTestingConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getDefaultConfigurationsFromStorage(facet)) {
+    for (GoogleCloudTestingConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getTestingConfigurations(facet)) {
       if (configuration.getId() == id) {
         return (GoogleCloudTestingConfigurationImpl) configuration;
       }

@@ -21,6 +21,7 @@ import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
 import com.google.api.services.test.model.TestExecution;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -89,14 +90,14 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
   }
 
   @Override
-  public ArrayList<? extends GoogleCloudTestingConfiguration> getCustomConfigurationsFromStorage(AndroidFacet facet) {
+  public ArrayList<? extends GoogleCloudTestingConfiguration> getTestingConfigurations(AndroidFacet facet) {
     List<GoogleCloudTestingPersistentConfiguration> googleCloudTestingPersistentConfigurations =
       GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myGoogleCloudTestingPersistentConfigurations;
-    return Lists.newArrayList(deserializeConfigurations(googleCloudTestingPersistentConfigurations, true, facet));
+    return Lists.newArrayList(Iterables.concat(deserializeConfigurations(googleCloudTestingPersistentConfigurations, true, facet),
+                                               getDefaultConfigurations(facet)));
   }
 
-  @Override
-  public List<? extends GoogleCloudTestingConfiguration> getDefaultConfigurationsFromStorage(AndroidFacet facet) {
+  private List<? extends GoogleCloudTestingConfiguration> getDefaultConfigurations(AndroidFacet facet) {
     GoogleCloudTestingConfigurationImpl allConfiguration =
       new GoogleCloudTestingConfigurationImpl(GoogleCloudTestingConfigurationImpl.ALL_ID, "All", AndroidIcons.Display, facet);
     allConfiguration.deviceDimension.enableAll();
@@ -113,16 +114,26 @@ public class GoogleCloudTestingConfigurationFactoryImpl extends GoogleCloudTesti
 
   @Override
   public boolean openMatrixConfigurationDialog(AndroidFacet currentFacet,
-                                            List<? extends GoogleCloudTestingConfiguration> customConfigurations,
-                                            List<? extends GoogleCloudTestingConfiguration> defaultConfigurations,
+                                            List<? extends GoogleCloudTestingConfiguration> testingConfigurations,
                                             GoogleCloudTestingConfiguration selectedConfiguration) {
 
     Module currentModule = currentFacet.getModule();
 
     List<GoogleCloudTestingConfigurationImpl> castDefaultConfigurations =
-      Lists.newArrayList(Iterables.transform(defaultConfigurations, CAST_CONFIGURATIONS));
+      Lists.newArrayList(Iterables.transform(Iterables.filter(testingConfigurations, new Predicate<GoogleCloudTestingConfiguration>(){
+        @Override
+        public boolean apply(GoogleCloudTestingConfiguration testingConfiguration) {
+          return !testingConfiguration.isEditable();
+        }
+      }), CAST_CONFIGURATIONS));
+
     List<GoogleCloudTestingConfigurationImpl> copyCustomConfigurations =
-      Lists.newArrayList(Iterables.transform(customConfigurations, CLONE_CONFIGURATIONS));
+      Lists.newArrayList(Iterables.transform(Iterables.filter(testingConfigurations, new Predicate<GoogleCloudTestingConfiguration>(){
+        @Override
+        public boolean apply(GoogleCloudTestingConfiguration testingConfiguration) {
+          return testingConfiguration.isEditable();
+        }
+      }), CLONE_CONFIGURATIONS));
 
     if (selectedConfiguration == null) {
       selectedConfiguration = new GoogleCloudTestingConfigurationImpl(currentFacet);
