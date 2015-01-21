@@ -41,6 +41,8 @@ import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 public class CloudResultsLoader {
   public static final String INFRASTRUCTURE_FAILURE_PREFIX = "Infrastructure Failure:";
 
+  private static final long MAX_SCREENSHOT_DOWNLOAD_SIZE = 512 * 1024 * 1024; // 512 MB
+
   private static final Function<StorageObject, BucketFileMetadata> TO_BUCKET_FILE = new Function<StorageObject, BucketFileMetadata>() {
     @Override
     public BucketFileMetadata apply(StorageObject input) {
@@ -89,6 +91,7 @@ public class CloudResultsLoader {
   private final IGoogleCloudTestRunListener testRunListener;
   private final String bucketName;
   private final Map<String, TestExecution> testExecutions;
+  private long loadedScreenshotSize = 0;
 
   // Encoded configuration instance -> progress accumulated so far.
   private final Map<String, String> configurationProgress = new HashMap<String, String>();
@@ -269,6 +272,9 @@ public class CloudResultsLoader {
   }
 
   public void loadScreenshots(Map<String, ConfigurationResult> results) {
+    if (loadedScreenshotSize > MAX_SCREENSHOT_DOWNLOAD_SIZE) {
+      return;
+    }
     List<StorageObject> storageObjects = null;
     try {
       Storage.Objects.List objects = getStorage().objects().list(bucketName);
@@ -291,28 +297,39 @@ public class CloudResultsLoader {
 
     // TODO: Replace with a pool of worker threads.
     final int capParallelThreads = 10;
-    int currentParallelTreads = 0;
+    int currentParallelThreads = 0;
     for (int i = 0; i < downloadThreads.size(); i++) {
-      downloadThreads.get(i).start();
-      currentParallelTreads++;
-      if (currentParallelTreads == capParallelThreads) {
+      if (loadedScreenshotSize > MAX_SCREENSHOT_DOWNLOAD_SIZE) {
+        joinCurrentParallelThreads(downloadThreads, currentParallelThreads, i);
+        return;
+      }
+      ScreenshotDownloadThread newDownloadThread = downloadThreads.get(i);
+      loadedScreenshotSize += newDownloadThread.getFileSize();
+      newDownloadThread.start();
+      currentParallelThreads++;
+      if (currentParallelThreads == capParallelThreads) {
         // Join the existing threads before proceeding to avoid going over the limit.
-        for (int j = i - currentParallelTreads + 1; j <= i; j++){
-          try {
-            downloadThreads.get(j).join();
-          }
-          catch (InterruptedException e) {
-            //ignore
-          }
-        }
-        currentParallelTreads = 0;
+        joinCurrentParallelThreads(downloadThreads, currentParallelThreads, i);
+        currentParallelThreads = 0;
       }
     }
 
     // Join any remaining threads.
-    for (int i = downloadThreads.size() - currentParallelTreads; i < downloadThreads.size(); i++){
+    for (int i = downloadThreads.size() - currentParallelThreads; i < downloadThreads.size(); i++){
       try {
         downloadThreads.get(i).join();
+      }
+      catch (InterruptedException e) {
+        //ignore
+      }
+    }
+  }
+
+  private void joinCurrentParallelThreads(ArrayList<ScreenshotDownloadThread> downloadThreads, int currentParallelThreads,
+                                          int lastStartedThreadIndex) {
+    for (int j = lastStartedThreadIndex - currentParallelThreads + 1; j <= lastStartedThreadIndex; j++){
+      try {
+        downloadThreads.get(j).join();
       }
       catch (InterruptedException e) {
         //ignore
@@ -328,6 +345,16 @@ public class CloudResultsLoader {
     private ScreenshotDownloadThread(BucketFileMetadata file, ConfigurationResult result) {
       this.file = file;
       this.result = result;
+    }
+
+    public long getFileSize() {
+      try {
+        return getStorage().objects().get(bucketName, file.getPath()).execute().getSize().longValue();
+      }
+      catch (IOException e) {
+        System.err.println("Failed to estimate a cloud file size: " + file.getName());
+        return 0;
+      }
     }
 
     @Override
