@@ -55,7 +55,7 @@ public class GoogleCloudTestingUtils {
   public static final String TEST_CONFIGURATION_FINISHED = "testConfigurationFinished";
 
   public static enum ConfigurationStopReason {
-    FINISHED, INFRASTRUCTURE_FAILURE, TIMED_OUT
+    FINISHED, INFRASTRUCTURE_FAILURE, TRIGGERING_ERROR, TIMED_OUT
   }
 
   public static boolean shouldShowProgressTimestamps() {

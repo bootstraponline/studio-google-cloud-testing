@@ -339,6 +339,9 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
       case INFRASTRUCTURE_FAILURE:
         test.setInfrastructureFailed();
         break;
+      case TRIGGERING_ERROR:
+        test.setTriggeringError();
+        break;
       case TIMED_OUT:
         test.setTimeout();
         break;

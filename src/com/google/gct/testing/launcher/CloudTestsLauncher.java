@@ -47,6 +47,8 @@ public class CloudTestsLauncher {
 
   public static final String TEST_RUNNER_CLASS = "com.google.android.apps.common.testing.testrunner.GoogleInstrumentationTestRunner";
 
+  public static final String INVALID_MATRIX_ELEMENT_ERROR_MESSAGE = "Incompatible API level for requested model";
+
 
   public CloudTestsLauncher() {
   }
@@ -113,27 +115,34 @@ public class CloudTestsLauncher {
     String historyId = getHistoryId(cloudProjectId, applicationName);
 
     for (String matrixInstance : matrixInstances) {
+      TestExecution currentTestExecution = testExecution.clone();
+      currentTestExecution.setResultStorage(
+        new ResultStorage()
+          .setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath))
+          .setToolResultsHistoryId(historyId));
+      String[] dimensionValues = matrixInstance.split("-");
+      currentTestExecution.setEnvironment(new Environment().setAndroidDevice(
+        new AndroidDevice()
+          .setAndroidModelId(dimensionValues[0])
+          .setAndroidVersionId(dimensionValues[1])
+          .setLocale(dimensionValues[2])
+          .setOrientation(dimensionValues[3])));
       try {
-        TestExecution currentTestExecution = testExecution.clone();
-        currentTestExecution.setResultStorage(
-          new ResultStorage()
-            .setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath))
-            .setToolResultsHistoryId(historyId));
-        String[] dimensionValues = matrixInstance.split("-");
-        currentTestExecution.setEnvironment(new Environment().setAndroidDevice(
-          new AndroidDevice()
-            .setAndroidModelId(dimensionValues[0])
-            .setAndroidVersionId(dimensionValues[1])
-            .setLocale(dimensionValues[2])
-            .setOrientation(dimensionValues[3])));
-
         TestExecution triggeredExecution = getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute();
         testExecutions.put(matrixInstance, triggeredExecution);
-      }
-      catch (Exception e) {
-        GoogleCloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test",
-                                                 "Failed to trigger a cloud test execution!\n" +
-                                                 "Exception while triggering a test execution\n\n" + e.getMessage());
+      } catch (Exception e) {
+        String errorMessage = e.getMessage();
+        String userErrorMessage = "";
+        if (errorMessage.contains(INVALID_MATRIX_ELEMENT_ERROR_MESSAGE)) {
+          userErrorMessage = ": " + INVALID_MATRIX_ELEMENT_ERROR_MESSAGE;
+          // An invalid configuration is a user error, no need to report.
+        } else {
+          GoogleCloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test",
+                                                   "Failed to trigger a cloud test execution!\n" +
+                                                   "Exception while triggering a test execution\n\n" + errorMessage);
+        }
+        currentTestExecution.setId("Error triggering the test execution" + userErrorMessage);
+        testExecutions.put(matrixInstance, currentTestExecution);
       }
     }
     return testExecutions;

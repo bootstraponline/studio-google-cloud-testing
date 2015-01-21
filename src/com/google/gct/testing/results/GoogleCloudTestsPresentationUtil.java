@@ -145,6 +145,8 @@ public class GoogleCloudTestsPresentationUtil {
       text = "Timed out";
     } else if (magnitude == TestStateInfo.Magnitude.INFRASTRUCTURE_FAILURE_INDEX) {
       text = "Infrastructure failure";
+    } else if (magnitude == TestStateInfo.Magnitude.TRIGGERING_ERROR_INDEX) {
+      text = "Triggering error";
     } else {
       text = SMTestsRunnerBundle.message("sm.test.runner.ui.tests.tree.presentation.labels.test.results");
     }
@@ -265,6 +267,8 @@ public class GoogleCloudTestsPresentationUtil {
         return AllIcons.Debugger.KillProcess;
       case INFRASTRUCTURE_FAILURE_INDEX:
         return AllIcons.Debugger.Db_exception_breakpoint;
+      case TRIGGERING_ERROR_INDEX:
+        return AllIcons.Debugger.Db_muted_invalid_breakpoint;
       case RUNNING_INDEX:
         if (consoleProperties.isPaused()) {
           return hasErrors ? SMPoolOfTestIcons.PAUSED_E_ICON : AllIcons.RunConfigurations.TestPaused;

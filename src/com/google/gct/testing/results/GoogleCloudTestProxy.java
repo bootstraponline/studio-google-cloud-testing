@@ -670,6 +670,17 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     fireOnNewPrintable(myState);
   }
 
+  public void setTriggeringError() {
+    if (myState.isFinal()) {
+      return;
+    }
+    myState = new GoogleCloudTestingTriggeringErrorState(this);
+    for (GoogleCloudTestProxy child : getChildren()) { // Actually, should not have children if it was not triggered.
+      child.setTriggeringError();
+    }
+    fireOnNewPrintable(myState);
+  }
+
   public boolean wasTerminated() {
     return myState.wasTerminated();
   }
@@ -703,6 +714,16 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     return false;
   }
 
+  private boolean containsPassedTests() {
+    final List<? extends GoogleCloudTestProxy> children = getChildren();
+    for (GoogleCloudTestProxy child : children) {
+      if (child.getMagnitudeInfo() == TestStateInfo.Magnitude.PASSED_INDEX) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Determines site state after it has been finished
    * @return New state
@@ -711,13 +732,13 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     final AbstractState state;
     if (isLeaf()) {
       state = SuiteFinishedState.EMPTY_LEAF_SUITE;
-    } else if (isEmptySuite() && !isDefect()) {
+    } else if (isEmptySuite() && !isDefect() && !containsTriggeringErrorChildren()) {
       state = SuiteFinishedState.EMPTY_SUITE;
     } else {
       if (isDefect()) {
-        if (containsTerminatedChildren()) { //Terminated has precedence over time out and infrastructure failure.
+        if (containsTerminatedChildren()) { // Terminated has precedence over time out and infrastructure failure.
           state = TerminatedState.INSTANCE;
-        } else if (containsTimeoutChildren()) { //Timeout has precedence over infrastructure failure.
+        } else if (containsTimeoutChildren()) { // Timeout has precedence over infrastructure failure.
           state = new GoogleCloudTestingTimeoutState(this);
         } else if (containsInfrastructureFailureChildren()) {
           state = new GoogleCloudTestingInfrastructureFailureState(this);
@@ -733,7 +754,9 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
                   : SuiteFinishedState.WITH_IGNORED_TESTS_SUITE;
         }
       } else {
-        state = SuiteFinishedState.PASSED_SUITE;
+        state = (containsPassedTests() || !containsTriggeringErrorChildren())
+                ? SuiteFinishedState.PASSED_SUITE
+                : new GoogleCloudTestingTriggeringErrorState(this);
       }
     }
     return state;
@@ -760,6 +783,15 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
   private boolean containsInfrastructureFailureChildren() {
     for (GoogleCloudTestProxy child : getChildren()) {
       if (child.getMagnitudeInfo() == TestStateInfo.Magnitude.INFRASTRUCTURE_FAILURE_INDEX) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean containsTriggeringErrorChildren() {
+    for (GoogleCloudTestProxy child : getChildren()) {
+      if (child.getMagnitudeInfo() == TestStateInfo.Magnitude.TRIGGERING_ERROR_INDEX) {
         return true;
       }
     }

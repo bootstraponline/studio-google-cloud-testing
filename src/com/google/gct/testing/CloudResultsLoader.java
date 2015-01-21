@@ -152,11 +152,7 @@ public class CloudResultsLoader {
         for (BucketFileMetadata file : files) {
           if (file.getType() == PROGRESS) {
             String encodedConfigurationInstance = file.getEncodedConfigurationInstance();
-            ConfigurationResult result = results.get(encodedConfigurationInstance);
-            if (result == null) {
-              result = new ConfigurationResult(encodedConfigurationInstance);
-              results.put(encodedConfigurationInstance, result);
-            }
+            ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
             result.setComplete(finishedConfigurations.contains(encodedConfigurationInstance));
             result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
           }
@@ -174,49 +170,67 @@ public class CloudResultsLoader {
 
   private void updateResultsFromApi(Map<String, ConfigurationResult> results) {
     for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
+      String encodedConfigurationInstance = testExecutionEntry.getKey();
       String testExecutionId = testExecutionEntry.getValue().getId();
-      try {
-        TestExecution testExecution =
-          getTest().projects().testExecutions().get(cloudProjectId, testExecutionId).execute();
-        String testExecutionState = testExecution.getState();
-        if (!testExecutionState.equals("QUEUED")) {
-          String encodedConfigurationInstance = testExecutionEntry.getKey();
-          if (testExecutionState.equals("ERROR")) {
-            String newProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
-            String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-            if (!previousProgress.endsWith(newProgress)) {
-              newDataReceived = true;
-              configurationProgress.put(encodedConfigurationInstance, previousProgress + newProgress);
-              testRunListener.testConfigurationProgress(
-                ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), newProgress);
-            }
-          } else if (testExecutionState.equals("IN_PROGRESS")) {
-            String newProgress = testExecution.getTestDetails().getProgressDetails();
-            String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-            if (newProgress != null && !newProgress.equals(previousProgress)) {
-              newDataReceived = true;
-              configurationProgress.put(encodedConfigurationInstance, newProgress);
-              String diffProgress = newProgress.substring(previousProgress.length());
-              testRunListener.testConfigurationProgress(
-                ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), diffProgress);
-            }
-          }
+      if (testExecutionId.startsWith("Error ")) { // A backend error happened while triggering this test execution.
+        String diffProgress = testExecutionId + "\n"; // The test execution's id carries the error message for the user.
+        String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+        if (!previousProgress.endsWith(diffProgress)) {
+          reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
 
-          ConfigurationResult result = results.get(encodedConfigurationInstance);
-          if (result == null) {
-            result = new ConfigurationResult(encodedConfigurationInstance);
-            results.put(encodedConfigurationInstance, result);
-          }
-          result.setComplete(testExecutionState.equals("FINISHED"));
-          result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
+          ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
+          result.setTriggeringError(true);
         }
-      } catch (Exception e) {
-        GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving matrix test results",
-                                                 "Failed to retrieve results of a cloud test execution!\n" +
-                                                 "Exception while updating results for test execution " + testExecutionId + "\n\n"
-                                                 + e.getMessage());
+      } else {
+        try {
+          TestExecution testExecution =
+            getTest().projects().testExecutions().get(cloudProjectId, testExecutionId).execute();
+          String testExecutionState = testExecution.getState();
+          if (!testExecutionState.equals("QUEUED")) {
+            if (testExecutionState.equals("ERROR")) {
+              String diffProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
+              String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+              if (!previousProgress.endsWith(diffProgress)) {
+                reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
+              }
+            } else if (testExecutionState.equals("IN_PROGRESS")) {
+              String newProgress = testExecution.getTestDetails().getProgressDetails();
+              String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+              if (newProgress != null && !newProgress.equals(previousProgress)) {
+                reportNewProgress(encodedConfigurationInstance, previousProgress, newProgress);
+              }
+            }
+            ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
+            result.setComplete(testExecutionState.equals("FINISHED"));
+            result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
+          }
+        } catch (Exception e) {
+          GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving matrix test results",
+                                                   "Failed to retrieve results of a cloud test execution!\n" +
+                                                   "Exception while updating results for test execution " + testExecutionId + "\n\n"
+                                                   + e.getMessage());
+        }
       }
     }
+  }
+
+  private void reportNewProgress(String encodedConfigurationInstance, String previousProgress, String newProgress) {
+    newDataReceived = true;
+    configurationProgress.put(encodedConfigurationInstance, newProgress);
+    String diffProgress = newProgress.substring(previousProgress.length());
+    testRunListener.testConfigurationProgress(
+      ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), diffProgress);
+  }
+
+  private ConfigurationResult getOrCreateConfigurationResult(String encodedConfigurationInstance,
+                                                             Map<String, ConfigurationResult> results) {
+
+    ConfigurationResult result = results.get(encodedConfigurationInstance);
+    if (result == null) {
+      result = new ConfigurationResult(encodedConfigurationInstance);
+      results.put(encodedConfigurationInstance, result);
+    }
+    return result;
   }
 
   private static boolean isInfrastructureFailure(String progress) {

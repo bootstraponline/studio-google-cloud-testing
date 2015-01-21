@@ -85,7 +85,7 @@ public class CloudResultsAdapter {
     int completedConfigurationInstances = Lists.newArrayList(Iterables.filter(results.values(), new Predicate<ConfigurationResult>(){
       @Override
       public boolean apply(ConfigurationResult result) {
-        return result.isComplete() || result.isInfrastructureFailure();
+        return result.isComplete() || result.isInfrastructureFailure() || result.isTriggeringError();
       }
     })).size();
 
@@ -101,11 +101,15 @@ public class CloudResultsAdapter {
     //TODO: Decide whether we need to distinguish finished vs. stopped configurations.
     // Also, currently test suites in a configuration stop only when the whole configuration is stopped.
     for (ConfigurationResult result : results.values()) {
-      if ((result.isComplete() || result.isInfrastructureFailure()) && !markedAsFinishedConfigurations.contains(result)) {
+      if ((result.isComplete() || result.isInfrastructureFailure() || result.isTriggeringError())
+          && !markedAsFinishedConfigurations.contains(result)) {
+
         markedAsFinishedConfigurations.add(result);
         ConfigurationStopReason stopReason = result.isComplete()
                                              ? ConfigurationStopReason.FINISHED
-                                             : ConfigurationStopReason.INFRASTRUCTURE_FAILURE;
+                                             : result.isInfrastructureFailure()
+                                               ? ConfigurationStopReason.INFRASTRUCTURE_FAILURE
+                                               : ConfigurationStopReason.TRIGGERING_ERROR;
         resultParser.getTestRunListener().stopTestConfiguration(result.getConfigurationInstance().getDisplayString(), stopReason);
       }
     }

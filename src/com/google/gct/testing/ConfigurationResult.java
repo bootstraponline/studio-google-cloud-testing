@@ -45,6 +45,7 @@ public class ConfigurationResult {
   //TODO: Consider unifying the state into a single enum value.
   private boolean isComplete;
   private boolean isInfrastructureFailure;
+  private boolean isTriggeringError;
 
   private final List<ConfigurationResultListener> listeners = new LinkedList<ConfigurationResultListener>();
 
@@ -83,6 +84,14 @@ public class ConfigurationResult {
 
   public boolean isInfrastructureFailure() {
     return isInfrastructureFailure;
+  }
+
+  public void setTriggeringError(boolean triggeringError) {
+    isTriggeringError = triggeringError;
+  }
+
+  public boolean isTriggeringError() {
+    return isTriggeringError;
   }
 
   public void addScreenshot(String fileName, BufferedImage image) {
