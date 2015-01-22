@@ -332,7 +332,8 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
 
     CloudTestConfigurationImpl that = (CloudTestConfigurationImpl)o;
 
-    return getHash() == that.getHash() && id == that.id;
+    //return getHash() == that.getHash() && id == that.id;
+    return id == that.id;
   }
 
   @Override
