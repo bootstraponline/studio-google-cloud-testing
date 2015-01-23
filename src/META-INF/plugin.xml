@@ -39,8 +39,8 @@
                     serviceImplementation="com.google.gct.testing.GoogleCloudTestingDefaultPersistentConfigurations"/>
   </extensions>
 
-  <extensions defaultExtensionNs="org.jetbrains.android">
-    <googleCloudTestingConfigurationFactory id="myCloudTestConfigurationProvider" order="first" implementation="com.google.gct.testing.CloudTestConfigurationProviderImpl"/>
+  <extensions defaultExtensionNs="com.android.tools.idea">
+    <run.cloudTestingConfigurationFactory id="myCloudTestConfigurationProvider" order="first" implementation="com.google.gct.testing.CloudTestConfigurationProviderImpl"/>
   </extensions>
 
   <extensionPoints>

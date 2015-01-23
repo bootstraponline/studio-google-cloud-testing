@@ -48,6 +48,8 @@ import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.run.AndroidRunningState;
 import org.jetbrains.android.run.testing.AndroidTestConsoleProperties;
 import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.File;
@@ -61,10 +63,6 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
   private static final Map<String, CloudResultsAdapter> testRunIdToCloudResultsAdapter = new HashMap<String, CloudResultsAdapter>();
 
   public static final Icon DEFAULT_ICON = AndroidIcons.AndroidFile;
-
-  private CloudTestConfiguration dialogSelectedConfiguration;
-  private String dialogSelectedProjectId;
-
 
   public static final Function<CloudTestConfiguration, CloudTestConfigurationImpl> CLONE_CONFIGURATIONS =
     new Function<CloudTestConfiguration, CloudTestConfigurationImpl>() {
@@ -91,8 +89,9 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
     return dimensionTypes;
   }
 
+  @NotNull
   @Override
-  public List<? extends CloudTestConfiguration> getTestingConfigurations(AndroidFacet facet) {
+  public List<? extends CloudTestConfiguration> getTestingConfigurations(@NotNull AndroidFacet facet) {
     List<GoogleCloudTestingPersistentConfiguration> googleCloudTestingPersistentConfigurations =
       GoogleCloudTestingCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myGoogleCloudTestingPersistentConfigurations;
     return Lists.newArrayList(Iterables.concat(deserializeConfigurations(googleCloudTestingPersistentConfigurations, true, facet),
@@ -114,12 +113,12 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
     //return ImmutableList.copyOf(deserializeConfigurations(myGoogleCloudTestingPersistentConfigurations, false, facet));
   }
 
+  @Nullable
   @Override
-  public boolean openMatrixConfigurationDialog(AndroidFacet currentFacet,
-                                            List<? extends CloudTestConfiguration> testingConfigurations,
-                                            CloudTestConfiguration selectedConfiguration) {
-
+  public CloudTestConfiguration openMatrixConfigurationDialog(@NotNull AndroidFacet currentFacet,
+                                                              @NotNull CloudTestConfiguration selectedConfiguration) {
     Module currentModule = currentFacet.getModule();
+    List<? extends CloudTestConfiguration> testingConfigurations = getTestingConfigurations(currentFacet);
 
     List<CloudTestConfigurationImpl> castDefaultConfigurations =
       Lists.newArrayList(Iterables.transform(Iterables.filter(testingConfigurations, new Predicate<CloudTestConfiguration>(){
@@ -159,37 +158,26 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
                             }));
       GoogleCloudTestingCustomPersistentConfigurations.getInstance(currentModule).loadState(customState);
 
-      dialogSelectedConfiguration = dialog.getSelectedConfiguration();
-      return true;
+      return dialog.getSelectedConfiguration();
     }
-    return false;
+    return null;
   }
 
+  @Nullable
   @Override
-  public CloudTestConfiguration getDialogSelectedConfiguration() {
-    return dialogSelectedConfiguration;
-  }
-
-  @Override
-  public boolean openCloudProjectConfigurationDialog(Project project, String projectId) {
+  public String openCloudProjectConfigurationDialog(@NotNull Project project, @Nullable String projectId) {
     CloudProjectChooserDialog dialog = new CloudProjectChooserDialog(project, projectId);
 
     dialog.show();
 
     if (dialog.isOK()) {
-      dialogSelectedProjectId = dialog.getSelectedProject();
-      return true;
+      return dialog.getSelectedProject();
     }
-    return false;
+    return null;
   }
 
   @Override
-  public String getDialogSelectedProjectId() {
-    return dialogSelectedProjectId;
-  }
-
-  @Override
-  public String performSanityCheck(Project project, String cloudProjectId) {
+  public String validateCloudProject(@NotNull Project project, @NotNull String cloudProjectId) {
     // Check that we can properly connect to the backend.
     Buckets buckets = null;
     String message = null;
@@ -214,13 +202,12 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
   }
 
   @Override
-  public boolean doesSupportDebugMode() {
+  public boolean supportsDebugging() {
     return false;
   }
 
   @Override
-  public ExecutionResult runWithConfigurationOnProject(
-    int selectedConfigurationId, String cloudProjectId, AndroidRunningState runningState, Executor executor) throws ExecutionException {
+  public ExecutionResult execute(int selectedConfigurationId, String cloudProjectId, AndroidRunningState runningState, Executor executor) throws ExecutionException {
 
     Project project = runningState.getFacet().getModule().getProject();
 
