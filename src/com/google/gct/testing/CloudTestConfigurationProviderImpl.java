@@ -99,7 +99,7 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
 
   private List<? extends CloudTestConfiguration> getDefaultConfigurations(AndroidFacet facet) {
     CloudTestConfigurationImpl allConfiguration =
-      new CloudTestConfigurationImpl(CloudTestConfigurationImpl.ALL_ID, "All", AndroidIcons.Display, facet);
+      new CloudTestConfigurationImpl(CloudTestConfigurationImpl.ALL_ID, "All Compatible", AndroidIcons.Display, facet);
     allConfiguration.deviceDimension.enableAll();
     allConfiguration.apiDimension.enableAll();
     allConfiguration.languageDimension.enableAll();
