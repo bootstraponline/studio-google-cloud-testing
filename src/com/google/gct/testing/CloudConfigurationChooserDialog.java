@@ -165,7 +165,8 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
             setIcon(AllIcons.General.Settings);
           } else if (node.getUserObject() instanceof CloudTestConfigurationImpl) {
             CloudTestConfigurationImpl config = (CloudTestConfigurationImpl) node.getUserObject();
-            boolean isInvalidConfiguration = config.countCombinations() < 1;
+            //TODO: Remove the cap > 100
+            boolean isInvalidConfiguration = config.countCombinations() < 1 || config.countCombinations() > 100;
             boolean oldMySelected = mySelected;
             // This is a trick to avoid using white color for the selected element if it has to be red.
             if (isInvalidConfiguration) {
