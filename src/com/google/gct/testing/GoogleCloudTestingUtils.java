@@ -39,7 +39,8 @@ import java.awt.*;
 
 public class GoogleCloudTestingUtils {
 
-  private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/a/google.com/forum/#!newtopic/cloud-test-lab-users-external'";
+  //private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/a/google.com/forum/#!newtopic/cloud-test-lab-users-external'";
+  private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/forum/#!newtopic/google-cloud-test-lab-external'";
 
   private static final String SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS = "show.google.cloud.testing.timestamps";
 
