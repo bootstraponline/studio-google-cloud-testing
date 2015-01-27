@@ -56,7 +56,7 @@ public class ShowScreenshotsAction extends AnAction {
 
   @Override
   public void actionPerformed(final AnActionEvent e) {
-    final GoogleCloudTestTreeView sender = e.getData(GoogleCloudTestTreeView.SM_TEST_RUNNER_VIEW);
+    final GoogleCloudTestTreeView sender = e.getData(GoogleCloudTestTreeView.CLOUD_TEST_RUNNER_VIEW);
     if (sender == null) {
       return;
     }

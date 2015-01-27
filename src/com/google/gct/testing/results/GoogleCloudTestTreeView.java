@@ -26,7 +26,7 @@ import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreePath;
 
 public class GoogleCloudTestTreeView extends TestTreeView {
-  public static final DataKey<GoogleCloudTestTreeView> SM_TEST_RUNNER_VIEW  = DataKey.create("SM_TEST_RUNNER_VIEW");
+  public static final DataKey<GoogleCloudTestTreeView> CLOUD_TEST_RUNNER_VIEW = DataKey.create("CLOUD_TEST_RUNNER_VIEW");
 
   @Nullable private GoogleCloudTestResultsViewer myResultsViewer;
 
@@ -65,7 +65,7 @@ public class GoogleCloudTestTreeView extends TestTreeView {
 
   @Override
   public Object getData(final String dataId) {
-    if (SM_TEST_RUNNER_VIEW.is(dataId)) {
+    if (CLOUD_TEST_RUNNER_VIEW.is(dataId)) {
       return this;
     }
     return super.getData(dataId);
