@@ -175,7 +175,7 @@ public class CloudResultsLoader {
     for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
       String encodedConfigurationInstance = testExecutionEntry.getKey();
       String testExecutionId = testExecutionEntry.getValue().getId();
-      if (testExecutionId.startsWith("Error ")) { // A backend error happened while triggering this test execution.
+      if (failedToTriggerTest(testExecutionId)) { // A backend error happened while triggering this test execution.
         String diffProgress = testExecutionId + "\n"; // The test execution's id carries the error message for the user.
         String previousProgress = getPreviousProgress(encodedConfigurationInstance);
         if (!previousProgress.endsWith(diffProgress)) {
@@ -215,6 +215,10 @@ public class CloudResultsLoader {
         }
       }
     }
+  }
+
+  private boolean failedToTriggerTest(String testExecutionId) {
+    return testExecutionId.startsWith("Error ") || testExecutionId.startsWith("Skipped ");
   }
 
   private void reportNewProgress(String encodedConfigurationInstance, String previousProgress, String newProgress) {

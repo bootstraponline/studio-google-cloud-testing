@@ -132,16 +132,15 @@ public class CloudTestsLauncher {
         testExecutions.put(matrixInstance, triggeredExecution);
       } catch (Exception e) {
         String errorMessage = e.getMessage();
-        String userErrorMessage = "";
         if (errorMessage.contains(INVALID_MATRIX_ELEMENT_ERROR_MESSAGE)) {
-          userErrorMessage = ": " + INVALID_MATRIX_ELEMENT_ERROR_MESSAGE;
+          currentTestExecution.setId("Skipped triggering the test execution: " + INVALID_MATRIX_ELEMENT_ERROR_MESSAGE);
           // An invalid configuration is a user error, no need to report.
         } else {
           GoogleCloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test",
                                                    "Failed to trigger a cloud test execution!\n" +
                                                    "Exception while triggering a test execution\n\n" + errorMessage);
+          currentTestExecution.setId("Error triggering the test execution");
         }
-        currentTestExecution.setId("Error triggering the test execution" + userErrorMessage);
         testExecutions.put(matrixInstance, currentTestExecution);
       }
     }
