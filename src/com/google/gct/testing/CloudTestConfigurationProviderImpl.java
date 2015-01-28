@@ -25,6 +25,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.gct.testing.config.GoogleCloudTestingConfigurable;
 import com.google.gct.testing.config.GoogleCloudTestingSettings;
 import com.google.gct.testing.dimension.*;
@@ -50,6 +51,7 @@ import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.*;
 
 public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationProvider {
@@ -276,16 +278,29 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
           CloudTestsLauncher.createBucket(cloudProjectId, bucketName);
 
           String apkPath = getPathToApks(runningState);
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading debug APK...", ""),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading app APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
-          String appApkName = CloudTestsLauncher.uploadFile(bucketName, new File(apkPath + moduleName + "-debug-unaligned.apk")).getName();
+          File appApk = findAppropriateApk(apkPath, moduleName, false);
+          if (appApk == null) {
+            GoogleCloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading app APK",
+                                                     "Failed to find a supported app APK format!\n" +
+                                                     "There is no supported app APK among the existing ones\n\n" + listAllApks(apkPath));
+            return;
+          }
+          String appApkName = CloudTestsLauncher.uploadFile(bucketName, appApk).getName();
 
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading test APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
-          String testApkName =
-            CloudTestsLauncher.uploadFile(bucketName, new File(apkPath + moduleName + "-debug-test-unaligned.apk")).getName();
+          File testApk = findAppropriateApk(apkPath, moduleName, true);
+          if (testApk == null) {
+            GoogleCloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading test APK",
+                                                     "Failed to find a supported test APK format!\n" +
+                                                     "There is no supported test APK among the existing ones\n\n" + listAllApks(apkPath));
+            return;
+          }
+          String testApkName = CloudTestsLauncher.uploadFile(bucketName, testApk).getName();
 
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking test API...", "\n"),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking cloud test API...", "\n"),
                                                                ProcessOutputTypes.STDOUT);
           String testSpecification = GoogleCloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
@@ -309,6 +324,40 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
         }
       }).start();
     }
+  }
+
+  private String listAllApks(String apkPath) {
+    String[] apks = new File(apkPath).list(new FilenameFilter() {
+      @Override
+      public boolean accept(File dir, String name) {
+        return name.endsWith(".apk");
+      }
+    });
+    String apkList = "";
+    for (String apk : apks) {
+      apkList += apk + "\n";
+    }
+    return apkList;
+  }
+
+  private File findAppropriateApk(String apkPath, String moduleName, boolean isTestApk) {
+    File apkFolder = new File(apkPath);
+    HashSet<String> apks = Sets.newHashSet(apkFolder.list());
+    String[] buildTypes = new String[] {"release", "debug"};
+    String[] alignments = new String[] {"", "-unaligned"};
+    String[] variations = new String[] {"full-", "", "x86-"}; // We do not support 'arm' and 'e2e' at the moment.
+
+    for (String buildType : buildTypes) {
+      for (String alignment : alignments) {
+        for (String variation : variations) {
+          String fileName = moduleName + "-" + variation + buildType + (isTestApk ? "-test" : "") + alignment + ".apk";
+          if (apks.contains(fileName)) {
+            return new File(apkFolder, fileName);
+          }
+        }
+      }
+    }
+    return null;
   }
 
   private String getPathToApks(AndroidRunningState runningState) {
