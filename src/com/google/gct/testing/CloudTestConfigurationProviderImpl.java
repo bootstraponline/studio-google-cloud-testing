@@ -176,8 +176,7 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
     return null;
   }
 
-  @Override
-  public String validateCloudProject(@NotNull Project project, @NotNull String cloudProjectId) {
+  private static boolean validateCloudProject(@NotNull Project project, @NotNull String cloudProjectId) {
     // Check that we can properly connect to the backend.
     Buckets buckets = null;
     String message = null;
@@ -189,16 +188,14 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
       // ignore
     } finally {
       if (buckets == null) {
-        return "Failed to authorize to Google Cloud project! Please select a project you are authorized to use.\n"
-          + "Exception while performing a pre-trigger sanity check\n\n" + message;
+        GoogleCloudTestingUtils
+          .showErrorMessage(project, "Cloud test configuration is invalid",
+                            "Failed to authorize to Google Cloud project! Please select a project you are authorized to use.\n"
+                            + "Exception while performing a pre-trigger sanity check\n\n" + message);
+        return false;
       }
     }
-    return null;
-  }
-
-  @Override
-  public void displaySanityCheckError(String errorMessage, final Project project) {
-    GoogleCloudTestingUtils.showErrorMessage(project, "Cloud test configuration is invalid", errorMessage);
+    return true;
   }
 
   @Override
@@ -210,6 +207,11 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
   public ExecutionResult execute(int selectedConfigurationId, String cloudProjectId, AndroidRunningState runningState, Executor executor) throws ExecutionException {
 
     Project project = runningState.getFacet().getModule().getProject();
+
+    if (!validateCloudProject(project, cloudProjectId)) {
+      // Cloud project is invalid, nothing to do.
+      return null;
+    }
 
     AndroidTestRunConfiguration testRunConfiguration = (AndroidTestRunConfiguration) runningState.getConfiguration();
     AndroidTestConsoleProperties properties =
