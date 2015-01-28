@@ -154,7 +154,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   }
 
   private void updateConfigurationCountLabel() {
-    int numberOfConfigurations = configuration.countCombinations();
+    int numberOfConfigurations = configuration.count();
     double coverage = computeCoverage(configuration.countCombinationsCollapsingOrientation()) * 100d;
     //TODO: Put back the covered % after it is not fake (or it is needed for demo purposes).
     //myConfigurationCountLabel.setText("<html>Tests will run on <b>" + numberOfConfigurations + " configurations</b> and cover <b>" +
