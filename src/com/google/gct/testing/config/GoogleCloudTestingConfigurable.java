@@ -28,9 +28,13 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 
+import static com.google.gct.testing.config.GoogleCloudTestingConfigurable.BackendOption.*;
+
 public class GoogleCloudTestingConfigurable implements OptionalConfigurable, SearchableConfigurable, Configurable.NoScroll {
 
   public final static String SHOW_GOOGLE_CLOUD_TESTING_SETTINGS = "show.google.cloud.testing.settings";
+
+  enum BackendOption {PROD, STAGING, TEST, CUSTOM};
 
   private final Project project;
 
@@ -120,11 +124,11 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     GoogleCloudTestingState state = getSavedSettings().getState();
     String stateFakeBucketName = state == null ? "" : state.fakeBucketName;
     boolean stateShouldUseFakeBucket = state == null ? false : state.shouldUseFakeBucket;
-    int urlChoice = state == null ? 0 : state.urlChoice;
+    int backendOption = state == null ? 0 : state.backendOption;
     String customUrl = state == null ? "" : state.customUrl;
     return !stateFakeBucketName.equals(fakeBucketNameField.getText())
            || stateShouldUseFakeBucket != useFakeBucketCheckbox.isSelected()
-           || urlChoice != getUrlChoice()
+           || backendOption != getBackendOption().ordinal()
            || !customUrl.equals(customUrlField.getText());
   }
 
@@ -133,11 +137,11 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     GoogleCloudTestingState state = new GoogleCloudTestingState();
     state.fakeBucketName = fakeBucketNameField.getText();
     state.shouldUseFakeBucket = useFakeBucketCheckbox.isSelected();
-    state.urlChoice = getUrlChoice();
-    state.backendUrl = getBackendUrl();
+    state.backendOption = getBackendOption().ordinal();
+    state.backendUrl = getTestBackendUrl();
     state.customUrl = customUrlField.getText();
     getSavedSettings().loadState(state);
-    CloudAuthenticator.recreateTest(getBackendUrl());
+    CloudAuthenticator.recreateTestAndToolResults(getTestBackendUrl(), getToolResultsBackendUrl());
   }
 
   @Override
@@ -145,59 +149,70 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     GoogleCloudTestingState state = getSavedSettings().getState();
     fakeBucketNameField.setText(state == null ? "" : state.fakeBucketName);
     useFakeBucketCheckbox.setSelected(state == null ? false : state.shouldUseFakeBucket);
-    setUrlChoice(state == null ? 0 : state.urlChoice);
+    setBackendOption(BackendOption.values()[state == null ? 0 : state.backendOption]);
     customUrlField.setText(state == null ? "" : state.customUrl);
-    CloudAuthenticator.recreateTest(getBackendUrl());
+    CloudAuthenticator.recreateTestAndToolResults(getTestBackendUrl(), getToolResultsBackendUrl());
   }
 
-  private int getUrlChoice() {
+  private BackendOption getBackendOption() {
     if (useProd.isSelected()) {
-      return 0;
+      return PROD;
     }
     if (useStaging.isSelected()) {
-      return 1;
+      return STAGING;
     }
     if (useTest.isSelected()) {
-      return 2;
+      return TEST;
     }
     if (useCustom.isSelected()) {
-      return 3;
+      return CUSTOM;
     }
     throw new RuntimeException("No URL option is selected!");
   }
 
-  private String getBackendUrl() {
-    if (useProd.isSelected()) {
-      return prodUrlField.getText();
+  private String getTestBackendUrl() {
+    switch (getBackendOption()) {
+      case PROD:
+        return prodUrlField.getText();
+      case STAGING:
+        return stagingUrlField.getText();
+      case TEST:
+        return testUrlField.getText();
+      case CUSTOM:
+        return customUrlField.getText();
+      default:
+        throw new RuntimeException("No URL option is selected!");
     }
-    if (useStaging.isSelected()) {
-      return stagingUrlField.getText();
-    }
-    if (useTest.isSelected()) {
-      return testUrlField.getText();
-    }
-    if (useCustom.isSelected()) {
-      return customUrlField.getText();
-    }
-    throw new RuntimeException("No URL option is selected!");
   }
 
-  private void setUrlChoice(int urlChoice) {
-    switch(urlChoice) {
-      case 0 :
+  private String getToolResultsBackendUrl() {
+    switch (getBackendOption()) {
+      case STAGING:
+        return "https://www-googleapis-staging.sandbox.google.com/";
+      case TEST:
+        return "https://www-googleapis-test.sandbox.google.com/";
+      default:
+        // Use prod by default.
+        return "https://www.googleapis.com/";
+    }
+  }
+
+  private void setBackendOption(BackendOption backendOption) {
+    switch(backendOption) {
+      case PROD :
         useProd.setSelected(true);
         break;
-      case 1:
+      case STAGING:
         useStaging.setSelected(true);
         break;
-      case 2:
+      case TEST:
         useTest.setSelected(true);
         break;
-      case 3:
+      case CUSTOM:
         useCustom.setSelected(true);
         break;
       default:
-        throw new RuntimeException("Unsupported URL choice: " + urlChoice);
+        throw new RuntimeException("Unsupported backend option: " + backendOption);
     }
   }
 
@@ -240,7 +255,7 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
   public static class GoogleCloudTestingState {
     public String fakeBucketName = "";
     public boolean shouldUseFakeBucket = false;
-    public int urlChoice = 0;
+    public int backendOption = 0;
     public String backendUrl = "";
     public String customUrl = "";
   }

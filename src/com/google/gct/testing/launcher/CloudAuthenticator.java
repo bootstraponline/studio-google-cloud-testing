@@ -50,14 +50,17 @@ public class CloudAuthenticator {
     return storage;
   }
 
-  public static void recreateTest(String backendUrl) {
+  public static void recreateTestAndToolResults(String testBackendUrl, String toolResultsBackendUrl) {
     prepareCredential();
-    test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(backendUrl).build();
+    test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(testBackendUrl).build();
+    toolresults =
+      new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(toolResultsBackendUrl).build();
   }
 
   public static Test getTest() {
     prepareCredential();
     if (test == null) {
+      //TODO: Update the client lib for Test API and use the default URL (i.e., no need to set it explicitly to prod here).
       test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
         //.setRootUrl("http://snegara0.mtv.corp.google.com:8788") // final distributed local
         //.setRootUrl("http://snegara0.mtv.corp.google.com:8787/test") // classic local
