@@ -94,6 +94,10 @@ public class ConfigurationResult {
     return isTriggeringError;
   }
 
+  public boolean isNoProgressExpected() {
+    return isComplete() || isInfrastructureFailure() || isTriggeringError();
+  }
+
   public void addScreenshot(String fileName, BufferedImage image) {
     fileNameToScreenshot.put(fileName, image);
     screenshotKeyToFileName.put(getScreenshotKey(fileName), fileName);

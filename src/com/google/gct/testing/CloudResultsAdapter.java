@@ -85,7 +85,7 @@ public class CloudResultsAdapter {
     int completedConfigurationInstances = Lists.newArrayList(Iterables.filter(results.values(), new Predicate<ConfigurationResult>(){
       @Override
       public boolean apply(ConfigurationResult result) {
-        return result.isComplete() || result.isInfrastructureFailure() || result.isTriggeringError();
+        return result.isNoProgressExpected();
       }
     })).size();
 

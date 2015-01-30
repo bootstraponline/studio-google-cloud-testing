@@ -90,8 +90,12 @@ public class CloudResultsLoader {
   private final String cloudProjectId;
   private final IGoogleCloudTestRunListener testRunListener;
   private final String bucketName;
+  // Test execution id -> TestExecution
   private final Map<String, TestExecution> testExecutions;
+  private final Set<String> finishedTestExecutions = new HashSet<String>();
   private long loadedScreenshotSize = 0;
+  // Encoded configuration instance -> number of failures
+  private final Map<String, Integer> consecutivePollFailuresMap = new HashMap<String, Integer>();
 
   // Encoded configuration instance -> progress accumulated so far.
   private final Map<String, String> configurationProgress = new HashMap<String, String>();
@@ -174,20 +178,22 @@ public class CloudResultsLoader {
   private void updateResultsFromApi(Map<String, ConfigurationResult> results) {
     for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
       String encodedConfigurationInstance = testExecutionEntry.getKey();
+      if (finishedTestExecutions.contains(encodedConfigurationInstance)) {
+        continue;
+      }
       String testExecutionId = testExecutionEntry.getValue().getId();
       if (failedToTriggerTest(testExecutionId)) { // A backend error happened while triggering this test execution.
         String diffProgress = testExecutionId + "\n"; // The test execution's id carries the error message for the user.
         String previousProgress = getPreviousProgress(encodedConfigurationInstance);
         if (!previousProgress.endsWith(diffProgress)) {
           reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
-
           ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
           result.setTriggeringError(true);
+          finishedTestExecutions.add(encodedConfigurationInstance);
         }
       } else {
         try {
-          TestExecution testExecution =
-            getTest().projects().testExecutions().get(cloudProjectId, testExecutionId).execute();
+          TestExecution testExecution = getTest().projects().testExecutions().get(cloudProjectId, testExecutionId).execute();
           String testExecutionState = testExecution.getState();
           if (!testExecutionState.equals("QUEUED")) {
             if (testExecutionState.equals("ERROR")) {
@@ -206,12 +212,26 @@ public class CloudResultsLoader {
             ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
             result.setComplete(testExecutionState.equals("FINISHED"));
             result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
+            if (result.isNoProgressExpected()) {
+              finishedTestExecutions.add(encodedConfigurationInstance);
+            }
+            consecutivePollFailuresMap.put(encodedConfigurationInstance, 0); // Reset the consecutive poll failures on every success.
           }
         } catch (Exception e) {
-          GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving matrix test results",
-                                                   "Failed to retrieve results of a cloud test execution!\n" +
-                                                   "Exception while updating results for test execution " + testExecutionId + "\n\n"
-                                                   + e.getMessage());
+          Integer failureCount = consecutivePollFailuresMap.get(encodedConfigurationInstance);
+          if (failureCount == null) {
+            consecutivePollFailuresMap.put(encodedConfigurationInstance, 1);
+          } else if (failureCount == 2) { // Tolerate 3 failures in a row.
+            ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
+            result.setInfrastructureFailure(true);
+            finishedTestExecutions.add(encodedConfigurationInstance);
+            GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving matrix test results",
+                                                     "Failed to retrieve results of a cloud test execution!\n" +
+                                                     "Exception while updating results for test execution " + testExecutionId + "\n\n"
+                                                     + e.getMessage());
+          } else {
+            consecutivePollFailuresMap.put(encodedConfigurationInstance, failureCount + 1);
+          }
         }
       }
     }
