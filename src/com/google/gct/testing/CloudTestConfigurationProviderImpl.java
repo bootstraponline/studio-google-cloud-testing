@@ -248,7 +248,7 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
 
   private void performTestsInCloud(final CloudTestConfigurationImpl googleCloudTestingConfiguration, final String cloudProjectId,
                                    final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser) {
-    if (googleCloudTestingConfiguration != null && googleCloudTestingConfiguration.count() > 0) {
+    if (googleCloudTestingConfiguration != null && googleCloudTestingConfiguration.getDeviceConfigurationCount() > 0) {
       final List<String> encodedMatrixInstances =
         googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.ENCODED_NAME_DELIMITER);
       final List<String> expectedConfigurationInstances =

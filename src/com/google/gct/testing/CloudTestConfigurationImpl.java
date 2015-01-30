@@ -126,7 +126,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
 
   @Override
   public String getDisplayName() {
-    return name + " (" + count() + ")";
+    return name + " (" + getDeviceConfigurationCount() + ")";
   }
 
   public void setName(String name) {
@@ -175,7 +175,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
    * by all of the types enabled in this configuration.
    */
   @Override
-  public int count() {
+  public int getDeviceConfigurationCount() {
     int product = 1;
 
     for (GoogleCloudTestingDimension dimension : getDimensions()) {
@@ -222,10 +222,10 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
   }
 
   /**
-   * Precondition: count() > 0.
+   * Precondition: getDeviceConfigurationCount() > 0.
    */
   public String prepareMatrixTestRequest() {
-    Preconditions.checkState(count() > 0, "There should be at least one combination in a matrix test request!");
+    Preconditions.checkState(getDeviceConfigurationCount() > 0, "There should be at least one combination in a matrix test request!");
 
     StringBuffer bf = new StringBuffer();
 
