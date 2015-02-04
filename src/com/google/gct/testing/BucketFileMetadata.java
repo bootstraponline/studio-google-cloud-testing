@@ -54,7 +54,7 @@ class BucketFileMetadata {
       type = Type.PROGRESS;
     } else if (path.endsWith(".results")) {
       type = Type.RESULT;
-    } else if (path.endsWith(".png") || path.endsWith(".bmp")) {
+    } else if (path.endsWith(".png") || path.endsWith(".bmp") || path.endsWith(".jpg")) {
       type = Type.SCREENSHOT;
     } else if (path.endsWith(".apk")) {
       type = Type.APK;
