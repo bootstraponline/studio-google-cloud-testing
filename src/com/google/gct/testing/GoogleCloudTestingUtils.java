@@ -104,9 +104,25 @@ public class GoogleCloudTestingUtils {
     String detailedErrorMessage = newLineIndex != -1
                                   ? "<html><a href=" + GOOGLE_GROUP_URL
                                     + ">Report this issue</a> (please copy/paste the text below into the form)<br><br>"
-                                    + errorMessage.substring(newLineIndex + 1).replace("\n", "<br>") + "</html>"
+                                    + getDetailedErrorMessage(errorMessage.substring(newLineIndex + 1)) + "</html>"
                                   : "No details...";
     showCascadingErrorMessages(project, errorDialogTitle, userErrorMessage, detailedErrorMessage);
+  }
+
+  private static String getDetailedErrorMessage(String errorMessage) {
+    String debugInfoField = "\"debugInfo\" : \""; // Available for internal runs only.
+    int debugInfoIndex = errorMessage.indexOf(debugInfoField);
+    if (debugInfoIndex != -1) {
+      int debugInfoStartIndex = debugInfoIndex + debugInfoField.length();
+      int debugInfoEndIndex = errorMessage.indexOf("\"", debugInfoStartIndex);
+      if (debugInfoEndIndex != -1) {
+        String debugInfo = errorMessage.substring(debugInfoStartIndex, debugInfoEndIndex);
+        errorMessage = errorMessage.substring(0, debugInfoIndex) + errorMessage.substring(debugInfoEndIndex + 2);
+        String unescapedDebugInfo = debugInfo.replace("\\n", "\n").replace("\\t", "\t");
+        errorMessage += "\n\n" + "DEBUG INFO:\n" + unescapedDebugInfo;
+      }
+    }
+    return errorMessage.replace("\n", "<br>").replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;");
   }
 
   private static void showCascadingErrorMessages(@Nullable final Project project, final String errorDialogTitle, String userErrorMessage,
