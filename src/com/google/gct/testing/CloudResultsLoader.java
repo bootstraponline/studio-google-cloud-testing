@@ -188,7 +188,12 @@ public class CloudResultsLoader {
         if (!previousProgress.endsWith(diffProgress)) {
           reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
           ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
-          result.setTriggeringError(true);
+          // If the execution is skipped because it is an incompatible combination, it is a triggering error. Otherwise - infra failure.
+          if (testExecutionId.startsWith("Error ")) {
+            result.setInfrastructureFailure(true);
+          } else {
+            result.setTriggeringError(true);
+          }
           finishedTestExecutions.add(encodedConfigurationInstance);
         }
       } else {
