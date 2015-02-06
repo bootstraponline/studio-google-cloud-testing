@@ -44,9 +44,9 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
   private JRadioButton useProd = new JRadioButton("Prod");
   private JTextField prodUrlField = new JTextField("https://test-devtools.googleapis.com");
   private JRadioButton useStaging = new JRadioButton("Staging");
-  private JTextField stagingUrlField = new JTextField("https://www-googleapis-staging.sandbox.google.com/test");
+  private JTextField stagingUrlField = new JTextField("https://staging-test-devtools.sandbox.googleapis.com");
   private JRadioButton useTest = new JRadioButton("Test");
-  private JTextField testUrlField = new JTextField("https://www-googleapis-test.sandbox.google.com/test");
+  private JTextField testUrlField = new JTextField("https://test-test-devtools.sandbox.googleapis.com");
   private JRadioButton useCustom = new JRadioButton("Custom");
   private JTextField customUrlField = new JTextField("");
 
