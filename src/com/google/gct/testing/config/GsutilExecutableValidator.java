@@ -19,7 +19,6 @@ import com.intellij.execution.ExecutableValidator;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.process.CapturingProcessHandler;
 import com.intellij.execution.process.ProcessOutput;
-import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.CharsetToolkit;
 import org.jetbrains.annotations.NotNull;
@@ -43,8 +42,8 @@ public class GsutilExecutableValidator extends ExecutableValidator {
 
   @NotNull
   @Override
-  protected Configurable getConfigurable() {
-    return gsutilConfigurable;
+  protected String getConfigurableDisplayName() {
+    return gsutilConfigurable.getDisplayName();
   }
 
   @Override

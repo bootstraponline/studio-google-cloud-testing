@@ -20,6 +20,7 @@ import com.intellij.execution.testframework.*;
 import com.intellij.execution.testframework.sm.SMStacktraceParser;
 import com.intellij.execution.testframework.sm.TestsLocationProviderUtil;
 import com.intellij.execution.testframework.sm.runner.states.*;
+import com.intellij.execution.testframework.stacktrace.DiffHyperlink;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.ide.util.EditSourceUtil;
 import com.intellij.openapi.diagnostic.Logger;
@@ -616,9 +617,19 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
 
   @Override
   @Nullable
-  public AssertEqualsDiffViewerProvider getDiffViewerProvider() {
-    if (myState instanceof AssertEqualsDiffViewerProvider) {
-      return (AssertEqualsDiffViewerProvider)myState;
+  public DiffHyperlink getDiffViewerProvider() {
+    if (myState instanceof TestComparisionFailedState) {
+      return ((TestComparisionFailedState)myState).getHyperlink();
+    }
+
+    if (myChildren != null) {
+      for (GoogleCloudTestProxy child : myChildren) {
+        if (!child.isDefect()) continue;
+        final DiffHyperlink provider = child.getDiffViewerProvider();
+        if (provider != null) {
+          return provider;
+        }
+      }
     }
     return null;
   }

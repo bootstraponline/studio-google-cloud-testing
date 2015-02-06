@@ -17,9 +17,8 @@ package com.google.gct.testing.config;
 
 import com.intellij.openapi.components.*;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.plugins.groovy.util.SdkHomeBean;
 import org.jetbrains.plugins.groovy.util.SdkHomeSettings;
-
-import static org.jetbrains.plugins.groovy.util.SdkHomeConfigurable.SdkHomeBean;
 
 @State(
     name = "GsutilSettings",
