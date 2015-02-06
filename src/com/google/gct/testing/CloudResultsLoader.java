@@ -316,7 +316,7 @@ public class CloudResultsLoader {
     Iterable<BucketFileMetadata> files = Iterables.transform(storageObjects, TO_BUCKET_FILE);
     ArrayList<ScreenshotDownloadThread> downloadThreads = new ArrayList<ScreenshotDownloadThread>();
     for (BucketFileMetadata file : files) {
-      if (file.getType() == SCREENSHOT) {
+      if (file.getType() == SCREENSHOT && !isIgnoredScreenshot(file)) {
         ConfigurationResult result = results.get(file.getEncodedConfigurationInstance());
         if (result != null && result.getScreenshots().get(file.getName()) == null) {
           downloadThreads.add(new ScreenshotDownloadThread(file, result));
@@ -352,6 +352,12 @@ public class CloudResultsLoader {
         //ignore
       }
     }
+  }
+
+  private boolean isIgnoredScreenshot(BucketFileMetadata file) {
+    return file.getPath().contains("/flipbook/") // Ignore video screenshots (they are stored in flipbook subfolder).
+           || file.getName().startsWith("TestRunner-prepareVirtualDevice-beforeunlock-") // Ignore screenshot that we take before unlocking.
+           || file.getName().startsWith("TestRunner-prepareVirtualDevice-afterunlock-"); // Ignore screenshot that we take after unlocking.
   }
 
   private void joinCurrentParallelThreads(ArrayList<ScreenshotDownloadThread> downloadThreads, int currentParallelThreads,
