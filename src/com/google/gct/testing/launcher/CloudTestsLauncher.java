@@ -101,7 +101,11 @@ public class CloudTestsLauncher {
 
   public static Map<String, TestExecution> triggerTestApi(
     String cloudProjectId, String applicationName, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath,
-    String testSpecification, List<String> matrixInstances, String appPackage, String testPackage) {
+    String testSpecification, String instrumentationTestRunner, List<String> matrixInstances, String appPackage, String testPackage) {
+
+    if (instrumentationTestRunner.isEmpty()) {
+      instrumentationTestRunner = TEST_RUNNER_CLASS;
+    }
 
     // Indexed by encoded configuration instance name.
     Map<String, TestExecution> testExecutions = new HashMap<String, TestExecution>();
@@ -110,7 +114,7 @@ public class CloudTestsLauncher {
     testExecution.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
       new AndroidInstrumentationTest().setAppApk(new FileReference().setGcsPath(appApkGcsPath))
         .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
-        .setTestRunnerClass(TEST_RUNNER_CLASS).setTestTargets(Lists.newArrayList(testSpecification))));
+        .setTestRunnerClass(instrumentationTestRunner).setTestTargets(Lists.newArrayList(testSpecification))));
 
     String historyId = getHistoryId(cloudProjectId, applicationName);
 

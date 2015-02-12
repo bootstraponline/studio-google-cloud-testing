@@ -25,7 +25,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.gct.testing.config.GoogleCloudTestingConfigurable;
 import com.google.gct.testing.config.GoogleCloudTestingSettings;
 import com.google.gct.testing.dimension.*;
@@ -266,25 +265,25 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
             prepareProgressString("Creating Cloud Storage bucket " + bucketName + "...", ""), ProcessOutputTypes.STDOUT);
           CloudTestsLauncher.createBucket(cloudProjectId, bucketName);
 
-          String apkPath = getPathToApks(runningState);
+          List<String> apkPaths = getApkPaths(runningState);
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading app APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
-          File appApk = findAppropriateApk(apkPath, moduleName, false);
+          File appApk = findAppropriateApk(apkPaths, false);
           if (appApk == null) {
             GoogleCloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading app APK",
                                                      "Failed to find a supported app APK format!\n" +
-                                                     "There is no supported app APK among the existing ones\n\n" + listAllApks(apkPath));
+                                                     "There is no supported app APK among the existing ones\n\n" + listAllApks(apkPaths));
             return;
           }
           String appApkName = CloudTestsLauncher.uploadFile(bucketName, appApk).getName();
 
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading test APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
-          File testApk = findAppropriateApk(apkPath, moduleName, true);
+          File testApk = findAppropriateApk(apkPaths, true);
           if (testApk == null) {
             GoogleCloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading test APK",
                                                      "Failed to find a supported test APK format!\n" +
-                                                     "There is no supported test APK among the existing ones\n\n" + listAllApks(apkPath));
+                                                     "There is no supported test APK among the existing ones\n\n" + listAllApks(apkPaths));
             return;
           }
           String testApkName = CloudTestsLauncher.uploadFile(bucketName, testApk).getName();
@@ -295,7 +294,8 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
 
           Map<String, TestExecution> testExecutions = CloudTestsLauncher
             .triggerTestApi(cloudProjectId, moduleName, getBucketGcsPath(bucketName), getApkGcsPath(bucketName, appApkName),
-                            getApkGcsPath(bucketName, testApkName), testSpecification, encodedMatrixInstances, appPackage, testPackage);
+                            getApkGcsPath(bucketName, testApkName), testSpecification, testRunConfiguration.INSTRUMENTATION_RUNNER_CLASS,
+                            encodedMatrixInstances, appPackage, testPackage);
 
           String testRunId = TEST_RUN_ID_PREFIX + bucketName;
           CloudResultsAdapter cloudResultsAdapter =
@@ -315,49 +315,77 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
     }
   }
 
-  private String listAllApks(String apkPath) {
-    String[] apks = new File(apkPath).list(new FilenameFilter() {
-      @Override
-      public boolean accept(File dir, String name) {
-        return name.endsWith(".apk");
-      }
-    });
+  private String listAllApks(List<String> apkPaths) {
+    List<String> allApks = new ArrayList<String>();
+    for (String apkPath : apkPaths) {
+      allApks.addAll(Arrays.asList(new File(apkPath).list(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          return name.endsWith(".apk");
+        }
+      })));
+    }
     String apkList = "";
-    for (String apk : apks) {
+    for (String apk : allApks) {
       apkList += apk + "\n";
     }
     return apkList;
   }
 
-  private File findAppropriateApk(String apkPath, String moduleName, boolean isTestApk) {
-    File apkFolder = new File(apkPath);
-    HashSet<String> apks = Sets.newHashSet(apkFolder.list());
-    String[] buildTypes = new String[] {"release", "debug"};
-    String[] alignments = new String[] {"", "-unaligned"};
-    String[] variations = new String[] {"full-", "", "x86-"}; // We do not support 'arm' and 'e2e' at the moment.
-
-    for (String buildType : buildTypes) {
-      for (String alignment : alignments) {
-        for (String variation : variations) {
-          String fileName = moduleName + "-" + variation + buildType + (isTestApk ? "-test" : "") + alignment + ".apk";
-          if (apks.contains(fileName)) {
-            return new File(apkFolder, fileName);
-          }
+  private File findAppropriateApk(List<String> apkPaths, final boolean isTestApk) {
+    List<File> allApkFiles = new ArrayList<File>();
+    for (String apkPath : apkPaths) {
+      allApkFiles.addAll(Arrays.asList(new File(apkPath).listFiles(new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+          return name.endsWith(".apk") && (isTestApk ? name.contains("-test") : !name.contains("-test"));
         }
-      }
+      })));
     }
-    return null;
+    if (allApkFiles.size() == 0) {
+      return null;
+    }
+
+    return Collections.max(allApkFiles, new Comparator<File>() {
+      @Override
+      public int compare(File file1, File file2) {
+        return (int)(file1.lastModified() - file2.lastModified());
+      }
+    });
   }
 
-  private String getPathToApks(AndroidRunningState runningState) {
+  //private File findAppropriateApk(String apkPath, String moduleName, final boolean isTestApk) {
+  //  File apkFolder = new File(apkPath);
+  //  HashSet<String> apks = Sets.newHashSet(apkFolder.list());
+  //  String[] buildTypes = new String[] {"release", "debug"};
+  //  String[] alignments = new String[] {"", "-unaligned"};
+  //  String[] variations = new String[] {"full-", "", "x86-"}; // We do not support 'arm' and 'e2e' at the moment.
+  //
+  //  for (String buildType : buildTypes) {
+  //    for (String alignment : alignments) {
+  //      for (String variation : variations) {
+  //        String fileName = moduleName + "-" + variation + buildType + (isTestApk ? "-test" : "") + alignment + ".apk";
+  //        if (apks.contains(fileName)) {
+  //          return new File(apkFolder, fileName);
+  //        }
+  //      }
+  //    }
+  //  }
+  //  return null;
+  //}
+
+  private List<String> getApkPaths(AndroidRunningState runningState) {
     String buildPath = runningState.getFacet().getModule().getModuleFile().getParent().getPath() + "/build";
-    File buildFolder = new File(buildPath);
-    for (String subFolder : buildFolder.list()) {
-      if (subFolder.equals("apk")) {
-        return buildPath + "/apk/";
-      }
+    List<String> apkPaths = new LinkedList<String>();
+    addPathIfExists(apkPaths, buildPath + "/apk/");
+    addPathIfExists(apkPaths, buildPath + "/outputs/apk/");
+    return apkPaths;
+  }
+
+  private void addPathIfExists(List<String> apkPaths, String apkPath) {
+    if (new File(apkPath).exists()) {
+      apkPaths.add(apkPath);
     }
-    return buildPath + "/outputs/apk/";
   }
 
   private String getBucketGcsPath(String bucketName) {
