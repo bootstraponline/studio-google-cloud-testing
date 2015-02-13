@@ -27,9 +27,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.gct.testing.results.IGoogleCloudTestRunListener;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
@@ -70,7 +67,7 @@ public class CloudResultsLoader {
     @Override
     public BucketFileMetadata apply(BucketFileMetadata file) {
       if (file.getType() == PROGRESS) {
-        Optional<byte[]> optionalBytes = getFileBytes(file);
+        Optional<byte[]> optionalBytes = getFileBytes(bucketName, file);
         if (optionalBytes.isPresent()) {
           String progressLine = new String(optionalBytes.get());
           String encodedConfigurationInstance = file.getEncodedConfigurationInstance();
@@ -110,7 +107,7 @@ public class CloudResultsLoader {
   }
 
   //TODO: Check file size after loading it and load the missing parts, if any (i.e., keep loading until the file's size does not change).
-  private Optional<byte[]> getFileBytes(BucketFileMetadata fileMetadata) {
+  public static Optional<byte[]> getFileBytes(String bucketName, BucketFileMetadata fileMetadata) {
     int chunkSize = 2 * 1000 * 1000; //A bit less than 2MB.
     int currentStart = 0;
     byte [] bytes = null;
@@ -259,7 +256,7 @@ public class CloudResultsLoader {
 
     ConfigurationResult result = results.get(encodedConfigurationInstance);
     if (result == null) {
-      result = new ConfigurationResult(encodedConfigurationInstance);
+      result = new ConfigurationResult(encodedConfigurationInstance, bucketName);
       results.put(encodedConfigurationInstance, result);
     }
     return result;
@@ -287,7 +284,7 @@ public class CloudResultsLoader {
           String encodedConfigurationInstance = file.getEncodedConfigurationInstance();
           ConfigurationResult configurationResult = results.get(encodedConfigurationInstance);
           if (configurationResult != null && !configurationResult.hasResult()) {
-            Optional<String> optionalResult = toOptionalString(getFileBytes(file));
+            Optional<String> optionalResult = toOptionalString(getFileBytes(bucketName, file));
             if (optionalResult.isPresent() && file.hasEncodedConfigurationInstance()) {
               newDataReceived = true;
               configurationResult.setResult(optionalResult.get());
@@ -314,44 +311,45 @@ public class CloudResultsLoader {
     }
 
     Iterable<BucketFileMetadata> files = Iterables.transform(storageObjects, TO_BUCKET_FILE);
-    ArrayList<ScreenshotDownloadThread> downloadThreads = new ArrayList<ScreenshotDownloadThread>();
+    //ArrayList<ScreenshotDownloadThread> downloadThreads = new ArrayList<ScreenshotDownloadThread>();
     for (BucketFileMetadata file : files) {
       if (file.getType() == SCREENSHOT && !isIgnoredScreenshot(file)) {
         ConfigurationResult result = results.get(file.getEncodedConfigurationInstance());
-        if (result != null && result.getScreenshots().get(file.getName()) == null) {
-          downloadThreads.add(new ScreenshotDownloadThread(file, result));
+        if (result != null && result.getScreenshotMetadata().get(file.getName()) == null) {
+          result.addScreenshotMetadata(file.getName(), file);
+          newDataReceived = true;
         }
       }
     }
 
     // TODO: Replace with a pool of worker threads.
-    final int capParallelThreads = 10;
-    int currentParallelThreads = 0;
-    for (int i = 0; i < downloadThreads.size(); i++) {
-      if (loadedScreenshotSize > MAX_SCREENSHOT_DOWNLOAD_SIZE) {
-        joinCurrentParallelThreads(downloadThreads, currentParallelThreads, i);
-        return;
-      }
-      ScreenshotDownloadThread newDownloadThread = downloadThreads.get(i);
-      loadedScreenshotSize += newDownloadThread.getFileSize();
-      newDownloadThread.start();
-      currentParallelThreads++;
-      if (currentParallelThreads == capParallelThreads) {
-        // Join the existing threads before proceeding to avoid going over the limit.
-        joinCurrentParallelThreads(downloadThreads, currentParallelThreads, i);
-        currentParallelThreads = 0;
-      }
-    }
-
-    // Join any remaining threads.
-    for (int i = downloadThreads.size() - currentParallelThreads; i < downloadThreads.size(); i++){
-      try {
-        downloadThreads.get(i).join();
-      }
-      catch (InterruptedException e) {
-        //ignore
-      }
-    }
+    //final int capParallelThreads = 10;
+    //int currentParallelThreads = 0;
+    //for (int i = 0; i < downloadThreads.size(); i++) {
+    //  if (loadedScreenshotSize > MAX_SCREENSHOT_DOWNLOAD_SIZE) {
+    //    joinCurrentParallelThreads(downloadThreads, currentParallelThreads, i);
+    //    return;
+    //  }
+    //  ScreenshotDownloadThread newDownloadThread = downloadThreads.get(i);
+    //  loadedScreenshotSize += newDownloadThread.getFileSize();
+    //  newDownloadThread.start();
+    //  currentParallelThreads++;
+    //  if (currentParallelThreads == capParallelThreads) {
+    //    // Join the existing threads before proceeding to avoid going over the limit.
+    //    joinCurrentParallelThreads(downloadThreads, currentParallelThreads, i);
+    //    currentParallelThreads = 0;
+    //  }
+    //}
+    //
+    //// Join any remaining threads.
+    //for (int i = downloadThreads.size() - currentParallelThreads; i < downloadThreads.size(); i++){
+    //  try {
+    //    downloadThreads.get(i).join();
+    //  }
+    //  catch (InterruptedException e) {
+    //    //ignore
+    //  }
+    //}
   }
 
   private boolean isIgnoredScreenshot(BucketFileMetadata file) {
@@ -360,58 +358,58 @@ public class CloudResultsLoader {
            || file.getName().startsWith("TestRunner-prepareVirtualDevice-afterunlock-"); // Ignore screenshot that we take after unlocking.
   }
 
-  private void joinCurrentParallelThreads(ArrayList<ScreenshotDownloadThread> downloadThreads, int currentParallelThreads,
-                                          int lastStartedThreadIndex) {
-    for (int j = lastStartedThreadIndex - currentParallelThreads + 1; j <= lastStartedThreadIndex; j++){
-      try {
-        downloadThreads.get(j).join();
-      }
-      catch (InterruptedException e) {
-        //ignore
-      }
-    }
-  }
+  //private void joinCurrentParallelThreads(ArrayList<ScreenshotDownloadThread> downloadThreads, int currentParallelThreads,
+  //                                        int lastStartedThreadIndex) {
+  //  for (int j = lastStartedThreadIndex - currentParallelThreads + 1; j <= lastStartedThreadIndex; j++){
+  //    try {
+  //      downloadThreads.get(j).join();
+  //    }
+  //    catch (InterruptedException e) {
+  //      //ignore
+  //    }
+  //  }
+  //}
 
-  private class ScreenshotDownloadThread extends Thread {
-
-    private final BucketFileMetadata file;
-    private final ConfigurationResult result;
-
-    private ScreenshotDownloadThread(BucketFileMetadata file, ConfigurationResult result) {
-      this.file = file;
-      this.result = result;
-    }
-
-    public long getFileSize() {
-      try {
-        return getStorage().objects().get(bucketName, file.getPath()).execute().getSize().longValue();
-      }
-      catch (IOException e) {
-        System.err.println("Failed to estimate a cloud file size: " + file.getName());
-        return 0;
-      }
-    }
-
-    @Override
-    public void run() {
-      Optional<byte[]> optionalFileBytes = getFileBytes(file);
-      if (optionalFileBytes.isPresent()) {
-        BufferedImage image = null;
-        try {
-          image = ImageIO.read(new ByteArrayInputStream(optionalFileBytes.get()));
-        }
-        catch (IOException e) {
-          System.out.println("Failed to create an image for screenshot: " + e.getMessage());
-          return;
-        }
-        image.flush();
-        result.addScreenshot(file.getName(), image);
-        // Mark that the new data was received as the last statement to ensure that no failures can follow after that
-        // (to avoid infinite failure mode).
-        newDataReceived = true;
-      }
-    }
-  }
+  //private class ScreenshotDownloadThread extends Thread {
+  //
+  //  private final BucketFileMetadata file;
+  //  private final ConfigurationResult result;
+  //
+  //  private ScreenshotDownloadThread(BucketFileMetadata file, ConfigurationResult result) {
+  //    this.file = file;
+  //    this.result = result;
+  //  }
+  //
+  //  public long getFileSize() {
+  //    try {
+  //      return getStorage().objects().get(bucketName, file.getPath()).execute().getSize().longValue();
+  //    }
+  //    catch (IOException e) {
+  //      System.err.println("Failed to estimate a cloud file size: " + file.getName());
+  //      return 0;
+  //    }
+  //  }
+  //
+  //  @Override
+  //  public void run() {
+  //    Optional<byte[]> optionalFileBytes = getFileBytes(file);
+  //    if (optionalFileBytes.isPresent()) {
+  //      BufferedImage image = null;
+  //      try {
+  //        image = ImageIO.read(new ByteArrayInputStream(optionalFileBytes.get()));
+  //      }
+  //      catch (IOException e) {
+  //        System.out.println("Failed to create an image for screenshot: " + e.getMessage());
+  //        return;
+  //      }
+  //      image.flush();
+  //      result.addScreenshotMetadata(file.getName(), image);
+  //      // Mark that the new data was received as the last statement to ensure that no failures can follow after that
+  //      // (to avoid infinite failure mode).
+  //      newDataReceived = true;
+  //    }
+  //  }
+  //}
 
   private Optional<String> toOptionalString(Optional<byte[]> optionalBytes) {
     return optionalBytes.isPresent()

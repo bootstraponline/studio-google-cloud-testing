@@ -20,8 +20,11 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -35,9 +38,11 @@ public class ConfigurationResult {
 
   private final ConfigurationInstance configurationInstance;
 
+  private final String bucketName;
+
   private Optional<String> result = Optional.absent();
 
-  private final Map<String, BufferedImage> fileNameToScreenshot = new HashMap<String, BufferedImage>();
+  private final Map<String, BucketFileMetadata> fileNameToScreenshotMetadata = new HashMap<String, BucketFileMetadata>();
 
   private final Map<ScreenshotKey, String> screenshotKeyToFileName = new HashMap<ScreenshotKey, String>();
 
@@ -50,8 +55,9 @@ public class ConfigurationResult {
   private final List<ConfigurationResultListener> listeners = new LinkedList<ConfigurationResultListener>();
 
 
-  public ConfigurationResult(String encodedConfigurationString) {
+  public ConfigurationResult(String encodedConfigurationString, String bucketName) {
     configurationInstance = ConfigurationInstance.parseFromEncodedString(encodedConfigurationString);
+    this.bucketName = bucketName;
   }
 
   public boolean hasResult() {
@@ -98,8 +104,8 @@ public class ConfigurationResult {
     return isComplete() || isInfrastructureFailure() || isTriggeringError();
   }
 
-  public void addScreenshot(String fileName, BufferedImage image) {
-    fileNameToScreenshot.put(fileName, image);
+  public void addScreenshotMetadata(String fileName, BucketFileMetadata fileMetadata) {
+    fileNameToScreenshotMetadata.put(fileName, fileMetadata);
     screenshotKeyToFileName.put(getScreenshotKey(fileName), fileName);
     SwingUtilities.invokeLater(new Runnable() {
       @Override
@@ -128,7 +134,15 @@ public class ConfigurationResult {
       throw new RuntimeException("Unsupported encoding!", e);
     }
     if (originalNameParts.length < 4) {
-      throw new IllegalStateException("Screenshot file name is not formatted properly: " + fileName);
+      System.out.println("Screenshot file name is not formatted properly: " + fileName);
+      // To tolerate such scenarios, use some dummy file name parts.
+      String[] nameParts = new String[4];
+      nameParts[0] = "dummyTestClass";
+      nameParts[1] = "dummyTestMethod";
+      nameParts[2] = "dummyScreenshotName";
+      nameParts[3] = "1.jpg"; //step
+      return nameParts;
+
     }
     // Since a screenshot name may contain screenshot filename delimiter, concatenate the corresponding parts.
     String[] nameParts = new String[4];
@@ -142,14 +156,32 @@ public class ConfigurationResult {
     return nameParts;
   }
 
-  public Map<String, BufferedImage> getScreenshots() {
-    return fileNameToScreenshot;
+  public Map<String, BucketFileMetadata> getScreenshotMetadata() {
+    return fileNameToScreenshotMetadata;
   }
 
   public BufferedImage getScreenshotForTestAndStep(TestName testName, int step) {
+    System.out.println("About to load a screenshot");
     String fileName = screenshotKeyToFileName.get(new ScreenshotKey(testName, step));
-    BufferedImage bufferedImage = fileNameToScreenshot.get(fileName);
-    return bufferedImage;
+
+    BufferedImage image = null;
+    BucketFileMetadata fileMetadata = fileNameToScreenshotMetadata.get(fileName);
+    if (fileMetadata == null) {
+      return null;
+    }
+    Optional<byte[]> optionalFileBytes = CloudResultsLoader.getFileBytes(bucketName, fileMetadata);
+    if (optionalFileBytes.isPresent()) {
+      try {
+        image = ImageIO.read(new ByteArrayInputStream(optionalFileBytes.get()));
+      }
+      catch (IOException e) {
+        System.out.println("Failed to create an image for screenshot: " + e.getMessage());
+        return null;
+      }
+      image.flush();
+    }
+    System.out.println("Finished loading the screenshot");
+    return image;
   }
 
   public String getScreenshotNameForTestAndStep(TestName testName, int step) {
@@ -163,10 +195,10 @@ public class ConfigurationResult {
   }
 
   public int maxScreenshotStep(final TestName testName) {
-    if (fileNameToScreenshot.isEmpty()) {
+    if (fileNameToScreenshotMetadata.isEmpty()) {
       return 0;
     }
-    return Ordering.natural().max(Iterables.transform(fileNameToScreenshot.keySet(), new Function<String, Integer>() {
+    return Ordering.natural().max(Iterables.transform(fileNameToScreenshotMetadata.keySet(), new Function<String, Integer>() {
       @Override
       public Integer apply(String fileName) {
         String[] fileNameParts = getFileNameParts(fileName);

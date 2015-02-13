@@ -77,7 +77,7 @@ public class ShowScreenshotsAction extends AnAction {
     Map<String,ConfigurationResult> results =
       CloudTestConfigurationProviderImpl.getCloudResultsAdapter(rootNode.getTestRunId()).getResults();
 
-    if (results.get(configurationInstance.getEncodedString()).getScreenshots().isEmpty()) {
+    if (results.get(configurationInstance.getEncodedString()).getScreenshotMetadata().isEmpty()) {
       showNoScreenshotsWarning(e);
       return;
     }
