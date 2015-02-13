@@ -45,7 +45,8 @@ import static com.google.gct.testing.launcher.CloudAuthenticator.*;
 
 public class CloudTestsLauncher {
 
-  public static final String TEST_RUNNER_CLASS = "com.google.android.apps.common.testing.testrunner.GoogleInstrumentationTestRunner";
+  //public static final String TEST_RUNNER_CLASS = "com.google.android.apps.common.testing.testrunner.GoogleInstrumentationTestRunner";
+  public static final String TEST_RUNNER_CLASS = "android.support.test.runner.AndroidJUnitRunner";
 
   public static final String INVALID_MATRIX_ELEMENT_ERROR_MESSAGE = "Incompatible API level for requested model";
 
