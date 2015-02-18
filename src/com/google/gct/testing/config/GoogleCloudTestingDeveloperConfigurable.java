@@ -28,9 +28,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 
-import static com.google.gct.testing.config.GoogleCloudTestingConfigurable.BackendOption.*;
+import static com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable.BackendOption.*;
 
-public class GoogleCloudTestingConfigurable implements OptionalConfigurable, SearchableConfigurable, Configurable.NoScroll {
+public class GoogleCloudTestingDeveloperConfigurable implements OptionalConfigurable, SearchableConfigurable, Configurable.NoScroll {
 
   public final static String SHOW_GOOGLE_CLOUD_TESTING_SETTINGS = "show.google.cloud.testing.settings";
 
@@ -50,20 +50,20 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
   private JRadioButton useCustom = new JRadioButton("Custom");
   private JTextField customUrlField = new JTextField("");
 
-  public GoogleCloudTestingConfigurable(Project project) {
+  public GoogleCloudTestingDeveloperConfigurable(Project project) {
     this.project = project;
   }
 
   @Nls
   @Override
   public String getDisplayName() {
-    return "Google Cloud Testing";
+    return "Google Cloud Testing Developer";
   }
 
   @Nullable
   @Override
   public String getHelpTopic() {
-    return "google.cloud.testing";
+    return "google.cloud.testing.developer";
   }
 
   @Override
@@ -72,8 +72,8 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     JPanel content = new JPanel(new GridBagLayout());
     panel.add(content, BorderLayout.NORTH);
     useFakeBucketCheckbox.setText("Use fake bucket:");
-    content.add(useFakeBucketCheckbox, createGbc(0, 1));
-    content.add(fakeBucketNameField, createGbc(1, 1));
+    content.add(useFakeBucketCheckbox, createSettingsGbc(0, 1));
+    content.add(fakeBucketNameField, createSettingsGbc(1, 1));
 
     ButtonGroup urlGroup = new ButtonGroup();
     urlGroup.add(useProd);
@@ -85,20 +85,20 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     stagingUrlField.setEditable(false);
     testUrlField.setEditable(false);
 
-    content.add(new JLabel("Backend URL to use for test requests:"), createGbc(0, 2));
-    content.add(useProd, createGbc(0, 3));
-    content.add(prodUrlField, createGbc(1, 3));
-    content.add(useStaging, createGbc(0, 4));
-    content.add(stagingUrlField, createGbc(1, 4));
-    content.add(useTest, createGbc(0, 5));
-    content.add(testUrlField, createGbc(1, 5));
-    content.add(useCustom, createGbc(0, 6));
-    content.add(customUrlField, createGbc(1, 6));
+    content.add(new JLabel("Backend URL to use for test requests:"), createSettingsGbc(0, 2));
+    content.add(useProd, createSettingsGbc(0, 3));
+    content.add(prodUrlField, createSettingsGbc(1, 3));
+    content.add(useStaging, createSettingsGbc(0, 4));
+    content.add(stagingUrlField, createSettingsGbc(1, 4));
+    content.add(useTest, createSettingsGbc(0, 5));
+    content.add(testUrlField, createSettingsGbc(1, 5));
+    content.add(useCustom, createSettingsGbc(0, 6));
+    content.add(customUrlField, createSettingsGbc(1, 6));
 
     return panel;
   }
 
-  private static GridBagConstraints createGbc(int x, int y, int gridheight, double weighty) {
+  private GridBagConstraints createGbc(int x, int y, int gridheight, double weighty) {
     GridBagConstraints gbc = new GridBagConstraints();
     gbc.fill = GridBagConstraints.BOTH;
     gbc.gridx = x;
@@ -115,13 +115,13 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     return gbc;
   }
 
-  private static GridBagConstraints createGbc(int x, int y) {
+  private GridBagConstraints createSettingsGbc(int x, int y) {
     return createGbc(x, y, 1, 0.0);
   }
 
   @Override
   public boolean isModified() {
-    GoogleCloudTestingState state = getSavedSettings().getState();
+    GoogleCloudTestingDeveloperState state = getSavedSettings().getState();
     String stateFakeBucketName = state == null ? "" : state.fakeBucketName;
     boolean stateShouldUseFakeBucket = state == null ? false : state.shouldUseFakeBucket;
     int backendOption = state == null ? 0 : state.backendOption;
@@ -134,7 +134,7 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
 
   @Override
   public void apply() throws ConfigurationException {
-    GoogleCloudTestingState state = new GoogleCloudTestingState();
+    GoogleCloudTestingDeveloperState state = new GoogleCloudTestingDeveloperState();
     state.fakeBucketName = fakeBucketNameField.getText();
     state.shouldUseFakeBucket = useFakeBucketCheckbox.isSelected();
     state.backendOption = getBackendOption().ordinal();
@@ -146,7 +146,7 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
 
   @Override
   public void reset() {
-    GoogleCloudTestingState state = getSavedSettings().getState();
+    GoogleCloudTestingDeveloperState state = getSavedSettings().getState();
     fakeBucketNameField.setText(state == null ? "" : state.fakeBucketName);
     useFakeBucketCheckbox.setSelected(state == null ? false : state.shouldUseFakeBucket);
     setBackendOption(BackendOption.values()[state == null ? 0 : state.backendOption]);
@@ -216,8 +216,8 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     }
   }
 
-  private GoogleCloudTestingSettings getSavedSettings() {
-    return GoogleCloudTestingSettings.getInstance(project);
+  private GoogleCloudTestingDeveloperSettings getSavedSettings() {
+    return GoogleCloudTestingDeveloperSettings.getInstance(project);
   }
 
   @Override
@@ -252,7 +252,7 @@ public class GoogleCloudTestingConfigurable implements OptionalConfigurable, Sea
     return Boolean.getBoolean(SHOW_GOOGLE_CLOUD_TESTING_SETTINGS);
   }
 
-  public static class GoogleCloudTestingState {
+  public static class GoogleCloudTestingDeveloperState {
     public String fakeBucketName = "";
     public boolean shouldUseFakeBucket = false;
     public int backendOption = 0;
