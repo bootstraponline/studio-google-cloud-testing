@@ -32,10 +32,6 @@
     <projectService serviceInterface="com.google.gct.testing.config.GoogleCloudTestingSettings"
                     serviceImplementation="com.google.gct.testing.config.GoogleCloudTestingSettings"/>
 
-    <projectConfigurable instance="com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable"/>
-    <projectService serviceInterface="com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings"
-                    serviceImplementation="com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings"/>
-
     <moduleService serviceInterface="com.google.gct.testing.GoogleCloudTestingCustomPersistentConfigurations"
                     serviceImplementation="com.google.gct.testing.GoogleCloudTestingCustomPersistentConfigurations"/>
 
