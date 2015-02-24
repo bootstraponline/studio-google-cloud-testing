@@ -25,8 +25,8 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.gct.testing.config.GoogleCloudTestingConfigurable;
-import com.google.gct.testing.config.GoogleCloudTestingSettings;
+import com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable;
+import com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings;
 import com.google.gct.testing.dimension.*;
 import com.google.gct.testing.launcher.CloudAuthenticator;
 import com.google.gct.testing.launcher.CloudTestsLauncher;
@@ -229,14 +229,14 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
     for (String configurationInstance : expectedConfigurationInstances) {
       cloudResultParser.getTestRunListener().testConfigurationScheduled(configurationInstance);
     }
-    GoogleCloudTestingConfigurable.GoogleCloudTestingState googleCloudTestingState =
-      GoogleCloudTestingSettings.getInstance(project).getState();
-    if (!googleCloudTestingState.shouldUseFakeBucket) {
+    GoogleCloudTestingDeveloperConfigurable.GoogleCloudTestingDeveloperState googleCloudTestingDeveloperState =
+      GoogleCloudTestingDeveloperSettings.getInstance(project).getState();
+    if (!googleCloudTestingDeveloperState.shouldUseFakeBucket) {
       performTestsInCloud(googleCloudTestingConfiguration, cloudProjectId, runningState, cloudResultParser);
     } else {
-      String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingState.fakeBucketName + System.currentTimeMillis();
+      String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingDeveloperState.fakeBucketName + System.currentTimeMillis();
       CloudResultsAdapter cloudResultsAdapter =
-        new CloudResultsAdapter(cloudProjectId, googleCloudTestingState.fakeBucketName, cloudResultParser, expectedConfigurationInstances,
+        new CloudResultsAdapter(cloudProjectId, googleCloudTestingDeveloperState.fakeBucketName, cloudResultParser, expectedConfigurationInstances,
                                 testRunId, null);
       addGoogleCloudTestingConfiguration(testRunId, googleCloudTestingConfiguration);
       addCloudResultsAdapter(testRunId, cloudResultsAdapter);
