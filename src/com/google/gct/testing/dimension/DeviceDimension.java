@@ -15,8 +15,8 @@
  */
 package com.google.gct.testing.dimension;
 
-import com.google.api.services.test.model.AndroidDeviceCatalog;
-import com.google.api.services.test.model.AndroidModel;
+import com.google.api.services.testing.model.AndroidDeviceCatalog;
+import com.google.api.services.testing.model.AndroidModel;
 import com.google.common.collect.ImmutableList;
 import com.google.gct.testing.CloudTestConfigurationImpl;
 import icons.AndroidIcons;

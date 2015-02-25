@@ -15,9 +15,9 @@
  */
 package com.google.gct.testing.dimension;
 
-import com.google.api.services.test.model.AndroidDeviceCatalog;
-import com.google.api.services.test.model.AndroidVersion;
-import com.google.api.services.test.model.Distribution;
+import com.google.api.services.testing.model.AndroidDeviceCatalog;
+import com.google.api.services.testing.model.AndroidVersion;
+import com.google.api.services.testing.model.Distribution;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;

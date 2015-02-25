@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.google.api.services.test.model.TestExecution;
+import com.google.api.services.testing.model.TestExecution;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;

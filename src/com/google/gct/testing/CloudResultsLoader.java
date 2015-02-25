@@ -18,7 +18,7 @@ package com.google.gct.testing;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.api.services.test.model.TestExecution;
+import com.google.api.services.testing.model.TestExecution;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;

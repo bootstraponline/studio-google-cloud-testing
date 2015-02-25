@@ -20,8 +20,8 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.storage.Storage;
-import com.google.api.services.test.Test;
-import com.google.api.services.test.model.AndroidDeviceCatalog;
+import com.google.api.services.testing.Testing;
+import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.api.services.toolresults.Toolresults;
 import com.google.gct.login.GoogleLogin;
 import com.google.gct.testing.GoogleCloudTestingUtils;
@@ -35,7 +35,7 @@ public class CloudAuthenticator {
 
   private static Storage storage;
 
-  private static Test test;
+  private static Testing test;
 
   private static Toolresults toolresults;
 
@@ -52,18 +52,15 @@ public class CloudAuthenticator {
 
   public static void recreateTestAndToolResults(String testBackendUrl, String toolResultsBackendUrl) {
     prepareCredential();
-    test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(testBackendUrl).build();
+    test = new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(testBackendUrl).build();
     toolresults =
       new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(toolResultsBackendUrl).build();
   }
 
-  public static Test getTest() {
+  public static Testing getTest() {
     prepareCredential();
     if (test == null) {
-      //TODO: Update the client lib for Test API and use the default URL (i.e., no need to set it explicitly to prod here).
-      test = new Test.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential)
-        .setRootUrl("https://test-devtools.googleapis.com") // final distributed prod
-        .build();
+      test = new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
     }
     return test;
   }

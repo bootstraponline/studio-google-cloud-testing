@@ -42,11 +42,14 @@ public class GoogleCloudTestingDeveloperConfigurable implements OptionalConfigur
   private JCheckBox useFakeBucketCheckbox = new JCheckBox();
   private JTextField fakeBucketNameField = new JTextField();
   private JRadioButton useProd = new JRadioButton("Prod");
-  private JTextField prodUrlField = new JTextField("https://test-devtools.googleapis.com");
+  //private JTextField prodUrlField = new JTextField("https://test-devtools.googleapis.com");
+  private JTextField prodUrlField = new JTextField("https://testing.googleapis.com");
   private JRadioButton useStaging = new JRadioButton("Staging");
-  private JTextField stagingUrlField = new JTextField("https://staging-test-devtools.sandbox.googleapis.com");
+  //private JTextField stagingUrlField = new JTextField("https://staging-test-devtools.sandbox.googleapis.com");
+  private JTextField stagingUrlField = new JTextField("https://staging-testing.sandbox.googleapis.com");
   private JRadioButton useTest = new JRadioButton("Test");
-  private JTextField testUrlField = new JTextField("https://test-test-devtools.sandbox.googleapis.com");
+  //private JTextField testUrlField = new JTextField("https://test-test-devtools.sandbox.googleapis.com");
+  private JTextField testUrlField = new JTextField("https://test-testing.sandbox.googleapis.com");
   private JRadioButton useCustom = new JRadioButton("Custom");
   private JTextField customUrlField = new JTextField("");
 

@@ -19,7 +19,7 @@ import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.api.services.test.model.*;
+import com.google.api.services.testing.model.*;
 import com.google.api.services.toolresults.model.History;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.GoogleCloudTestingUtils;

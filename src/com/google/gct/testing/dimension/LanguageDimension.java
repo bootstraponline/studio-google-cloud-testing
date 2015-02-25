@@ -16,8 +16,8 @@
 package com.google.gct.testing.dimension;
 
 import com.google.api.client.util.Lists;
-import com.google.api.services.test.model.AndroidDeviceCatalog;
-import com.google.api.services.test.model.Locale;
+import com.google.api.services.testing.model.AndroidDeviceCatalog;
+import com.google.api.services.testing.model.Locale;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;

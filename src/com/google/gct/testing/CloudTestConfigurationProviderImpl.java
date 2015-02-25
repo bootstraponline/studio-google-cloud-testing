@@ -19,7 +19,7 @@ import com.android.tools.idea.run.CloudTestConfiguration;
 import com.android.tools.idea.run.CloudTestConfigurationProvider;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
-import com.google.api.services.test.model.TestExecution;
+import com.google.api.services.testing.model.TestExecution;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
