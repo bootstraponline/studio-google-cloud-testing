@@ -293,7 +293,7 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
           String testSpecification = GoogleCloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
           Map<String, TestExecution> testExecutions = CloudTestsLauncher
-            .triggerTestApi(cloudProjectId, moduleName, getBucketGcsPath(bucketName), getApkGcsPath(bucketName, appApkName),
+            .triggerTestApi(cloudProjectId, getBucketGcsPath(bucketName), getApkGcsPath(bucketName, appApkName),
                             getApkGcsPath(bucketName, testApkName), testSpecification, testRunConfiguration.INSTRUMENTATION_RUNNER_CLASS,
                             encodedMatrixInstances, appPackage, testPackage);
 

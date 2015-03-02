@@ -101,7 +101,7 @@ public class CloudTestsLauncher {
   }
 
   public static Map<String, TestExecution> triggerTestApi(
-    String cloudProjectId, String applicationName, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath,
+    String cloudProjectId, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath,
     String testSpecification, String instrumentationTestRunner, List<String> matrixInstances, String appPackage, String testPackage) {
 
     if (instrumentationTestRunner.isEmpty()) {
@@ -117,7 +117,7 @@ public class CloudTestsLauncher {
         .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
         .setTestRunnerClass(instrumentationTestRunner).setTestTargets(Lists.newArrayList(testSpecification))));
 
-    String historyId = getHistoryId(cloudProjectId, applicationName);
+    String historyId = getHistoryId(cloudProjectId, appPackage);
 
     for (String matrixInstance : matrixInstances) {
       TestExecution currentTestExecution = testExecution.clone();
