@@ -42,7 +42,7 @@ class BucketFileMetadata {
     } else if (path.contains("/")) {
       String[] fileNameParts = path.split("/");
       encodedConfigurationInstance = Optional.of(fileNameParts[0]);
-      name = fileNameParts[1];
+      name = fileNameParts[fileNameParts.length - 1];
     } else {
       encodedConfigurationInstance = Optional.absent();
       name = path;
