@@ -73,7 +73,8 @@ public class ShowScreenshotsAction extends AnAction {
     }
 
     AbstractTestProxy selectedConfigurationNode = selectedLeaf.getParent().getParent();
-    ConfigurationInstance configurationInstance = ConfigurationInstance.parseFromDisplayString(selectedConfigurationNode.getName());
+    ConfigurationInstance configurationInstance =
+      ConfigurationInstance.parseFromResultsViewerDisplayString(selectedConfigurationNode.getName());
     Map<String,ConfigurationResult> results =
       CloudTestConfigurationProviderImpl.getCloudResultsAdapter(rootNode.getTestRunId()).getResults();
 
@@ -84,7 +85,9 @@ public class ShowScreenshotsAction extends AnAction {
 
     AbstractTestProxy anotherConfigurationNode = findClosestNeighborWithResults(selectedConfigurationNode);
     ConfigurationInstance anotherConfigurationInstance =
-      anotherConfigurationNode == null ? null : ConfigurationInstance.parseFromDisplayString(anotherConfigurationNode.getName());
+      anotherConfigurationNode == null
+      ? null
+      : ConfigurationInstance.parseFromResultsViewerDisplayString(anotherConfigurationNode.getName());
 
     ArrayList<TestName> allTests = Lists.newArrayList(Iterables.transform(selectedLeaf.getParent().getChildren(), TO_TEST_NAMES));
 

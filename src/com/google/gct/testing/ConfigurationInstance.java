@@ -28,12 +28,20 @@ import java.util.regex.Pattern;
 
 public class ConfigurationInstance {
 
-  public static final Function<GoogleCloudTestingType,String> GET_DISPLAY_NAME = new Function<GoogleCloudTestingType, String>() {
-    @Override
-    public String apply(GoogleCloudTestingType input) {
-      return input.getConfigurationDialogDisplayName();
-    }
-  };
+  //public static final Function<GoogleCloudTestingType,String> GET_CONFIGURATION_DIALOG_DISPLAY_NAME =
+  //  new Function<GoogleCloudTestingType, String>() {
+  //    @Override
+  //    public String apply(GoogleCloudTestingType input) {
+  //      return input.getConfigurationDialogDisplayName();
+  //    }
+  //  };
+  public static final Function<GoogleCloudTestingType,String> GET_RESULTS_VIEWER_DISPLAY_NAME =
+    new Function<GoogleCloudTestingType, String>() {
+      @Override
+      public String apply(GoogleCloudTestingType input) {
+        return input.getResultsViewerDisplayName();
+      }
+    };
   public static final Function<GoogleCloudTestingType,String> GET_ENCODED_NAME = new Function<GoogleCloudTestingType, String>() {
     @Override
     public String apply(GoogleCloudTestingType input) {
@@ -52,8 +60,8 @@ public class ConfigurationInstance {
     return parse(GET_ENCODED_NAME, ENCODED_NAME_DELIMITER, configurationInstance);
   }
 
-  public static ConfigurationInstance parseFromDisplayString(String configurationInstance) {
-    return parse(GET_DISPLAY_NAME, DISPLAY_NAME_DELIMITER, configurationInstance);
+  public static ConfigurationInstance parseFromResultsViewerDisplayString(String configurationInstance) {
+    return parse(GET_RESULTS_VIEWER_DISPLAY_NAME, DISPLAY_NAME_DELIMITER, configurationInstance);
   }
 
   private static ConfigurationInstance parse(Function<GoogleCloudTestingType, String> typeToNameFunction, String delimiter, String input) {
@@ -78,7 +86,7 @@ public class ConfigurationInstance {
       }
     }
     if (dimensionName == null) {
-      throw new NoSuchElementException("Could not find the corresponding dimension for type: " + type.getConfigurationDialogDisplayName());
+      throw new NoSuchElementException("Could not find the corresponding dimension for type: " + type.getResultsViewerDisplayName());
     }
     result.typesByDimensionName.put(dimensionName, type);
   }
@@ -97,8 +105,12 @@ public class ConfigurationInstance {
     return getRepresentationString(GET_ENCODED_NAME, ENCODED_NAME_DELIMITER);
   }
 
-  public String getDisplayString() {
-    return getRepresentationString(GET_DISPLAY_NAME, DISPLAY_NAME_DELIMITER);
+  //public String getConfigurationDialogDisplayString() {
+  //  return getRepresentationString(GET_CONFIGURATION_DIALOG_DISPLAY_NAME, DISPLAY_NAME_DELIMITER);
+  //}
+  //
+  public String getResultsViewerDisplayString() {
+    return getRepresentationString(GET_RESULTS_VIEWER_DISPLAY_NAME, DISPLAY_NAME_DELIMITER);
   }
 
   private String getRepresentationString(Function<GoogleCloudTestingType,String> typeToNameFunction, String delimiter) {

@@ -76,7 +76,7 @@ public class CloudResultsLoader {
             newDataReceived = true;
             configurationProgress.put(encodedConfigurationInstance, progressLine);
             testRunListener.testConfigurationProgress(
-              ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), progressLine);
+              ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getResultsViewerDisplayString(), progressLine);
           }
         }
       }
@@ -248,7 +248,7 @@ public class CloudResultsLoader {
     configurationProgress.put(encodedConfigurationInstance, newProgress);
     String diffProgress = newProgress.substring(previousProgress.length());
     testRunListener.testConfigurationProgress(
-      ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getDisplayString(), diffProgress);
+      ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getResultsViewerDisplayString(), diffProgress);
   }
 
   private ConfigurationResult getOrCreateConfigurationResult(String encodedConfigurationInstance,

@@ -221,7 +221,7 @@ public class ConfigurationResult {
   @Override
   public String toString() {
     return "ConfigurationResult{" +
-           "configurationInstance='" + configurationInstance.getDisplayString() + '\'' +
+           "configurationInstance='" + configurationInstance.getResultsViewerDisplayString() + '\'' +
            ", result=" + result +
            ", isComplete=" + isComplete +
            '}';

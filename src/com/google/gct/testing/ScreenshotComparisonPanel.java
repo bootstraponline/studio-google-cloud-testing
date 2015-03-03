@@ -136,7 +136,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
         if (value instanceof GoogleCloudTestingType) {
           final GoogleCloudTestingType type = (GoogleCloudTestingType) value;
 
-          label.setText(type.getConfigurationDialogDisplayName());
+          label.setText(type.getResultsViewerDisplayName());
           //label.setIcon(type.getIcon());
           //label.setIconTextGap(2);
         }
@@ -196,7 +196,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
         });
       } else {
         final GoogleCloudTestingType type = Iterables.getOnlyElement(dimension.getEnabledTypes());
-        myConfigurationChooserPanel.add(new JLabel(" " + type.getConfigurationDialogDisplayName()), bagConstraints);
+        myConfigurationChooserPanel.add(new JLabel(" " + type.getResultsViewerDisplayName()), bagConstraints);
         myTypeSelections.add(new GoogleCloudTestingTypeSelection() {
           @Override
           public GoogleCloudTestingType getType() {
@@ -260,7 +260,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   }
 
   private void updateHeaderBar() {
-    String configurationInstanceName = selectedConfigurationInstance.getDisplayString();
+    String configurationInstanceName = selectedConfigurationInstance.getResultsViewerDisplayString();
     GoogleCloudTestProxy testNode;
     try {
       testNode = (GoogleCloudTestProxy) getChild(getChild(getChild(testTreeRoot, configurationInstanceName), currentTest.getClassName()), currentTest.getMethodName());
@@ -319,7 +319,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
         ConfigurationInstance configurationInstance = selectedConfigurationResult.getConfigurationInstance();
         String proposedFileName = configurationInstance.getEncodedString();
-        String description = "Save screenshot of " + configurationInstance.getDisplayString();
+        String description = "Save screenshot of " + configurationInstance.getResultsViewerDisplayString();
 
         FileSaverDescriptor descriptor = new FileSaverDescriptor("Save Screenshot", description, "png");
         FileSaverDialogImpl fileSaverDialog = new FileSaverDialogImpl(descriptor, parent.getWindow());

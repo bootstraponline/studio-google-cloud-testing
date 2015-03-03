@@ -77,7 +77,7 @@ public class CloudResultsAdapter {
     for (ConfigurationResult result : results.values()) {
       if (!markedAsPendingConfigurations.contains(result)) {
         markedAsPendingConfigurations.add(result);
-        resultParser.getTestRunListener().testConfigurationStarted(result.getConfigurationInstance().getDisplayString());
+        resultParser.getTestRunListener().testConfigurationStarted(result.getConfigurationInstance().getResultsViewerDisplayString());
       }
     }
 
@@ -110,7 +110,7 @@ public class CloudResultsAdapter {
                                              : result.isInfrastructureFailure()
                                                ? ConfigurationStopReason.INFRASTRUCTURE_FAILURE
                                                : ConfigurationStopReason.TRIGGERING_ERROR;
-        resultParser.getTestRunListener().stopTestConfiguration(result.getConfigurationInstance().getDisplayString(), stopReason);
+        resultParser.getTestRunListener().stopTestConfiguration(result.getConfigurationInstance().getResultsViewerDisplayString(), stopReason);
       }
     }
 
@@ -128,7 +128,7 @@ public class CloudResultsAdapter {
       //for (ConfigurationResult result : results.values()) {
       //  if (!markedAsFinishedConfigurations.contains(result)) {
       //    resultParser.getTestRunListener()
-      //      .stopTestConfiguration(result.getConfigurationInstance().getDisplayString(), ConfigurationStopReason.TIMED_OUT);
+      //      .stopTestConfiguration(result.getConfigurationInstance().getResultsViewerDisplayString(), ConfigurationStopReason.TIMED_OUT);
       //  }
       //}
     }
@@ -138,7 +138,8 @@ public class CloudResultsAdapter {
   }
 
   private byte[] getParserInput(ConfigurationResult result) {
-    String configurationName = "\r\nINSTRUMENTATION_STATUS: configuration=" + result.getConfigurationInstance().getDisplayString() + "\r\n";
+    String configurationName = "\r\nINSTRUMENTATION_STATUS: configuration="
+                               + result.getConfigurationInstance().getResultsViewerDisplayString() + "\r\n";
     String classNamePrefix = "INSTRUMENTATION_STATUS: class=";
     //Make sure the input uses \r\n (Windows-style EOL) as line delimiter as this is what parser expects/produces.
     return result.getResult().replaceAll("\\n" + classNamePrefix, configurationName + classNamePrefix).getBytes();
