@@ -191,7 +191,6 @@ public class GoogleCloudTestingDeveloperConfigurable implements OptionalConfigur
   private String getToolResultsBackendUrl() {
     switch (getBackendOption()) {
       case STAGING:
-        return "https://www-googleapis-staging.sandbox.google.com/";
       case TEST:
         return "https://www-googleapis-test.sandbox.google.com/";
       default:
