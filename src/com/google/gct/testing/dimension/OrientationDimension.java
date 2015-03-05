@@ -40,11 +40,11 @@ public class OrientationDimension extends GoogleCloudTestingDimension {
   }
 
   @Override
-  public List<? extends GoogleCloudTestingType> getAppSupportedDomain() {
+  public List<? extends CloudTestingType> getAppSupportedDomain() {
     return getFullDomain();
   }
 
-  public static List<? extends GoogleCloudTestingType> getFullDomain() {
+  public static List<? extends CloudTestingType> getFullDomain() {
     if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Orientation> fullDomainBuilder = new ImmutableList.Builder<Orientation>();
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
@@ -76,7 +76,7 @@ public class OrientationDimension extends GoogleCloudTestingDimension {
     return AndroidIcons.Configs.Orientation;
   }
 
-  public static class Orientation extends GoogleCloudTestingType {
+  public static class Orientation extends CloudTestingType {
 
     private final String id;
     private final String name;

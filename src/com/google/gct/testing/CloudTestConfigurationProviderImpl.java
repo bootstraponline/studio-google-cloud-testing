@@ -20,6 +20,7 @@ import com.android.tools.idea.run.CloudTestConfigurationProvider;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
 import com.google.api.services.testing.model.TestExecution;
+import com.google.api.services.testing.model.TestMatrix;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
@@ -79,8 +80,8 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
       }
     };
 
-  public static Map<String, List<? extends GoogleCloudTestingType>> getAllDimensionTypes() {
-    Map<String, List<? extends GoogleCloudTestingType>> dimensionTypes = new HashMap<String, List<? extends GoogleCloudTestingType>>();
+  public static Map<String, List<? extends CloudTestingType>> getAllDimensionTypes() {
+    Map<String, List<? extends CloudTestingType>> dimensionTypes = new HashMap<String, List<? extends CloudTestingType>>();
     dimensionTypes.put(DeviceDimension.DISPLAY_NAME, DeviceDimension.getFullDomain());
     dimensionTypes.put(ApiDimension.DISPLAY_NAME, ApiDimension.getFullDomain());
     dimensionTypes.put(LanguageDimension.DISPLAY_NAME, LanguageDimension.getFullDomain());
@@ -187,7 +188,7 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
       // ignore
     } finally {
       if (buckets == null) {
-        GoogleCloudTestingUtils
+        CloudTestingUtils
           .showErrorMessage(project, "Cloud test configuration is invalid",
                             "Failed to authorize to Google Cloud project! Please select a project you are authorized to use.\n"
                             + "Exception while performing a pre-trigger sanity check\n\n" + message);
@@ -222,36 +223,34 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
     GoogleCloudTestingResultParser
       cloudResultParser = new GoogleCloudTestingResultParser("Cloud Test Run", new GoogleCloudTestListener(runningState));
 
-    CloudTestConfigurationImpl googleCloudTestingConfiguration = GoogleCloudTestingUtils
-      .getConfigurationById(selectedConfigurationId, runningState.getFacet());
+    CloudTestConfigurationImpl cloudTestingConfiguration =
+      CloudTestingUtils.getConfigurationById(selectedConfigurationId, runningState.getFacet());
     List<String> expectedConfigurationInstances =
-      googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
+      cloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
     for (String configurationInstance : expectedConfigurationInstances) {
       cloudResultParser.getTestRunListener().testConfigurationScheduled(configurationInstance);
     }
     GoogleCloudTestingDeveloperConfigurable.GoogleCloudTestingDeveloperState googleCloudTestingDeveloperState =
       GoogleCloudTestingDeveloperSettings.getInstance(project).getState();
     if (!googleCloudTestingDeveloperState.shouldUseFakeBucket) {
-      performTestsInCloud(googleCloudTestingConfiguration, cloudProjectId, runningState, cloudResultParser);
+      performTestsInCloud(cloudTestingConfiguration, cloudProjectId, runningState, cloudResultParser);
     } else {
       String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingDeveloperState.fakeBucketName + System.currentTimeMillis();
       CloudResultsAdapter cloudResultsAdapter =
         new CloudResultsAdapter(cloudProjectId, googleCloudTestingDeveloperState.fakeBucketName, cloudResultParser, expectedConfigurationInstances,
                                 testRunId, null);
-      addGoogleCloudTestingConfiguration(testRunId, googleCloudTestingConfiguration);
+      addGoogleCloudTestingConfiguration(testRunId, cloudTestingConfiguration);
       addCloudResultsAdapter(testRunId, cloudResultsAdapter);
       cloudResultsAdapter.startPolling();
     }
     return new DefaultExecutionResult(console, runningState.getProcessHandler());
   }
 
-  private void performTestsInCloud(final CloudTestConfigurationImpl googleCloudTestingConfiguration, final String cloudProjectId,
+  private void performTestsInCloud(final CloudTestConfigurationImpl cloudTestingConfiguration, final String cloudProjectId,
                                    final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser) {
-    if (googleCloudTestingConfiguration != null && googleCloudTestingConfiguration.getDeviceConfigurationCount() > 0) {
-      final List<String> encodedMatrixInstances =
-        googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.ENCODED_NAME_DELIMITER);
+    if (cloudTestingConfiguration != null && cloudTestingConfiguration.getDeviceConfigurationCount() > 0) {
       final List<String> expectedConfigurationInstances =
-        googleCloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
+        cloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
       new Thread(new Runnable() {
         @Override
         public void run() {
@@ -270,9 +269,9 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
                                                                ProcessOutputTypes.STDOUT);
           File appApk = findAppropriateApk(apkPaths, false);
           if (appApk == null) {
-            GoogleCloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading app APK",
-                                                     "Failed to find a supported app APK format!\n" +
-                                                     "There is no supported app APK among the existing ones\n\n" + listAllApks(apkPaths));
+            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading app APK",
+                                               "Failed to find a supported app APK format!\n" +
+                                               "There is no supported app APK among the existing ones\n\n" + listAllApks(apkPaths));
             return;
           }
           String appApkName = CloudTestsLauncher.uploadFile(bucketName, appApk).getName();
@@ -281,33 +280,34 @@ public class CloudTestConfigurationProviderImpl extends CloudTestConfigurationPr
                                                                ProcessOutputTypes.STDOUT);
           File testApk = findAppropriateApk(apkPaths, true);
           if (testApk == null) {
-            GoogleCloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading test APK",
-                                                     "Failed to find a supported test APK format!\n" +
-                                                     "There is no supported test APK among the existing ones\n\n" + listAllApks(apkPaths));
+            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading test APK",
+                                               "Failed to find a supported test APK format!\n" +
+                                               "There is no supported test APK among the existing ones\n\n" + listAllApks(apkPaths));
             return;
           }
           String testApkName = CloudTestsLauncher.uploadFile(bucketName, testApk).getName();
 
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking cloud test API...", "\n"),
                                                                ProcessOutputTypes.STDOUT);
-          String testSpecification = GoogleCloudTestingUtils.prepareTestSpecification(testRunConfiguration);
+          String testSpecification = CloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
-          Map<String, TestExecution> testExecutions = CloudTestsLauncher
+          TestMatrix testMatrix = CloudTestsLauncher
             .triggerTestApi(cloudProjectId, getBucketGcsPath(bucketName), getApkGcsPath(bucketName, appApkName),
                             getApkGcsPath(bucketName, testApkName), testSpecification, testRunConfiguration.INSTRUMENTATION_RUNNER_CLASS,
-                            encodedMatrixInstances, appPackage, testPackage);
+                            cloudTestingConfiguration, appPackage, testPackage);
 
-          String testRunId = TEST_RUN_ID_PREFIX + bucketName;
-          CloudResultsAdapter cloudResultsAdapter =
-            new CloudResultsAdapter(cloudProjectId, bucketName, cloudResultParser, expectedConfigurationInstances, testRunId,
-                                    testExecutions);
-          addGoogleCloudTestingConfiguration(testRunId, googleCloudTestingConfiguration);
-          addCloudResultsAdapter(testRunId, cloudResultsAdapter);
-          cloudResultsAdapter.startPolling();
+          if (testMatrix != null) {
+            String testRunId = TEST_RUN_ID_PREFIX + bucketName;
+            CloudResultsAdapter cloudResultsAdapter =
+              new CloudResultsAdapter(cloudProjectId, bucketName, cloudResultParser, expectedConfigurationInstances, testRunId, testMatrix);
+            addGoogleCloudTestingConfiguration(testRunId, cloudTestingConfiguration);
+            addCloudResultsAdapter(testRunId, cloudResultsAdapter);
+            cloudResultsAdapter.startPolling();
+          }
         }
 
         private String prepareProgressString(String progressMessage, String suffix) {
-          return GoogleCloudTestingUtils.shouldShowProgressTimestamps()
+          return CloudTestingUtils.shouldShowProgressTimestamps()
                  ? progressMessage + "\t" + System.currentTimeMillis() + "\n" + suffix
                  : progressMessage + "\n" + suffix;
         }

@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing.ui;
 
-import com.google.gct.testing.GoogleCloudTestingUtils;
+import com.google.gct.testing.CloudTestingUtils;
 import com.intellij.util.ui.UIUtil;
 
 import javax.imageio.ImageIO;
@@ -113,7 +113,7 @@ public class AddCompareScreenshotPanel {
 
     @Override
     public void mousePressed(MouseEvent e) {
-      myPanel.setBackground(GoogleCloudTestingUtils.makeDarker(myPanel.getBackground(), 1));
+      myPanel.setBackground(CloudTestingUtils.makeDarker(myPanel.getBackground(), 1));
     }
 
     @Override

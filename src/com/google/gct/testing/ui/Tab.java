@@ -16,7 +16,7 @@
 package com.google.gct.testing.ui;
 
 import com.android.annotations.Nullable;
-import com.google.gct.testing.GoogleCloudTestingUtils;
+import com.google.gct.testing.CloudTestingUtils;
 import com.intellij.icons.AllIcons;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.UIUtil;
@@ -41,7 +41,7 @@ public class Tab extends GradientJPanel {
   //private static final Color TOP_COLOR = new Color(245, 245, 245);
 
   private static final Color TOP_COLOR = UIUtil.getPanelBackground();
-  private static final Color BOTTOM_COLOR = GoogleCloudTestingUtils.makeDarker(UIUtil.getPanelBackground(), 2);
+  private static final Color BOTTOM_COLOR = CloudTestingUtils.makeDarker(UIUtil.getPanelBackground(), 2);
 
   private static final Color STUB_TAB_BACKGROUND = new Color(200, 200, 200);
   private static final Color STUB_TAB_FOREGROUND = new Color(114, 114, 114);

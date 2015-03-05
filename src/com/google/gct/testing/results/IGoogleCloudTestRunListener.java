@@ -17,7 +17,7 @@ package com.google.gct.testing.results;
 
 import java.util.Map;
 
-import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopReason;
+import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 /**
  * Receives event notifications during instrumentation test runs.

@@ -37,7 +37,7 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 
-public class GoogleCloudTestingUtils {
+public class CloudTestingUtils {
 
   //private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/a/google.com/forum/#!newtopic/cloud-test-lab-users-external'";
   private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/forum/#!newtopic/google-cloud-test-lab-external'";

@@ -47,11 +47,11 @@ public class DeviceDimension extends GoogleCloudTestingDimension {
   }
 
   @Override
-  public List<? extends GoogleCloudTestingType> getAppSupportedDomain() {
+  public List<? extends CloudTestingType> getAppSupportedDomain() {
     return getFullDomain();
   }
 
-  public static List<? extends GoogleCloudTestingType> getFullDomain() {
+  public static List<? extends CloudTestingType> getFullDomain() {
     if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Device> fullDomainBuilder = new ImmutableList.Builder<Device>();
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
@@ -88,7 +88,7 @@ public class DeviceDimension extends GoogleCloudTestingDimension {
     return true;
   }
 
-  public static class Device extends GoogleCloudTestingType {
+  public static class Device extends CloudTestingType {
 
     private final String id;
     private final String name;

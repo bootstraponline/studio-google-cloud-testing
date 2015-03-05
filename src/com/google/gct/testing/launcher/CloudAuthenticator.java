@@ -24,7 +24,7 @@ import com.google.api.services.testing.Testing;
 import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.api.services.toolresults.Toolresults;
 import com.google.gct.login.GoogleLogin;
-import com.google.gct.testing.GoogleCloudTestingUtils;
+import com.google.gct.testing.CloudTestingUtils;
 
 public class CloudAuthenticator {
 
@@ -86,9 +86,8 @@ public class CloudAuthenticator {
   private static void showDeviceCatalogError(String errorMessageSuffix, long currentTimestamp) {
     // The error should be reported just once per burst of invocations.
     if (currentTimestamp - lastDiscoveryServiceInvocationTimestamp > 1000l) { // If more than a second has passed.
-      GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving android device catalog",
-                                               "Failed to retrieve available cloud devices! Please try again later.\n" +
-                                               errorMessageSuffix);
+      CloudTestingUtils.showErrorMessage(null, "Error retrieving android device catalog",
+                                         "Failed to retrieve available cloud devices! Please try again later.\n" + errorMessageSuffix);
     }
   }
 

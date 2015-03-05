@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing.results;
 
-import com.google.gct.testing.GoogleCloudTestingUtils;
+import com.google.gct.testing.CloudTestingUtils;
 import com.google.gct.testing.results.events.*;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.TestConsoleProperties;
@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.text.ParseException;
 import java.util.Map;
 
-import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopReason;
+import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 /**
  *         This implementation also supports messages splitted in parts by early flush.
@@ -536,26 +536,26 @@ public class OutputToGoogleCloudTestEventsConverter implements GoogleCloudTestin
     private void handleCustomMessages(@NotNull final ServiceMessage message) {
       final String messageName = message.getMessageName();
 
-      if (messageName.equals(GoogleCloudTestingUtils.SET_TEST_RUN_ID)) {
+      if (messageName.equals(CloudTestingUtils.SET_TEST_RUN_ID)) {
         SetTestRunIdEvent setTestRunIdEvent = new SetTestRunIdEvent(message.getAttributes().get("testRunId"));
         fireOnSetTestRunId(setTestRunIdEvent);
       } else {
         String configurationName = message.getAttributes().get("name");
-        if (messageName.equals(GoogleCloudTestingUtils.TEST_CONFIGURATION_STOPPED)) {
+        if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_STOPPED)) {
           ConfigurationStopReason stopReason = ConfigurationStopReason.valueOf(message.getAttributes().get("stopReason"));
           TestConfigurationStoppedEvent configurationStoppedEvent = new TestConfigurationStoppedEvent(configurationName, stopReason);
           fireOnConfigurationStopped(configurationStoppedEvent);
-        } else if (messageName.equals(GoogleCloudTestingUtils.TEST_CONFIGURATION_PROGRESS)) {
+        } else if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_PROGRESS)) {
           TestConfigurationProgressEvent configurationProgressEvent =
             new TestConfigurationProgressEvent(configurationName, message.getAttributes().get("text"));
           fireOnConfigurationProgress(configurationProgressEvent);
-        } else if (messageName.equals(GoogleCloudTestingUtils.TEST_CONFIGURATION_SCHEDULED)) {
+        } else if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_SCHEDULED)) {
           TestConfigurationScheduledEvent configurationScheduledEvent = new TestConfigurationScheduledEvent(configurationName);
           fireOnConfigurationScheduled(configurationScheduledEvent);
-        } else if (messageName.equals(GoogleCloudTestingUtils.TEST_CONFIGURATION_STARTED)) {
+        } else if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_STARTED)) {
           TestConfigurationStartedEvent configurationStartedEvent = new TestConfigurationStartedEvent(configurationName);
           fireOnConfigurationStarted(configurationStartedEvent);
-        } else if (messageName.equals(GoogleCloudTestingUtils.TEST_CONFIGURATION_FINISHED)) {
+        } else if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_FINISHED)) {
           TestConfigurationFinishedEvent configurationFinishedEvent = new TestConfigurationFinishedEvent(configurationName);
           fireOnConfigurationFinished(configurationFinishedEvent);
         } else {

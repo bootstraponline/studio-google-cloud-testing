@@ -16,8 +16,8 @@
 package com.google.gct.testing;
 
 import com.google.common.base.Function;
+import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.GoogleCloudTestingDimension;
-import com.google.gct.testing.dimension.GoogleCloudTestingType;
 import com.google.gct.testing.dimension.GoogleCloudTestingTypeGroup;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.CheckboxTree;
@@ -259,14 +259,14 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     // Add each supported type to the tree.
     List<? extends GoogleCloudTestingTypeGroup> supportedGroups = dimension.getSupportedGroups();
     for (GoogleCloudTestingTypeGroup group : supportedGroups) {
-      List<GoogleCloudTestingType> types = group.getTypes();
+      List<CloudTestingType> types = group.getTypes();
       if (types.size() == 1 && !dimension.shouldBeAlwaysGrouped()) {
         addChildNode(rootNode, types.get(0), dimension);
       } else {
         CheckedTreeNode groupNode = new CheckedTreeNode(group);
         rootNode.add(groupNode);
         groupNode.setEnabled(dimension.isEditable());
-        for (GoogleCloudTestingType type : types) {
+        for (CloudTestingType type : types) {
           addChildNode(groupNode, type, dimension);
         }
       }
@@ -287,26 +287,26 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
         if (value instanceof DefaultMutableTreeNode) {
           Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
-          if (userObject instanceof GoogleCloudTestingType) {
-            GoogleCloudTestingType googleCloudTestingType = (GoogleCloudTestingType)userObject;
-            getTextRenderer().append(googleCloudTestingType.getConfigurationDialogDisplayName());
-            updateTreeState(tree, (CheckedTreeNode)value, googleCloudTestingType);
+          if (userObject instanceof CloudTestingType) {
+            CloudTestingType cloudTestingType = (CloudTestingType)userObject;
+            getTextRenderer().append(cloudTestingType.getConfigurationDialogDisplayName());
+            updateTreeState(tree, (CheckedTreeNode)value, cloudTestingType);
           } else if (userObject instanceof GoogleCloudTestingTypeGroup) {
             GoogleCloudTestingTypeGroup group = (GoogleCloudTestingTypeGroup)userObject;
             getTextRenderer().append(group.getName());
-            GoogleCloudTestingType type = (GoogleCloudTestingType) ((CheckedTreeNode) ((DefaultMutableTreeNode)value).getChildAt(0)).getUserObject();
+            CloudTestingType type = (CloudTestingType) ((CheckedTreeNode) ((DefaultMutableTreeNode)value).getChildAt(0)).getUserObject();
             updateTreeState(tree, (CheckedTreeNode)value, type);
           }
         }
       }
 
-      private void updateTreeState(JTree tree, CheckedTreeNode node, GoogleCloudTestingType googleCloudTestingType) {
+      private void updateTreeState(JTree tree, CheckedTreeNode node, CloudTestingType cloudTestingType) {
         if (node.isEnabled()) {
           //getTextRenderer().setForeground(Color.BLACK);
         } else {
           //getTextRenderer().setForeground(Color.LIGHT_GRAY);
           GoogleCloudTestingDimension googleCloudTestingDimension = (GoogleCloudTestingDimension)((CheckedTreeNode) tree.getModel().getRoot()).getUserObject();
-          boolean isChecked = googleCloudTestingDimension.getEnabledTypes().contains(googleCloudTestingType);
+          boolean isChecked = googleCloudTestingDimension.getEnabledTypes().contains(cloudTestingType);
           node.setChecked(isChecked);
           for (int childIndex = 0; childIndex < node.getChildCount(); childIndex++) {
             ((CheckedTreeNode) node.getChildAt(childIndex)).setChecked(isChecked);
@@ -326,7 +326,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     return myPanel;
   }
 
-  private void addChildNode(CheckedTreeNode parentNode, GoogleCloudTestingType type, GoogleCloudTestingDimension dimension) {
+  private void addChildNode(CheckedTreeNode parentNode, CloudTestingType type, GoogleCloudTestingDimension dimension) {
     CheckedTreeNode newNode = new CheckedTreeNode(type);
     parentNode.add(newNode);
     newNode.setChecked(dimension.getEnabledTypes().contains(type));
@@ -383,8 +383,8 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
     CheckedTreeNode selectedNode = (CheckedTreeNode) currentTree.getSelectionPath().getLastPathComponent();
     Object userObject = selectedNode.getUserObject();
-    if (userObject instanceof GoogleCloudTestingType) {
-      GoogleCloudTestingType clickedType = (GoogleCloudTestingType)userObject;
+    if (userObject instanceof CloudTestingType) {
+      CloudTestingType clickedType = (CloudTestingType)userObject;
       if (selectedNode.isEnabled()) {
         currentDimension.setEnabled(clickedType, selectedNode.isChecked());
         currentDimension.dimensionChanged();
@@ -397,7 +397,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       if (selectedNode.isEnabled()) {
         for (int childIndex = 0; childIndex < selectedNode.getChildCount(); childIndex++) {
           CheckedTreeNode child = (CheckedTreeNode)selectedNode.getChildAt(childIndex);
-          currentDimension.setEnabled((GoogleCloudTestingType) child.getUserObject(), child.isChecked());
+          currentDimension.setEnabled((CloudTestingType) child.getUserObject(), child.isChecked());
         }
         currentDimension.dimensionChanged();
       }

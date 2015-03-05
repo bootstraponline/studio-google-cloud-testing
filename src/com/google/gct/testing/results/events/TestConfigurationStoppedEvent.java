@@ -18,7 +18,7 @@ package com.google.gct.testing.results.events;
 import com.intellij.execution.testframework.sm.runner.events.TreeNodeEvent;
 import org.jetbrains.annotations.NotNull;
 
-import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopReason;
+import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 public class TestConfigurationStoppedEvent extends TreeNodeEvent {
 

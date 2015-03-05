@@ -18,8 +18,8 @@ package com.google.gct.testing;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.GoogleCloudTestingDimension;
-import com.google.gct.testing.dimension.GoogleCloudTestingType;
 import com.google.gct.testing.results.GoogleCloudTestProxy;
 import com.google.gct.testing.ui.CopyImageToClipboard;
 import com.google.gct.testing.ui.Tab;
@@ -51,14 +51,14 @@ import static java.awt.Color.BLACK;
 
 public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPanelListener, ConfigurationResultListener {
 
-  public static final Function<GoogleCloudTestingTypeSelection, GoogleCloudTestingType> GET_SELECTED_TYPE = new Function<GoogleCloudTestingTypeSelection, GoogleCloudTestingType>() {
+  public static final Function<GoogleCloudTestingTypeSelection, CloudTestingType> GET_SELECTED_TYPE = new Function<GoogleCloudTestingTypeSelection, CloudTestingType>() {
     @Override
-    public GoogleCloudTestingType apply(GoogleCloudTestingTypeSelection input) {
+    public CloudTestingType apply(GoogleCloudTestingTypeSelection input) {
       return input.getType();
     }
   };
   public static final Color GREEN = new Color(61, 138, 78);
-  public static final Color RED = UIUtil.isUnderDarcula() ? GoogleCloudTestingUtils.makeDarker(new Color(183, 14, 10), 2) : new Color(183, 14, 10);
+  public static final Color RED = UIUtil.isUnderDarcula() ? CloudTestingUtils.makeDarker(new Color(183, 14, 10), 2) : new Color(183, 14, 10);
 
   private final ScreenshotComparisonDialog parent;
   private final AbstractTestProxy testTreeRoot;
@@ -125,7 +125,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   public void init() {
     if (UIUtil.isUnderDarcula()) {
-      myConfigurationChooserPanel.setBackground(GoogleCloudTestingUtils.makeDarker(UIUtil.getPanelBackground(), 1));
+      myConfigurationChooserPanel.setBackground(CloudTestingUtils.makeDarker(UIUtil.getPanelBackground(), 1));
     }
 
     DefaultListCellRenderer dimensionChooserRenderer = new DefaultListCellRenderer() {
@@ -133,8 +133,8 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
       public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         JLabel label = (JLabel)super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-        if (value instanceof GoogleCloudTestingType) {
-          final GoogleCloudTestingType type = (GoogleCloudTestingType) value;
+        if (value instanceof CloudTestingType) {
+          final CloudTestingType type = (CloudTestingType) value;
 
           label.setText(type.getResultsViewerDisplayName());
           //label.setIcon(type.getIcon());
@@ -190,16 +190,16 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
         myConfigurationChooserPanel.add(comboBox, bagConstraints);
         myTypeSelections.add(new GoogleCloudTestingTypeSelection() {
           @Override
-          public GoogleCloudTestingType getType() {
-            return (GoogleCloudTestingType)comboBox.getSelectedItem();
+          public CloudTestingType getType() {
+            return (CloudTestingType)comboBox.getSelectedItem();
           }
         });
       } else {
-        final GoogleCloudTestingType type = Iterables.getOnlyElement(dimension.getEnabledTypes());
+        final CloudTestingType type = Iterables.getOnlyElement(dimension.getEnabledTypes());
         myConfigurationChooserPanel.add(new JLabel(" " + type.getResultsViewerDisplayName()), bagConstraints);
         myTypeSelections.add(new GoogleCloudTestingTypeSelection() {
           @Override
-          public GoogleCloudTestingType getType() {
+          public CloudTestingType getType() {
             return type;
           }
         });
@@ -287,7 +287,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   private void createTabsAndBorders(String status, Icon icon, Color color) {
     myScreenshotPanel.setBorder(new MatteBorder(8, 2, 2, 2, color));
     if (UIUtil.isUnderDarcula()) {
-      myScreenshotPanel.setBackground(GoogleCloudTestingUtils.makeDarker(UIUtil.getPanelBackground(), 1));
+      myScreenshotPanel.setBackground(CloudTestingUtils.makeDarker(UIUtil.getPanelBackground(), 1));
     }
     myButtonPanel.removeAll();
 
@@ -407,5 +407,5 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 }
 
 interface GoogleCloudTestingTypeSelection {
-  public GoogleCloudTestingType getType();
+  public CloudTestingType getType();
 }

@@ -20,38 +20,38 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.GoogleCloudTestingDimension;
-import com.google.gct.testing.dimension.GoogleCloudTestingType;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class ConfigurationInstance {
 
-  //public static final Function<GoogleCloudTestingType,String> GET_CONFIGURATION_DIALOG_DISPLAY_NAME =
-  //  new Function<GoogleCloudTestingType, String>() {
+  //public static final Function<CloudTestingType,String> GET_CONFIGURATION_DIALOG_DISPLAY_NAME =
+  //  new Function<CloudTestingType, String>() {
   //    @Override
-  //    public String apply(GoogleCloudTestingType input) {
+  //    public String apply(CloudTestingType input) {
   //      return input.getConfigurationDialogDisplayName();
   //    }
   //  };
-  public static final Function<GoogleCloudTestingType,String> GET_RESULTS_VIEWER_DISPLAY_NAME =
-    new Function<GoogleCloudTestingType, String>() {
+  public static final Function<CloudTestingType,String> GET_RESULTS_VIEWER_DISPLAY_NAME =
+    new Function<CloudTestingType, String>() {
       @Override
-      public String apply(GoogleCloudTestingType input) {
+      public String apply(CloudTestingType input) {
         return input.getResultsViewerDisplayName();
       }
     };
-  public static final Function<GoogleCloudTestingType,String> GET_ENCODED_NAME = new Function<GoogleCloudTestingType, String>() {
+  public static final Function<CloudTestingType,String> GET_ENCODED_NAME = new Function<CloudTestingType, String>() {
     @Override
-    public String apply(GoogleCloudTestingType input) {
+    public String apply(CloudTestingType input) {
       return input.getId();
     }
   };
   public static final String DISPLAY_NAME_DELIMITER = " | ";
   public static final String ENCODED_NAME_DELIMITER = "-";
 
-  private final Map<String, GoogleCloudTestingType> typesByDimensionName = new LinkedHashMap<String, GoogleCloudTestingType>();
+  private final Map<String, CloudTestingType> typesByDimensionName = new LinkedHashMap<String, CloudTestingType>();
 
   private ConfigurationInstance() {
   }
@@ -64,12 +64,12 @@ public class ConfigurationInstance {
     return parse(GET_RESULTS_VIEWER_DISPLAY_NAME, DISPLAY_NAME_DELIMITER, configurationInstance);
   }
 
-  private static ConfigurationInstance parse(Function<GoogleCloudTestingType, String> typeToNameFunction, String delimiter, String input) {
+  private static ConfigurationInstance parse(Function<CloudTestingType, String> typeToNameFunction, String delimiter, String input) {
     ConfigurationInstance result= new ConfigurationInstance();
-    ArrayList<GoogleCloudTestingType> allTypes = Lists.newArrayList(Iterables.concat(
+    ArrayList<CloudTestingType> allTypes = Lists.newArrayList(Iterables.concat(
       CloudTestConfigurationProviderImpl.getAllDimensionTypes().values()));
 
-    ImmutableMap<String,GoogleCloudTestingType> nameToTypeMap = Maps.uniqueIndex(allTypes, typeToNameFunction);
+    ImmutableMap<String,CloudTestingType> nameToTypeMap = Maps.uniqueIndex(allTypes, typeToNameFunction);
 
     for (String name : input.split(Pattern.quote(delimiter))) {
       recordType(result, nameToTypeMap.get(name));
@@ -77,9 +77,9 @@ public class ConfigurationInstance {
     return result;
   }
 
-  private static void recordType(ConfigurationInstance result, GoogleCloudTestingType type) {
+  private static void recordType(ConfigurationInstance result, CloudTestingType type) {
     String dimensionName = null;
-    for (Map.Entry<String, List<? extends GoogleCloudTestingType>> entry : CloudTestConfigurationProviderImpl.getAllDimensionTypes().entrySet()) {
+    for (Map.Entry<String, List<? extends CloudTestingType>> entry : CloudTestConfigurationProviderImpl.getAllDimensionTypes().entrySet()) {
       if (entry.getValue().contains(type)) {
         dimensionName = entry.getKey();
         break;
@@ -91,12 +91,12 @@ public class ConfigurationInstance {
     result.typesByDimensionName.put(dimensionName, type);
   }
 
-  public GoogleCloudTestingType getTypeForDimension(GoogleCloudTestingDimension dimension) {
+  public CloudTestingType getTypeForDimension(GoogleCloudTestingDimension dimension) {
     return typesByDimensionName.get(dimension.getDisplayName());
   }
 
-  public ConfigurationInstance(List<GoogleCloudTestingType> types) {
-    for (GoogleCloudTestingType type : types) {
+  public ConfigurationInstance(List<CloudTestingType> types) {
+    for (CloudTestingType type : types) {
       recordType(this, type);
     }
   }
@@ -113,9 +113,9 @@ public class ConfigurationInstance {
     return getRepresentationString(GET_RESULTS_VIEWER_DISPLAY_NAME, DISPLAY_NAME_DELIMITER);
   }
 
-  private String getRepresentationString(Function<GoogleCloudTestingType,String> typeToNameFunction, String delimiter) {
+  private String getRepresentationString(Function<CloudTestingType,String> typeToNameFunction, String delimiter) {
     StringBuffer sb = new StringBuffer();
-    for (GoogleCloudTestingType type : typesByDimensionName.values()) {
+    for (CloudTestingType type : typesByDimensionName.values()) {
       sb.append(typeToNameFunction.apply(type) + delimiter);
     }
     sb.replace(sb.length() - delimiter.length(), sb.length(), ""); //Remove trailing delimiter.

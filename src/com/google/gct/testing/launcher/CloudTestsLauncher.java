@@ -21,8 +21,11 @@ import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.testing.model.*;
 import com.google.api.services.toolresults.model.History;
+import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.gct.testing.GoogleCloudTestingUtils;
+import com.google.gct.testing.CloudTestConfigurationImpl;
+import com.google.gct.testing.CloudTestingUtils;
+import com.google.gct.testing.dimension.CloudTestingType;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -36,9 +39,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.google.gct.testing.launcher.CloudAuthenticator.*;
 
@@ -48,8 +49,12 @@ public class CloudTestsLauncher {
   //public static final String TEST_RUNNER_CLASS = "com.google.android.apps.common.testing.testrunner.GoogleInstrumentationTestRunner";
   public static final String TEST_RUNNER_CLASS = "android.support.test.runner.AndroidJUnitRunner";
 
-  public static final String INVALID_MATRIX_ELEMENT_ERROR_MESSAGE = "Incompatible API level for requested model";
-
+  private static final Function<CloudTestingType, String> TO_CLOUD_TESTING_TYPE_IDS = new Function<CloudTestingType, String>() {
+    @Override
+    public String apply(CloudTestingType type) {
+      return type.getId();
+    }
+  };
 
   public CloudTestsLauncher() {
   }
@@ -100,56 +105,52 @@ public class CloudTestsLauncher {
            : s;
   }
 
-  public static Map<String, TestExecution> triggerTestApi(
-    String cloudProjectId, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath,
-    String testSpecification, String instrumentationTestRunner, List<String> matrixInstances, String appPackage, String testPackage) {
+  /**
+   * Returns the triggered test matrix or {@code null} if the attempt was unsuccessful.
+   */
+  public static TestMatrix triggerTestApi(
+    String cloudProjectId, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath, String testSpecification,
+    String instrumentationTestRunner, CloudTestConfigurationImpl cloudTestConfiguration, String appPackage, String testPackage) {
 
     if (instrumentationTestRunner.isEmpty()) {
       instrumentationTestRunner = TEST_RUNNER_CLASS;
     }
 
-    // Indexed by encoded configuration instance name.
-    Map<String, TestExecution> testExecutions = new HashMap<String, TestExecution>();
-    TestExecution testExecution = new TestExecution();
+    TestMatrix testMatrix = new TestMatrix();
 
-    testExecution.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
+    testMatrix.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
       new AndroidInstrumentationTest().setAppApk(new FileReference().setGcsPath(appApkGcsPath))
         .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
         .setTestRunnerClass(instrumentationTestRunner).setTestTargets(Lists.newArrayList(testSpecification))));
 
-    String historyId = getHistoryId(cloudProjectId, appPackage);
+    testMatrix.setResultStorage(new ResultStorage().setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath))
+                                  .setToolResultsHistoryId(getHistoryId(cloudProjectId, appPackage)));
 
-    for (String matrixInstance : matrixInstances) {
-      TestExecution currentTestExecution = testExecution.clone();
-      currentTestExecution.setResultStorage(
-        new ResultStorage()
-          .setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath))
-          .setToolResultsHistoryId(historyId));
-      String[] dimensionValues = matrixInstance.split("-");
-      currentTestExecution.setEnvironment(new Environment().setAndroidDevice(
-        new AndroidDevice()
-          .setAndroidModelId(dimensionValues[0])
-          .setAndroidVersionId(dimensionValues[1])
-          .setLocale(dimensionValues[2])
-          .setOrientation(dimensionValues[3])));
-      try {
-        TestExecution triggeredExecution = getTest().projects().testExecutions().create(cloudProjectId, currentTestExecution).execute();
-        testExecutions.put(matrixInstance, triggeredExecution);
-      } catch (Exception e) {
-        String errorMessage = e.getMessage();
-        if (errorMessage.contains(INVALID_MATRIX_ELEMENT_ERROR_MESSAGE)) {
-          currentTestExecution.setId("Skipped triggering the test execution: " + INVALID_MATRIX_ELEMENT_ERROR_MESSAGE);
-          // An invalid configuration is a user error, no need to report.
-        } else {
-          GoogleCloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test",
-                                                   "Failed to trigger a cloud test execution!\n" +
-                                                   "Exception while triggering a test execution\n\n" + errorMessage);
-          currentTestExecution.setId("Error triggering the test execution");
-        }
-        testExecutions.put(matrixInstance, currentTestExecution);
-      }
+    AndroidMatrix androidMatrix = new AndroidMatrix();
+
+    androidMatrix.setAndroidModelIds(
+      Lists.transform(cloudTestConfiguration.getDeviceDimension().getEnabledTypes(), TO_CLOUD_TESTING_TYPE_IDS));
+
+    androidMatrix.setAndroidVersionIds(
+      Lists.transform(cloudTestConfiguration.getApiDimension().getEnabledTypes(), TO_CLOUD_TESTING_TYPE_IDS));
+
+    androidMatrix.setLocales(
+      Lists.transform(cloudTestConfiguration.getLanguageDimension().getEnabledTypes(), TO_CLOUD_TESTING_TYPE_IDS));
+
+    androidMatrix.setOrientations(
+      Lists.transform(cloudTestConfiguration.getOrientationDimension().getEnabledTypes(), TO_CLOUD_TESTING_TYPE_IDS));
+
+    testMatrix.setEnvironmentMatrix(new EnvironmentMatrix().setAndroidMatrix(androidMatrix));
+
+    TestMatrix triggeredTestMatrix = null;
+    try {
+      triggeredTestMatrix = getTest().projects().testMatrices().create(cloudProjectId, testMatrix).execute();
+    } catch (Exception e) {
+      CloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test", "Failed to trigger a cloud matrix execution!\n" +
+                                                                                 "Exception while triggering a matrix execution\n\n" +
+                                                                                 e.getMessage());
     }
-    return testExecutions;
+    return triggeredTestMatrix;
   }
 
   private static String getHistoryId(String cloudProjectId, String applicationName) {
@@ -168,9 +169,9 @@ public class CloudTestsLauncher {
                                                             new History().setDisplayName(historyName)).execute().getHistoryId();
     }
     catch (Exception e) {
-      GoogleCloudTestingUtils.showErrorMessage(null, "Error creating history id",
-                                               "Failed to create history id for test execution!\n" +
-                                               "Exception while creating a test execution history id\n\n" + e.getMessage());
+      CloudTestingUtils.showErrorMessage(null, "Error creating history id", "Failed to create history id for test execution!\n" +
+                                                                            "Exception while creating a test execution history id\n\n" +
+                                                                            e.getMessage());
       return "";
     }
   }

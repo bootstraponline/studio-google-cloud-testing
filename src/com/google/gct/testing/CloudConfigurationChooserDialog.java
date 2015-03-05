@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static com.google.gct.testing.GoogleCloudTestingUtils.createConfigurationChooserGbc;
+import static com.google.gct.testing.CloudTestingUtils.createConfigurationChooserGbc;
 
 public class CloudConfigurationChooserDialog extends DialogWrapper implements ConfigurationChangeListener {
 

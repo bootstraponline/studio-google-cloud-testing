@@ -102,7 +102,7 @@ public class ShowScreenshotsAction extends AnAction {
 
   private void showNoScreenshotsWarning(AnActionEvent e) {
     //TODO: Instead of ignoring invalid invocations, should remove the menu option to show screenshot if the context is not correct.
-    GoogleCloudTestingUtils
+    CloudTestingUtils
       .showBalloonMessage(e.getData(PlatformDataKeys.PROJECT), "Screenshots are not yet available for this configuration",
                           MessageType.WARNING, 3);
   }

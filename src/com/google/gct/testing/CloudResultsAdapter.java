@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.google.api.services.testing.model.TestExecution;
+import com.google.api.services.testing.model.TestMatrix;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -23,7 +23,7 @@ import com.google.gct.testing.results.GoogleCloudTestingResultParser;
 
 import java.util.*;
 
-import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopReason;
+import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 public class CloudResultsAdapter {
 
@@ -31,8 +31,6 @@ public class CloudResultsAdapter {
   private final CloudResultsLoader loader;
   private final GoogleCloudTestingResultParser resultParser;
   private final List<String> expectedConfigurationInstances;
-  // Indexed by encoded configuration instance name. Is null for a fake bucket since we bypass Test API.
-  private final Map<String, TestExecution> testExecutions;
   // Indexed by encoded configuration instance name.
   private final Map<String, ConfigurationResult> results = new HashMap<String, ConfigurationResult>();
   // The set of configurations for which we've gotten a result and published it to the parser.
@@ -45,14 +43,13 @@ public class CloudResultsAdapter {
 
 
   public CloudResultsAdapter(String cloudProjectId, String bucketName, GoogleCloudTestingResultParser resultParser,
-                             List<String> expectedConfigurationInstances, String testRunId, Map<String, TestExecution> testExecutions) {
+                             List<String> expectedConfigurationInstances, String testRunId, TestMatrix testMatrix) {
     this.cloudProjectId = cloudProjectId;
-    loader = new CloudResultsLoader(cloudProjectId, resultParser.getTestRunListener(), bucketName, testExecutions);
+    loader = new CloudResultsLoader(cloudProjectId, resultParser.getTestRunListener(), bucketName, testMatrix);
     this.resultParser = resultParser;
     this.expectedConfigurationInstances = expectedConfigurationInstances;
     // Update the tree's root node with the index of the adapter that communicates with the tree through this parser.
     resultParser.getTestRunListener().setTestRunId(testRunId);
-    this.testExecutions = testExecutions;
   }
 
   public void startPolling() {

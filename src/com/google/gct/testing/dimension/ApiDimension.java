@@ -76,10 +76,10 @@ public class ApiDimension extends GoogleCloudTestingDimension {
   }
 
   @Override
-  public List<? extends GoogleCloudTestingType> getAppSupportedDomain() {
-    return Lists.newArrayList(Iterables.filter(getFullDomain(), new Predicate<GoogleCloudTestingType>() {
+  public List<? extends CloudTestingType> getAppSupportedDomain() {
+    return Lists.newArrayList(Iterables.filter(getFullDomain(), new Predicate<CloudTestingType>() {
       @Override
-      public boolean apply(GoogleCloudTestingType input) {
+      public boolean apply(CloudTestingType input) {
         if (input instanceof ApiLevel) {
           return ((ApiLevel)input).apiVersion >= minSdkVersion;
         }
@@ -89,17 +89,17 @@ public class ApiDimension extends GoogleCloudTestingDimension {
   }
 
   @Override
-  public List<? extends GoogleCloudTestingType> getSupportedDomain() {
-    return Lists.newArrayList(Iterables.filter(getAppSupportedDomain(), new Predicate<GoogleCloudTestingType>() {
+  public List<? extends CloudTestingType> getSupportedDomain() {
+    return Lists.newArrayList(Iterables.filter(getAppSupportedDomain(), new Predicate<CloudTestingType>() {
       @Override
-      public boolean apply(GoogleCloudTestingType type) {
+      public boolean apply(CloudTestingType type) {
         //return BACKEND_SUPPORTED_API_VERSIONS.contains(type);
         return true;
       }
     }));
   }
 
-  public static List<? extends GoogleCloudTestingType> getFullDomain() {
+  public static List<? extends CloudTestingType> getFullDomain() {
     if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       List<ApiLevel> apiLevels = new LinkedList<ApiLevel>();
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
@@ -134,7 +134,7 @@ public class ApiDimension extends GoogleCloudTestingDimension {
     return AndroidIcons.SdkManager;
   }
 
-  public static class ApiLevel extends GoogleCloudTestingType {
+  public static class ApiLevel extends CloudTestingType {
 
     private final String id;
     private final String codeName;

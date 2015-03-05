@@ -23,7 +23,7 @@ public class GoogleCloudTestingTypeGroup {
   private final String name;
   private final String description;
 
-  private final List<GoogleCloudTestingType> types = new LinkedList<GoogleCloudTestingType>();
+  private final List<CloudTestingType> types = new LinkedList<CloudTestingType>();
 
   public GoogleCloudTestingTypeGroup(String name, String description) {
     this.name = name;
@@ -38,11 +38,11 @@ public class GoogleCloudTestingTypeGroup {
     return description;
   }
 
-  public void addType(GoogleCloudTestingType type) {
+  public void addType(CloudTestingType type) {
     types.add(type);
   }
 
-  public List<GoogleCloudTestingType> getTypes() {
+  public List<CloudTestingType> getTypes() {
     return types;
   }
 

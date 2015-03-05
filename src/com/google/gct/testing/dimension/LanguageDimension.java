@@ -118,7 +118,7 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
   }
 
   @Override
-  public List<? extends GoogleCloudTestingType> getAppSupportedDomain() {
+  public List<? extends CloudTestingType> getAppSupportedDomain() {
     return supportedLanguages;
   }
 
@@ -165,7 +165,7 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
     return AndroidIcons.Configs.Language;
   }
 
-  public static class Language extends GoogleCloudTestingType {
+  public static class Language extends CloudTestingType {
 
     private final String id;
     private final String name;

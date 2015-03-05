@@ -17,7 +17,7 @@ package com.google.gct.testing.results;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.google.gct.testing.GoogleCloudTestingUtils;
+import com.google.gct.testing.CloudTestingUtils;
 import com.google.gct.testing.results.events.*;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.AbstractTestProxy;
@@ -39,7 +39,7 @@ import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
 
-import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopReason;
+import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 /**
  * This class fires events to RTestUnitEventsListener in EventDispatch thread
@@ -126,7 +126,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
       }
 
       private String prepareFinishString() {
-        return GoogleCloudTestingUtils.shouldShowProgressTimestamps()
+        return CloudTestingUtils.shouldShowProgressTimestamps()
           ? "Finish\t" + System.currentTimeMillis() + "\n"
           : "Finish\n";
       }

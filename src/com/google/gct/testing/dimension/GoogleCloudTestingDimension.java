@@ -36,7 +36,7 @@ public abstract class GoogleCloudTestingDimension {
   /**
    * The list of types that are currently enabled (use List rather than Set for comparison consistency).
    */
-  private List<GoogleCloudTestingType> enabledTypes = new LinkedList<GoogleCloudTestingType>();
+  private List<CloudTestingType> enabledTypes = new LinkedList<CloudTestingType>();
   private CloudTestConfigurationImpl myGoogleCloudTestingConfiguration;
   private Icon icon;
 
@@ -59,14 +59,14 @@ public abstract class GoogleCloudTestingDimension {
   /**
    * Returns the list of types supported by the app for this dimension.
    */
-  public abstract List<? extends GoogleCloudTestingType> getAppSupportedDomain();
+  public abstract List<? extends CloudTestingType> getAppSupportedDomain();
 
   /**
    * Returns the list of type groups supported by the app and the backend for this dimension.
    */
   public List<? extends GoogleCloudTestingTypeGroup> getSupportedGroups() {
     List<GoogleCloudTestingTypeGroup> result = new LinkedList<GoogleCloudTestingTypeGroup>();
-    for (GoogleCloudTestingType type : getSupportedDomain()) {
+    for (CloudTestingType type : getSupportedDomain()) {
       GoogleCloudTestingTypeGroup groupToAddTo = null;
       for (GoogleCloudTestingTypeGroup group : result) {
         if (type.getGroupName().equals(group.getName())) {
@@ -86,22 +86,22 @@ public abstract class GoogleCloudTestingDimension {
   /**
    * Returns the list of types supported both by the app and the backend for this dimension.
    */
-  public List<? extends GoogleCloudTestingType> getSupportedDomain() {
+  public List<? extends CloudTestingType> getSupportedDomain() {
     return getAppSupportedDomain();
   }
 
-  public void enable(GoogleCloudTestingType... types) {
+  public void enable(CloudTestingType... types) {
     checkIsEditable();
-    for (GoogleCloudTestingType type : types) {
+    for (CloudTestingType type : types) {
       validateType(type);
       enableType(type);
     }
   }
 
-  public void enable(List<? extends GoogleCloudTestingType> types, Iterable<String> ids) {
+  public void enable(List<? extends CloudTestingType> types, Iterable<String> ids) {
     checkIsEditable();
     Set<String> idsSet = Sets.newHashSet(ids);
-    for (GoogleCloudTestingType type : types) {
+    for (CloudTestingType type : types) {
       if (idsSet.contains(type.getId())) {
         validateType(type);
         enableType(type);
@@ -109,15 +109,15 @@ public abstract class GoogleCloudTestingDimension {
     }
   }
 
-  public void disable(GoogleCloudTestingType... types) {
+  public void disable(CloudTestingType... types) {
     checkIsEditable();
-    for (GoogleCloudTestingType type : types) {
+    for (CloudTestingType type : types) {
       validateType(type);
       enabledTypes.remove(type);
     }
   }
 
-  public void setEnabled(GoogleCloudTestingType type, boolean isEnabled) {
+  public void setEnabled(CloudTestingType type, boolean isEnabled) {
     checkIsEditable();
     validateType(type);
     if (isEnabled) {
@@ -127,7 +127,7 @@ public abstract class GoogleCloudTestingDimension {
     }
   }
 
-  private void enableType(GoogleCloudTestingType type) {
+  private void enableType(CloudTestingType type) {
     if (!enabledTypes.contains(type)) {
       enabledTypes.add(type);
     }
@@ -139,23 +139,23 @@ public abstract class GoogleCloudTestingDimension {
 
   public void enableAll() {
     checkIsEditable();
-    for (GoogleCloudTestingType type : getSupportedDomain()) {
+    for (CloudTestingType type : getSupportedDomain()) {
       enable(type);
     }
   }
 
   public void disableAll() {
     checkIsEditable();
-    for (GoogleCloudTestingType type : getSupportedDomain()) {
+    for (CloudTestingType type : getSupportedDomain()) {
       disable(type);
     }
   }
 
-  public ImmutableList<GoogleCloudTestingType> getEnabledTypes() {
+  public ImmutableList<CloudTestingType> getEnabledTypes() {
     return ImmutableList.copyOf(enabledTypes);
   }
 
-  private void validateType(GoogleCloudTestingType type) {
+  private void validateType(CloudTestingType type) {
     if (!getSupportedDomain().contains(type)) {
       throw new IllegalArgumentException("Type " + type + " is not supported in domain: " + getSupportedDomain());
     }
@@ -190,8 +190,8 @@ public abstract class GoogleCloudTestingDimension {
 
   public abstract Icon getIcon();
 
-  public void enableAll(Iterable<GoogleCloudTestingType> enabledTypes) {
-    for (GoogleCloudTestingType enabledType : enabledTypes) {
+  public void enableAll(Iterable<CloudTestingType> enabledTypes) {
+    for (CloudTestingType enabledType : enabledTypes) {
       enable(enabledType);
     }
   }

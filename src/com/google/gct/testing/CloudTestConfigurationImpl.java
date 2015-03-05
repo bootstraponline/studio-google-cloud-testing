@@ -113,7 +113,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
   private String getStringRepresentation(GoogleCloudTestingDimension dimension) {
     StringBuffer sb = new StringBuffer();
     sb.append(dimension.getId());
-    for (GoogleCloudTestingType type : dimension.getEnabledTypes()) {
+    for (CloudTestingType type : dimension.getEnabledTypes()) {
       sb.append(type.getId());
     }
     return sb.toString();
@@ -265,7 +265,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     }
 
     String separator = dimensionIndex == 0 ? "" : delimiter;
-    for (GoogleCloudTestingType type : getDimensions().get(dimensionIndex).getEnabledTypes()) {
+    for (CloudTestingType type : getDimensions().get(dimensionIndex).getEnabledTypes()) {
       String typeName;
       if (ConfigurationInstance.DISPLAY_NAME_DELIMITER.equals(delimiter)) {
         typeName = type.getResultsViewerDisplayName();
@@ -280,7 +280,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
   private StringBuffer prepareDimensionRequest(GoogleCloudTestingDimension dimension) {
     StringBuffer bf = new StringBuffer();
     boolean firstType = true;
-    for (GoogleCloudTestingType type : dimension.getEnabledTypes()) {
+    for (CloudTestingType type : dimension.getEnabledTypes()) {
       if (!firstType) {
         bf.append(" || ");
       }
@@ -319,7 +319,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
 
   private List<String> getEnabledTypes(GoogleCloudTestingDimension dimension) {
     List<String> enabledTypes = new LinkedList<String>();
-    for (GoogleCloudTestingType type : dimension.getEnabledTypes()) {
+    for (CloudTestingType type : dimension.getEnabledTypes()) {
       enabledTypes.add(type.getId());
     }
     return enabledTypes;

@@ -18,7 +18,9 @@ package com.google.gct.testing;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
+import com.google.api.services.testing.model.AndroidDevice;
 import com.google.api.services.testing.model.TestExecution;
+import com.google.api.services.testing.model.TestMatrix;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -26,6 +28,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.gct.testing.results.IGoogleCloudTestRunListener;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -87,23 +90,25 @@ public class CloudResultsLoader {
   private final String cloudProjectId;
   private final IGoogleCloudTestRunListener testRunListener;
   private final String bucketName;
-  // Test execution id -> TestExecution
-  private final Map<String, TestExecution> testExecutions;
-  private final Set<String> finishedTestExecutions = new HashSet<String>();
+  private final String testMatrixId;
+  private final Set<String> allConfigurationInstances = new HashSet<String>();
+  private final Set<String> finishedConfigurationInstances = new HashSet<String>();
   private long loadedScreenshotSize = 0;
-  // Encoded configuration instance -> number of failures
-  private final Map<String, Integer> consecutivePollFailuresMap = new HashMap<String, Integer>();
+  private int consecutivePollFailuresCount = 0;
 
   // Encoded configuration instance -> progress accumulated so far.
   private final Map<String, String> configurationProgress = new HashMap<String, String>();
 
 
   public CloudResultsLoader(String cloudProjectId, IGoogleCloudTestRunListener testRunListener, String bucketName,
-                            Map<String, TestExecution> testExecutions) {
+                            TestMatrix testMatrix) {
     this.cloudProjectId = cloudProjectId;
     this.testRunListener = testRunListener;
     this.bucketName = bucketName;
-    this.testExecutions = testExecutions;
+    testMatrixId = testMatrix.getTestMatrixId();
+    for (TestExecution testExecution : testMatrix.getTestExecutions()) {
+      allConfigurationInstances.add(getEncodedConfigurationNameForTestExecution(testExecution));
+    }
   }
 
   //TODO: Check file size after loading it and load the missing parts, if any (i.e., keep loading until the file's size does not change).
@@ -143,7 +148,7 @@ public class CloudResultsLoader {
   public boolean updateResults(Map<String, ConfigurationResult> results) {
     newDataReceived = false;
     try {
-      if (testExecutions == null) { // The obsolete logic kept for handling fake buckets.
+      if (testMatrixId == null) { // The obsolete logic kept for handling fake buckets.
         Storage.Objects.List objects = getStorage().objects().list(bucketName);
         List<StorageObject> storageObjects = objects.execute().getItems();
 
@@ -173,70 +178,79 @@ public class CloudResultsLoader {
   }
 
   private void updateResultsFromApi(Map<String, ConfigurationResult> results) {
-    for (Map.Entry<String, TestExecution> testExecutionEntry : testExecutions.entrySet()) {
-      String encodedConfigurationInstance = testExecutionEntry.getKey();
-      if (finishedTestExecutions.contains(encodedConfigurationInstance)) {
+    TestMatrix testMatrix = null;
+    try {
+       testMatrix = getTest().projects().testMatrices().get(cloudProjectId, testMatrixId).execute();
+    } catch (Exception e) {
+      if (consecutivePollFailuresCount == 2) { // Give up on the 3rd failure in a row.
+        for (String configurationInstance : allConfigurationInstances) {
+          if (!finishedConfigurationInstances.contains(configurationInstance)) {
+            ConfigurationResult result = getOrCreateConfigurationResult(configurationInstance, results);
+            result.setInfrastructureFailure(true);
+            finishedConfigurationInstances.add(configurationInstance);
+          }
+        }
+        CloudTestingUtils
+          .showErrorMessage(null, "Error retrieving matrix test results", "Failed to retrieve results of a cloud test matrix!\n" +
+                                                                          "Exception while updating results for test matrix " +
+                                                                          testMatrixId +
+                                                                          "\n\n" +
+                                                                          e.getMessage());
+      } else {
+        consecutivePollFailuresCount++;
+      }
+    }
+    if (testMatrix != null) {
+      updateResultsFromTestMatrix(results, testMatrix);
+      consecutivePollFailuresCount = 0; // Reset the consecutive poll failures on every success.
+    }
+  }
+
+  private void updateResultsFromTestMatrix(Map<String, ConfigurationResult> results, @NotNull TestMatrix testMatrix) {
+    for (TestExecution testExecution : testMatrix.getTestExecutions()) {
+      String encodedConfigurationInstance = getEncodedConfigurationNameForTestExecution(testExecution);
+      if (finishedConfigurationInstances.contains(encodedConfigurationInstance)) {
         continue;
       }
-      String testExecutionId = testExecutionEntry.getValue().getId();
-      if (failedToTriggerTest(testExecutionId)) { // A backend error happened while triggering this test execution.
-        String diffProgress = testExecutionId + "\n"; // The test execution's id carries the error message for the user.
+      String testExecutionState = testExecution.getState();
+      if (testExecutionState.equals("UNSUPPORTED_ENVIRONMENT")) {
+        String diffProgress = "Skipped triggering the test execution: Incompatible API level for requested model\n";
+        // Probably, no previous progress could be expected in this scenario, but it would not hurt considering it anyway.
         String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-        if (!previousProgress.endsWith(diffProgress)) {
-          reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
-          ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
-          // If the execution is skipped because it is an incompatible combination, it is a triggering error. Otherwise - infra failure.
-          if (testExecutionId.startsWith("Error ")) {
-            result.setInfrastructureFailure(true);
-          } else {
-            result.setTriggeringError(true);
+        reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
+        ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
+        result.setTriggeringError(true);
+        finishedConfigurationInstances.add(encodedConfigurationInstance);
+      } else if (!testExecutionState.equals("QUEUED")) {
+        if (testExecutionState.equals("ERROR")) {
+          String diffProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
+          String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+          if (!previousProgress.endsWith(diffProgress)) {
+            reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
           }
-          finishedTestExecutions.add(encodedConfigurationInstance);
+        } else if (testExecutionState.equals("IN_PROGRESS")) {
+          String newProgress = testExecution.getTestDetails().getProgressDetails();
+          String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+          if (newProgress != null && !newProgress.equals(previousProgress)) {
+            reportNewProgress(encodedConfigurationInstance, previousProgress, newProgress);
+          }
         }
-      } else {
-        try {
-          TestExecution testExecution = getTest().projects().testExecutions().get(cloudProjectId, testExecutionId).execute();
-          String testExecutionState = testExecution.getState();
-          if (!testExecutionState.equals("QUEUED")) {
-            if (testExecutionState.equals("ERROR")) {
-              String diffProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
-              String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-              if (!previousProgress.endsWith(diffProgress)) {
-                reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
-              }
-            } else if (testExecutionState.equals("IN_PROGRESS")) {
-              String newProgress = testExecution.getTestDetails().getProgressDetails();
-              String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-              if (newProgress != null && !newProgress.equals(previousProgress)) {
-                reportNewProgress(encodedConfigurationInstance, previousProgress, newProgress);
-              }
-            }
-            ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
-            result.setComplete(testExecutionState.equals("FINISHED"));
-            result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
-            if (result.isNoProgressExpected()) {
-              finishedTestExecutions.add(encodedConfigurationInstance);
-            }
-            consecutivePollFailuresMap.put(encodedConfigurationInstance, 0); // Reset the consecutive poll failures on every success.
-          }
-        } catch (Exception e) {
-          Integer failureCount = consecutivePollFailuresMap.get(encodedConfigurationInstance);
-          if (failureCount == null) {
-            consecutivePollFailuresMap.put(encodedConfigurationInstance, 1);
-          } else if (failureCount == 2) { // Tolerate 3 failures in a row.
-            ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
-            result.setInfrastructureFailure(true);
-            finishedTestExecutions.add(encodedConfigurationInstance);
-            GoogleCloudTestingUtils.showErrorMessage(null, "Error retrieving matrix test results",
-                                                     "Failed to retrieve results of a cloud test execution!\n" +
-                                                     "Exception while updating results for test execution " + testExecutionId + "\n\n"
-                                                     + e.getMessage());
-          } else {
-            consecutivePollFailuresMap.put(encodedConfigurationInstance, failureCount + 1);
-          }
+        ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
+        result.setComplete(testExecutionState.equals("FINISHED"));
+        result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
+        if (result.isNoProgressExpected()) {
+          finishedConfigurationInstances.add(encodedConfigurationInstance);
         }
       }
     }
+  }
+
+  private String getEncodedConfigurationNameForTestExecution(TestExecution testExecution) {
+    AndroidDevice androidDevice = testExecution.getEnvironment().getAndroidDevice();
+    return androidDevice.getAndroidModelId() + ConfigurationInstance.ENCODED_NAME_DELIMITER
+           + androidDevice.getAndroidVersionId() + ConfigurationInstance.ENCODED_NAME_DELIMITER
+           + androidDevice.getLocale() + ConfigurationInstance.ENCODED_NAME_DELIMITER
+           + androidDevice.getOrientation();
   }
 
   private boolean failedToTriggerTest(String testExecutionId) {

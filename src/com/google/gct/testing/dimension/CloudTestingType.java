@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * A GoogleCloudTestingDimension consists of a set of Types; concrete instantiations of a dimension.
  */
-public abstract class GoogleCloudTestingType {
+public abstract class CloudTestingType {
 
   protected Map<String, String> details;
 
@@ -56,9 +56,9 @@ public abstract class GoogleCloudTestingType {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    GoogleCloudTestingType googleCloudTestingType = (GoogleCloudTestingType)o;
+    CloudTestingType cloudTestingType = (CloudTestingType)o;
 
-    return googleCloudTestingType.getId().equals(this.getId());
+    return cloudTestingType.getId().equals(this.getId());
   }
 
   @Override

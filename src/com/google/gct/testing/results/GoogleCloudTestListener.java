@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing.results;
 
-import com.google.gct.testing.GoogleCloudTestingUtils;
+import com.google.gct.testing.CloudTestingUtils;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.sm.ServiceMessageBuilder;
@@ -24,7 +24,7 @@ import org.jetbrains.android.run.testing.AndroidTestLocationProvider;
 
 import java.util.Map;
 
-import static com.google.gct.testing.GoogleCloudTestingUtils.ConfigurationStopReason;
+import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   private final AndroidRunningState myRunningState;
@@ -90,14 +90,14 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
 
   @Override
   public void setTestRunId(String testRunId) {
-    ServiceMessageBuilder builder = new ServiceMessageBuilder(GoogleCloudTestingUtils.SET_TEST_RUN_ID);
+    ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.SET_TEST_RUN_ID);
     builder.addAttribute("testRunId", testRunId);
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
   }
 
   @Override
   public void stopTestConfiguration(String configurationName, ConfigurationStopReason stopReason) {
-    ServiceMessageBuilder builder = new ServiceMessageBuilder(GoogleCloudTestingUtils.TEST_CONFIGURATION_STOPPED);
+    ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_STOPPED);
     builder.addAttribute("name", configurationName);
     builder.addAttribute("stopReason" , stopReason.name());
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
@@ -106,14 +106,14 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   @Override
   public void testConfigurationProgress(String configurationName, String progressMessage) {
     myConfiguration = configurationName;
-    ServiceMessageBuilder builder = new ServiceMessageBuilder(GoogleCloudTestingUtils.TEST_CONFIGURATION_PROGRESS);
+    ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_PROGRESS);
     builder.addAttribute("name", configurationName);
     builder.addAttribute("text", prepareProgressString(progressMessage));
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
   }
 
   private String prepareProgressString(String progressMessage) {
-    return GoogleCloudTestingUtils.shouldShowProgressTimestamps()
+    return CloudTestingUtils.shouldShowProgressTimestamps()
       ? progressMessage.substring(0, progressMessage.length() - 1) + "\t" + System.currentTimeMillis() + "\n"
       : progressMessage;
   }
@@ -121,7 +121,7 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   @Override
   public void testConfigurationScheduled(String configurationName) {
     myConfiguration = configurationName;
-    ServiceMessageBuilder builder = new ServiceMessageBuilder(GoogleCloudTestingUtils.TEST_CONFIGURATION_SCHEDULED);
+    ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_SCHEDULED);
     builder.addAttribute("name", configurationName);
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
   }
@@ -129,7 +129,7 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   @Override
   public void testConfigurationStarted(String configurationName) {
     myConfiguration = configurationName;
-    ServiceMessageBuilder builder = new ServiceMessageBuilder(GoogleCloudTestingUtils.TEST_CONFIGURATION_STARTED);
+    ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_STARTED);
     builder.addAttribute("name", configurationName);
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
   }
@@ -144,7 +144,7 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   //}
 
   public void testConfigurationFinished(String configurationName) {
-    ServiceMessageBuilder builder = new ServiceMessageBuilder(GoogleCloudTestingUtils.TEST_CONFIGURATION_FINISHED);
+    ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_FINISHED);
     builder.addAttribute("name", configurationName);
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
   }
