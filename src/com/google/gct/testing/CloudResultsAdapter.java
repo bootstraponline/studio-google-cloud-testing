@@ -135,11 +135,15 @@ public class CloudResultsAdapter {
   }
 
   private byte[] getParserInput(ConfigurationResult result) {
-    String configurationName = "\r\nINSTRUMENTATION_STATUS: configuration="
+    String resultString = result.getResult();
+    if (resultString.indexOf("\r\n") == -1 && resultString.indexOf("\n") != -1) {
+      //Make sure the result uses \r\n (Windows-style EOL) as line delimiter as this is what parser expects/produces.
+      resultString = resultString.replaceAll("\\n", "\r\n");
+    }
+    String configurationName = "\nINSTRUMENTATION_STATUS: configuration="
                                + result.getConfigurationInstance().getResultsViewerDisplayString() + "\r\n";
     String classNamePrefix = "INSTRUMENTATION_STATUS: class=";
-    //Make sure the input uses \r\n (Windows-style EOL) as line delimiter as this is what parser expects/produces.
-    return result.getResult().replaceAll("\\n" + classNamePrefix, configurationName + classNamePrefix).getBytes();
+    return resultString.replaceAll("\\n" + classNamePrefix, configurationName + classNamePrefix).getBytes();
   }
 
   class PollingTicker implements Runnable {
