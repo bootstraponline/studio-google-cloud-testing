@@ -26,12 +26,11 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.*;
 import com.intellij.ui.treeStructure.Tree;
-import com.intellij.util.IconUtil;
+import com.intellij.util.PlatformIcons;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import icons.AndroidIcons;
@@ -45,7 +44,6 @@ import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -54,22 +52,17 @@ import static com.google.gct.testing.CloudTestingUtils.createConfigurationChoose
 
 public class CloudConfigurationChooserDialog extends DialogWrapper implements ConfigurationChangeListener {
 
-  public static final double COST_PER_COMBINATION = 0.3;
   private final List<CloudTestConfigurationImpl> editableConfigurations;
   private final List<CloudTestConfigurationImpl> defaultConfigurations;
   private final MyAddAction myAddAction = new MyAddAction();
   private final MyRemoveAction myRemoveAction = new MyRemoveAction();
+  private final MyCopyActionButton myCopyActionButton = new MyCopyActionButton();
   private final MyMoveUpAction myMoveUpAction = new MyMoveUpAction();
   private final MyMoveDownAction myMoveDownAction = new MyMoveDownAction();
-  NumberFormat formatter = NumberFormat.getCurrencyInstance();
-
-  private static final Icon ADD_ICON = IconUtil.getAddIcon();
-  private static final Icon REMOVE_ICON = IconUtil.getRemoveIcon();
 
   private final DefaultMutableTreeNode customRoot = new DefaultMutableTreeNode("Custom");
   private final DefaultMutableTreeNode defaultsRoot = new DefaultMutableTreeNode("Defaults");
 
-  private final Project myProject;
   private JPanel myPanel;
   private final Splitter mySplitter = new Splitter(false);
   private JPanel myConfigurationPanel;
@@ -78,8 +71,6 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   private JPanel myConfigurationTreePanel;
   private JLabel myConfigurationNameLabel;
   private JLabel myGroupDescriptionLabel;
-  private JPanel myConfiguarationNamePanel;
-  private JPanel myConfigurationDetailsPanel;
   private JPanel myConfigurationEditorPanel;
   private JPanel myConfigurationInfoPanel;
   private JLabel myConfigurationInfoLabel;
@@ -109,8 +100,6 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     facet = AndroidFacet.getInstance(module);
 
     setTitle("Matrix Configurations");
-
-    myProject = facet.getModule().getProject();
 
     getOKAction().setEnabled(true);
 
@@ -287,7 +276,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
         ExecutionBundle.message("move.up.action.name"))
       .setMoveDownAction(myMoveDownAction).setMoveDownActionUpdater(myMoveDownAction).setMoveDownActionName(
         ExecutionBundle.message("move.down.action.name"))
-      //.addExtraAction(AnActionButton.fromAction(new MyCopyAction()))
+      .addExtraAction(myCopyActionButton)
       //.addExtraAction(AnActionButton.fromAction(new MySaveAction()))
       .setButtonComparator(ExecutionBundle.message("add.new.run.configuration.acrtion.name"),
                            ExecutionBundle.message("remove.run.configuration.action.name"),
@@ -441,6 +430,30 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
   }
 
+  private class MyCopyActionButton extends AnActionButton implements AnActionButtonUpdater {
+
+    public MyCopyActionButton() {
+      super(ExecutionBundle.message("copy.configuration.action.name"), ExecutionBundle.message("copy.configuration.action.name"),
+            PlatformIcons.COPY_ICON);
+      addCustomUpdater(this);
+    }
+
+    @Override
+    public void actionPerformed(AnActionEvent e) {
+      // selectedConfiguration should not be null here, but handle this scenario just in case.
+      CloudTestConfigurationImpl newConfiguration = selectedConfiguration != null
+                                                    ? selectedConfiguration.copy("Copy of ")
+                                                    : new CloudTestConfigurationImpl(facet);
+
+      addNewConfiguration(newConfiguration);
+    }
+
+    @Override
+    public boolean isEnabled(AnActionEvent e) {
+      return selectedConfiguration != null;
+    }
+  }
+
   private class MyAddAction extends AnAction implements AnActionButtonRunnable, AnActionButtonUpdater {
 
     @Override
@@ -454,25 +467,25 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
 
     private void doAdd() {
-      CloudTestConfigurationImpl newConfiguration = selectedConfiguration != null
-          ? selectedConfiguration.copy("Copy of ")
-          : new CloudTestConfigurationImpl(facet);
-
-      newConfiguration.setIcon(CloudTestConfigurationProviderImpl.DEFAULT_ICON);
-      int addIndex = selectedConfiguration == null
-                     ? editableConfigurations.size()
-                     : editableConfigurations.indexOf(selectedConfiguration) + 1;
-      editableConfigurations.add(addIndex, newConfiguration);
-      addConfigurationToTree(addIndex, newConfiguration, true);
-      selectedConfiguration = newConfiguration;
-
-      updateConfigurationTree();
+      addNewConfiguration(new CloudTestConfigurationImpl(facet));
     }
 
     @Override
     public boolean isEnabled(AnActionEvent e) {
       return true;
     }
+  }
+
+  private void addNewConfiguration(CloudTestConfigurationImpl newConfiguration) {
+    newConfiguration.setIcon(CloudTestConfigurationProviderImpl.DEFAULT_ICON);
+    int addIndex = selectedConfiguration == null
+                   ? editableConfigurations.size()
+                   : editableConfigurations.indexOf(selectedConfiguration) + 1;
+    editableConfigurations.add(addIndex, newConfiguration);
+    addConfigurationToTree(addIndex, newConfiguration, true);
+    selectedConfiguration = newConfiguration;
+
+    updateConfigurationTree();
   }
 
   private class MyMoveUpAction extends AnAction implements AnActionButtonRunnable, AnActionButtonUpdater {
