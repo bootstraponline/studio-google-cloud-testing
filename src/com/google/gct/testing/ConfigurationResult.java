@@ -161,7 +161,6 @@ public class ConfigurationResult {
   }
 
   public BufferedImage getScreenshotForTestAndStep(TestName testName, int step) {
-    System.out.println("About to load a screenshot");
     String fileName = screenshotKeyToFileName.get(new ScreenshotKey(testName, step));
 
     BufferedImage image = null;
@@ -180,7 +179,6 @@ public class ConfigurationResult {
       }
       image.flush();
     }
-    System.out.println("Finished loading the screenshot");
     return image;
   }
 

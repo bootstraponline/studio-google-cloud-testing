@@ -87,11 +87,17 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   //private static final int IMAGE_WIDTH = 300;
   //private static int imageHeight = 550;
   private static final BufferedImage NO_IMAGE;
+  private static final BufferedImage LOADING_PORTRAIT;
+
+  private UpdateImageThread updateImageThread;
+  private final Object lock;
 
   static {
     try {
       NO_IMAGE = ImageIO.read(ScreenshotComparisonPanel.class.getResourceAsStream("NoImage.png"));
       NO_IMAGE.flush();
+      LOADING_PORTRAIT = ImageIO.read(ScreenshotComparisonPanel.class.getResourceAsStream("LoadingPortrait.png"));
+      LOADING_PORTRAIT.flush();
     }
     catch (IOException e) {
       throw new RuntimeException(e);
@@ -104,6 +110,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   public ScreenshotComparisonPanel(ScreenshotComparisonDialog parent, AbstractTestProxy testTreeRoot, CloudTestConfigurationImpl configuration,
                                    ConfigurationInstance configurationInstance, TestName currentTest, int currentStep,
                                    Map<String, ConfigurationResult> results) {
+    lock = this;
     this.parent = parent;
     this.testTreeRoot = testTreeRoot;
     this.configuration = configuration;
@@ -221,42 +228,93 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   }
 
   private void updateImage() {
-    ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
-    if (selectedConfigurationResult == null) {
-      myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
-      return;
+    synchronized (lock) {
+      if (updateImageThread != null) {
+        updateImageThread.makeObsolete();
+      }
+      ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
+      if (selectedConfigurationResult == null) {
+        myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+        return;
+      }
+      myImageLabel.setIcon(new ImageIcon(LOADING_PORTRAIT.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+      updateImageThread = new UpdateImageThread(currentTest, currentStep, selectedConfigurationResult);
+      updateImageThread.start();
     }
-    currentImage = selectedConfigurationResult.getScreenshotForTestAndStep(currentTest, currentStep);
-    if (currentImage == null) {
-      myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
-      return;
+  }
+
+  private class UpdateImageThread extends Thread {
+
+    private final TestName test;
+    private final int step;
+    private final ConfigurationResult configurationResult;
+
+    private BufferedImage loadedImage;
+
+    private volatile boolean isObsolete = false;
+
+    public UpdateImageThread(TestName test, int step, ConfigurationResult configurationResult) {
+      this.test = test;
+      this.step = step;
+      this.configurationResult = configurationResult;
     }
 
-    //TODO: This is a temporary rotation hack that should be removed after the backend produces correct landscape screenshots.
-    if (selectedConfigurationInstance.getEncodedString().endsWith("landscape")
-        && currentImage.getHeight() > currentImage.getWidth()) { // Rotate landscape screenshots that are indeed mis-rotated.
-
-      AffineTransform transform = new AffineTransform();
-      transform.translate(currentImage.getHeight() / 2, currentImage.getWidth() / 2);
-      transform.rotate(-Math.PI / 2);
-      //transform.scale(0.5, 0.5);
-      transform.translate(-currentImage.getWidth() / 2, -currentImage.getHeight() / 2);
-      //transform.rotate(-Math.PI / 2, currentImage.getWidth() / 2, currentImage.getHeight() / 2);
-      AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-      currentImage = op.filter(currentImage, null);
+    public synchronized void makeObsolete() {
+      isObsolete = true;
     }
 
-    int imageWidth = currentImage.getWidth();
-    int imageHeight = currentImage.getHeight();
-    if (imageWidth > MAX_IMAGE_WIDTH) {
-      imageHeight = imageHeight * MAX_IMAGE_WIDTH / imageWidth;
-      imageWidth = MAX_IMAGE_WIDTH;
+    public synchronized boolean isObsolete() {
+      return isObsolete;
     }
-    if (imageHeight > MAX_IMAGE_HEIGHT) {
-      imageWidth = imageWidth * MAX_IMAGE_HEIGHT / imageHeight;
-      imageHeight = MAX_IMAGE_HEIGHT;
+
+    @Override
+    public void run() {
+      loadedImage = configurationResult.getScreenshotForTestAndStep(test, step); // A long-running operation.
+      if (isObsolete()) {
+        return;
+      }
+      SwingUtilities.invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          synchronized (lock) {
+            if (isObsolete()) {
+              return;
+            }
+            currentImage = loadedImage;
+            if (currentImage == null) {
+              myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+              return;
+            }
+
+            //TODO: This is a temporary rotation hack that should be removed after the backend produces correct landscape screenshots.
+            // Rotate landscape screenshots that are indeed mis-rotated.
+            if (selectedConfigurationInstance.getEncodedString().endsWith("landscape") && currentImage.getHeight() > currentImage.getWidth()) {
+
+              AffineTransform transform = new AffineTransform();
+              transform.translate(currentImage.getHeight() / 2, currentImage.getWidth() / 2);
+              transform.rotate(-Math.PI / 2);
+              //transform.scale(0.5, 0.5);
+              transform.translate(-currentImage.getWidth() / 2, -currentImage.getHeight() / 2);
+              //transform.rotate(-Math.PI / 2, currentImage.getWidth() / 2, currentImage.getHeight() / 2);
+              AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+              currentImage = op.filter(currentImage, null);
+            }
+
+            int imageWidth = currentImage.getWidth();
+            int imageHeight = currentImage.getHeight();
+            if (imageWidth > MAX_IMAGE_WIDTH) {
+              imageHeight = imageHeight * MAX_IMAGE_WIDTH / imageWidth;
+              imageWidth = MAX_IMAGE_WIDTH;
+            }
+            if (imageHeight > MAX_IMAGE_HEIGHT) {
+              imageWidth = imageWidth * MAX_IMAGE_HEIGHT / imageHeight;
+              imageHeight = MAX_IMAGE_HEIGHT;
+            }
+            myImageLabel.setIcon(new ImageIcon(currentImage.getScaledInstance(imageWidth, imageHeight, Image.SCALE_SMOOTH)));
+          }
+        }
+      });
     }
-    myImageLabel.setIcon(new ImageIcon(currentImage.getScaledInstance(imageWidth, imageHeight, Image.SCALE_SMOOTH)));
   }
 
   private void updateHeaderBar() {
