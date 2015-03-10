@@ -235,9 +235,11 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
       ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
       if (selectedConfigurationResult == null) {
         myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+        parent.fitWindow();
         return;
       }
       myImageLabel.setIcon(new ImageIcon(LOADING_PORTRAIT.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+      parent.fitWindow();
       updateImageThread = new UpdateImageThread(currentTest, currentStep, selectedConfigurationResult);
       updateImageThread.start();
     }
@@ -283,6 +285,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
             currentImage = loadedImage;
             if (currentImage == null) {
               myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
+              parent.fitWindow();
               return;
             }
 
@@ -311,6 +314,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
               imageHeight = MAX_IMAGE_HEIGHT;
             }
             myImageLabel.setIcon(new ImageIcon(currentImage.getScaledInstance(imageWidth, imageHeight, Image.SCALE_SMOOTH)));
+            parent.fitWindow();
           }
         }
       });

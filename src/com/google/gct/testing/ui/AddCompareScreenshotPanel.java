@@ -86,7 +86,9 @@ public class AddCompareScreenshotPanel {
   }
 
   public void setHeight(int height) {
-    myPanel.setPreferredSize(new Dimension(WIDTH, height));
+    Dimension panelSize = new Dimension(WIDTH, height);
+    myPanel.setMinimumSize(panelSize);
+    myPanel.setPreferredSize(panelSize);
   }
 
   public void addListener(AddScreenshotListener listener) {

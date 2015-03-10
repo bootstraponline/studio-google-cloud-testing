@@ -284,6 +284,9 @@ public class ScreenshotComparisonDialog {
   }
 
   public void fitWindow() {
+    if (myWindow == null) {
+      return;
+    }
     myAllScreenshotsPanel.updateUI();
     myWindow.pack();
     int maxHeight = 0;
