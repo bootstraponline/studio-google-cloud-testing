@@ -105,9 +105,14 @@ public class CloudResultsLoader {
     this.cloudProjectId = cloudProjectId;
     this.testRunListener = testRunListener;
     this.bucketName = bucketName;
-    testMatrixId = testMatrix.getTestMatrixId();
-    for (TestExecution testExecution : testMatrix.getTestExecutions()) {
-      allConfigurationInstances.add(getEncodedConfigurationNameForTestExecution(testExecution));
+    // testMatrix is null for runs with a fake bucket.
+    if (testMatrix != null) {
+      testMatrixId = testMatrix.getTestMatrixId();
+      for (TestExecution testExecution : testMatrix.getTestExecutions()) {
+        allConfigurationInstances.add(getEncodedConfigurationNameForTestExecution(testExecution));
+      }
+    } else {
+      testMatrixId = null;
     }
   }
 
