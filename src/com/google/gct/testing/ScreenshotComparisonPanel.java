@@ -15,11 +15,13 @@
  */
 package com.google.gct.testing;
 
+import com.android.annotations.Nullable;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.GoogleCloudTestingDimension;
+import com.google.gct.testing.dimension.OrientationDimension;
 import com.google.gct.testing.results.GoogleCloudTestProxy;
 import com.google.gct.testing.ui.CopyImageToClipboard;
 import com.google.gct.testing.ui.Tab;
@@ -28,6 +30,7 @@ import com.google.gct.testing.ui.WipePanel;
 import com.intellij.execution.testframework.AbstractTestProxy;
 import com.intellij.openapi.fileChooser.FileSaverDescriptor;
 import com.intellij.openapi.fileChooser.ex.FileSaverDialogImpl;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.util.ui.UIUtil;
 
@@ -50,6 +53,8 @@ import static com.intellij.icons.AllIcons.RunConfigurations.*;
 import static java.awt.Color.BLACK;
 
 public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPanelListener, ConfigurationResultListener {
+
+  private enum StaticImageKind {LOADING, NO_IMAGE};
 
   public static final Function<GoogleCloudTestingTypeSelection, CloudTestingType> GET_SELECTED_TYPE = new Function<GoogleCloudTestingTypeSelection, CloudTestingType>() {
     @Override
@@ -82,21 +87,29 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   private static final int MAX_IMAGE_WIDTH = 533;
   private static final int MAX_IMAGE_HEIGHT = 533;
-  private static final int NO_IMAGE_WIDTH = 300;
+  private static final int PORTRAIT_WIDTH = 300;
+  private static final int LANDSCAPE_HEIGHT = 300;
 
   //private static final int IMAGE_WIDTH = 300;
   //private static int imageHeight = 550;
-  private static final BufferedImage NO_IMAGE;
+  private static final BufferedImage NO_IMAGE_PORTRAIT;
+  private static final BufferedImage NO_IMAGE_LANSCAPE;
   private static final BufferedImage LOADING_PORTRAIT;
+  private static final BufferedImage LOADING_LANDSCAPE;
 
   private UpdateImageThread updateImageThread;
   private final Object lock;
+  private boolean isLoaded;
 
   static {
     try {
-      NO_IMAGE = ImageIO.read(ScreenshotComparisonPanel.class.getResourceAsStream("NoImage.png"));
-      NO_IMAGE.flush();
+      NO_IMAGE_PORTRAIT = ImageIO.read(ScreenshotComparisonPanel.class.getResourceAsStream("NoImagePortrait.png"));
+      NO_IMAGE_PORTRAIT.flush();
+      NO_IMAGE_LANSCAPE = ImageIO.read(ScreenshotComparisonPanel.class.getResourceAsStream("NoImageLandscape.png"));
+      NO_IMAGE_LANSCAPE.flush();
       LOADING_PORTRAIT = ImageIO.read(ScreenshotComparisonPanel.class.getResourceAsStream("LoadingPortrait.png"));
+      LOADING_PORTRAIT.flush();
+      LOADING_LANDSCAPE = ImageIO.read(ScreenshotComparisonPanel.class.getResourceAsStream("LoadingLandscape.png"));
       LOADING_PORTRAIT.flush();
     }
     catch (IOException e) {
@@ -106,12 +119,18 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   private BufferedImage currentImage;
 
+  private Icon referenceIcon = null;
 
-  public ScreenshotComparisonPanel(ScreenshotComparisonDialog parent, AbstractTestProxy testTreeRoot, CloudTestConfigurationImpl configuration,
+
+  public ScreenshotComparisonPanel(ScreenshotComparisonDialog parent, @Nullable ScreenshotComparisonPanel clonedPanel,
+                                   AbstractTestProxy testTreeRoot, CloudTestConfigurationImpl configuration,
                                    ConfigurationInstance configurationInstance, TestName currentTest, int currentStep,
                                    Map<String, ConfigurationResult> results) {
     lock = this;
     this.parent = parent;
+    if (clonedPanel != null) {
+      referenceIcon = clonedPanel.myImageLabel.getIcon();
+    }
     this.testTreeRoot = testTreeRoot;
     this.configuration = configuration;
     selectedConfigurationInstance = configurationInstance;
@@ -127,10 +146,10 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     }
 
     //TODO: Dispose to avoid memory leak.
-    init();
+    init(clonedPanel);
   }
 
-  public void init() {
+  public void init(@Nullable ScreenshotComparisonPanel clonedPanel) {
     if (UIUtil.isUnderDarcula()) {
       myConfigurationChooserPanel.setBackground(CloudTestingUtils.makeDarker(UIUtil.getPanelBackground(), 1));
     }
@@ -156,7 +175,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     bagConstraints.ipadx = 5;
 
     int index = 0;
-    for (GoogleCloudTestingDimension dimension : configuration.getDimensions()) {
+    for (final GoogleCloudTestingDimension dimension : configuration.getDimensions()) {
       JLabel label = new JLabel(dimension.getIcon());
       label.setToolTipText(dimension.getDisplayName());
 
@@ -188,9 +207,13 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
               currentConfigurationResult.addConfigurationResultListener(thisPanel);
             }
             updateHeaderBar();
+            if (dimension instanceof OrientationDimension) {
+              referenceIcon = null;
+            } else {
+              referenceIcon = myImageLabel.getIcon();
+            }
             updateImage();
             parent.updateMaxStep();
-            parent.fitWindow();
           }
         });
 
@@ -219,7 +242,13 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     myImagePanel.add(myImageLabel, BorderLayout.CENTER);
 
     updateHeaderBar();
-    updateImage();
+
+    if (clonedPanel != null && clonedPanel.isLoaded) {
+      myImageLabel.setIcon(clonedPanel.myImageLabel.getIcon());
+      isLoaded = true;
+    } else {
+      updateImage();
+    }
   }
 
   public int getMaxStep() {
@@ -229,20 +258,42 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   private void updateImage() {
     synchronized (lock) {
+      isLoaded = false;
       if (updateImageThread != null) {
         updateImageThread.makeObsolete();
       }
       ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
       if (selectedConfigurationResult == null) {
-        myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
-        parent.fitWindow();
+        setStaticImage(StaticImageKind.NO_IMAGE);
         return;
       }
-      myImageLabel.setIcon(new ImageIcon(LOADING_PORTRAIT.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
-      parent.fitWindow();
+      setStaticImage(StaticImageKind.LOADING);
       updateImageThread = new UpdateImageThread(currentTest, currentStep, selectedConfigurationResult);
       updateImageThread.start();
     }
+  }
+
+  private void setStaticImage(StaticImageKind imageKind) {
+    BufferedImage staticImage = imageKind == StaticImageKind.LOADING
+      ? (isPortrait() ? LOADING_PORTRAIT : LOADING_LANDSCAPE)
+      : (isPortrait() ? NO_IMAGE_PORTRAIT : NO_IMAGE_LANSCAPE);
+    Pair<Integer, Integer> imageSize = getStaticImageSize();
+    myImageLabel.setIcon(new ImageIcon(staticImage.getScaledInstance(imageSize.getFirst(), imageSize.getSecond(), Image.SCALE_SMOOTH)));
+    isLoaded = imageKind != StaticImageKind.LOADING;
+    parent.fitWindow();
+  }
+
+  /**
+   * Returns a pair of (width, height).
+   */
+  private Pair<Integer, Integer> getStaticImageSize() {
+    if (referenceIcon != null) {
+      return new Pair(referenceIcon.getIconWidth(), referenceIcon.getIconHeight());
+    }
+    if (isPortrait()) {
+      return new Pair(PORTRAIT_WIDTH, MAX_IMAGE_HEIGHT);
+    }
+    return new Pair(MAX_IMAGE_WIDTH, LANDSCAPE_HEIGHT);
   }
 
   private class UpdateImageThread extends Thread {
@@ -284,8 +335,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
             }
             currentImage = loadedImage;
             if (currentImage == null) {
-              myImageLabel.setIcon(new ImageIcon(NO_IMAGE.getScaledInstance(NO_IMAGE_WIDTH, MAX_IMAGE_HEIGHT, Image.SCALE_SMOOTH)));
-              parent.fitWindow();
+              setStaticImage(StaticImageKind.NO_IMAGE);
               return;
             }
 
@@ -314,6 +364,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
               imageHeight = MAX_IMAGE_HEIGHT;
             }
             myImageLabel.setIcon(new ImageIcon(currentImage.getScaledInstance(imageWidth, imageHeight, Image.SCALE_SMOOTH)));
+            isLoaded = true;
             parent.fitWindow();
           }
         }
@@ -368,7 +419,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
       @Override
       public void openEvent() {
-        parent.createNewScreenshotComparisonPanel(thisPanel);
+        parent.addScreenshotComparisonPanel(thisPanel);
       }
 
       @Override
@@ -425,6 +476,10 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     return results.get(selectedConfigurationInstance.getEncodedString());
   }
 
+  private boolean isPortrait() {
+    return selectedConfigurationInstance.getEncodedString().endsWith("portrait");
+  }
+
   public void stopListeningToResults() {
     ConfigurationResult selectedConfigurationResult = getSelectedConfigurationResult();
     if (selectedConfigurationResult != null ) {
@@ -445,6 +500,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     currentTest = test;
     if (shouldUpdateImage) {
       updateHeaderBar();
+      referenceIcon = myImageLabel.getIcon();
       updateImage();
     }
   }
@@ -453,6 +509,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   public void updateStep(int step, boolean shouldUpdateImage) {
     currentStep = step;
     if (shouldUpdateImage) {
+      referenceIcon = myImageLabel.getIcon();
       updateImage();
     }
   }

@@ -104,14 +104,14 @@ public class ScreenshotComparisonDialog {
 
     populateHeaderPanel();
 
-    addScreenshotComparisonPanel(configurationInstance);
+    createFirstScreenshotComparisonPanel(configurationInstance);
 
     addScreenshotPanel = new AddCompareScreenshotPanel();
     //addScreenshotPanel.setHeight(UIUtil.isUnderDarcula() ? 585 : 570);
     addScreenshotPanel.addListener(new AddScreenshotListener() {
       @Override
       public void addScreenshot() {
-        createNewScreenshotComparisonPanel(screenshotPanels.get(screenshotPanels.size() - 1));
+        addScreenshotComparisonPanel(screenshotPanels.get(screenshotPanels.size() - 1));
       }
     });
 
@@ -157,10 +157,10 @@ public class ScreenshotComparisonDialog {
     return myWindow;
   }
 
-  private void addScreenshotComparisonPanel(ConfigurationInstance configurationInstance) {
+  private void createFirstScreenshotComparisonPanel(ConfigurationInstance configurationInstance) {
     ScreenshotComparisonPanel screenshotComparisonPanel =
-      new ScreenshotComparisonPanel(this, testTreeRoot, configuration, configurationInstance, (TestName)myTestComboBox.getSelectedItem(),
-                                    step, results);
+      new ScreenshotComparisonPanel(this, null, testTreeRoot, configuration, configurationInstance,
+                                    (TestName)myTestComboBox.getSelectedItem(), step, results);
     screenshotPanels.add(screenshotComparisonPanel);
     WipePanel wipePanel = screenshotComparisonPanel.getPanel();
     myAllScreenshotsPanel.add(wipePanel);
@@ -262,14 +262,15 @@ public class ScreenshotComparisonDialog {
     myIncrementStepButton.setEnabled(step < maxStep);
   }
 
-  public void createNewScreenshotComparisonPanel(ScreenshotComparisonPanel createAfterPanel) {
+  public void addScreenshotComparisonPanel(ScreenshotComparisonPanel createAfterPanel) {
     int index = 0;
     for (Component component : myAllScreenshotsPanel.getComponents()) {
       if (component == createAfterPanel.getPanel()) {
         ScreenshotComparisonPanel screenshotComparisonPanel =
-          new ScreenshotComparisonPanel(this, testTreeRoot, configuration, createAfterPanel.computeSelectedConfigurationInstance(),
-                                        (TestName)myTestComboBox.getSelectedItem(), step, results);
-        screenshotPanels.add(screenshotComparisonPanel);
+          new ScreenshotComparisonPanel(this, createAfterPanel, testTreeRoot, configuration,
+                                        createAfterPanel.computeSelectedConfigurationInstance(), (TestName)myTestComboBox.getSelectedItem(),
+                                        step, results);
+        screenshotPanels.add(index + 1, screenshotComparisonPanel);
         updateMaxStep();
         WipePanel newPanel = screenshotComparisonPanel.getPanel();
         myAllScreenshotsPanel.add(newPanel, index + 1);
