@@ -18,13 +18,13 @@ package com.google.gct.testing.dimension;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
-import com.google.gct.testing.CloudTestConfigurationImpl;
+import com.google.gct.testing.CloudConfigurationImpl;
 
 import javax.swing.*;
 import java.util.*;
 
 
-public abstract class GoogleCloudTestingDimension {
+public abstract class CloudConfigurationDimension {
 
   private static final long DISCOVERY_TEST_API_REFRESH_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
@@ -37,11 +37,11 @@ public abstract class GoogleCloudTestingDimension {
    * The list of types that are currently enabled (use List rather than Set for comparison consistency).
    */
   private List<CloudTestingType> enabledTypes = new LinkedList<CloudTestingType>();
-  private CloudTestConfigurationImpl myGoogleCloudTestingConfiguration;
+  private CloudConfigurationImpl myCloudConfiguration;
   private Icon icon;
 
-  public GoogleCloudTestingDimension(CloudTestConfigurationImpl googleCloudTestingConfiguration) {
-    myGoogleCloudTestingConfiguration = googleCloudTestingConfiguration;
+  public CloudConfigurationDimension(CloudConfigurationImpl cloudConfiguration) {
+    myCloudConfiguration = cloudConfiguration;
   }
 
   static boolean shouldPollDiscoveryTestApi(String dimension) {
@@ -64,18 +64,18 @@ public abstract class GoogleCloudTestingDimension {
   /**
    * Returns the list of type groups supported by the app and the backend for this dimension.
    */
-  public List<? extends GoogleCloudTestingTypeGroup> getSupportedGroups() {
-    List<GoogleCloudTestingTypeGroup> result = new LinkedList<GoogleCloudTestingTypeGroup>();
+  public List<? extends CloudTestingTypeGroup> getSupportedGroups() {
+    List<CloudTestingTypeGroup> result = new LinkedList<CloudTestingTypeGroup>();
     for (CloudTestingType type : getSupportedDomain()) {
-      GoogleCloudTestingTypeGroup groupToAddTo = null;
-      for (GoogleCloudTestingTypeGroup group : result) {
+      CloudTestingTypeGroup groupToAddTo = null;
+      for (CloudTestingTypeGroup group : result) {
         if (type.getGroupName().equals(group.getName())) {
           groupToAddTo = group;
           break;
         }
       }
       if (groupToAddTo == null) {
-        groupToAddTo = new GoogleCloudTestingTypeGroup(type.getGroupName(), type.getGroupDescription());
+        groupToAddTo = new CloudTestingTypeGroup(type.getGroupName(), type.getGroupDescription());
         result.add(groupToAddTo);
       }
       groupToAddTo.addType(type);
@@ -162,11 +162,11 @@ public abstract class GoogleCloudTestingDimension {
   }
 
   public boolean isEditable() {
-    return myGoogleCloudTestingConfiguration.isEditable();
+    return myCloudConfiguration.isEditable();
   }
 
   public void dimensionChanged() {
-    myGoogleCloudTestingConfiguration.dimensionChanged(this);
+    myCloudConfiguration.dimensionChanged(this);
   }
 
   private void checkIsEditable() {

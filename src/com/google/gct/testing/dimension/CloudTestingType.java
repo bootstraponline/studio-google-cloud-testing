@@ -18,7 +18,7 @@ package com.google.gct.testing.dimension;
 import java.util.Map;
 
 /**
- * A GoogleCloudTestingDimension consists of a set of Types; concrete instantiations of a dimension.
+ * A {@link CloudTestingType} consists of a set of Types; concrete instantiations of a dimension.
  */
 public abstract class CloudTestingType {
 

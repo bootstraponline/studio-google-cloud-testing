@@ -16,6 +16,7 @@
 package com.google.gct.testing;
 
 import com.android.annotations.Nullable;
+import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -30,11 +31,13 @@ import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.*;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.IconUtil;
 import com.intellij.util.PlatformIcons;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -52,8 +55,8 @@ import static com.google.gct.testing.CloudTestingUtils.createConfigurationChoose
 
 public class CloudConfigurationChooserDialog extends DialogWrapper implements ConfigurationChangeListener {
 
-  private final List<CloudTestConfigurationImpl> editableConfigurations;
-  private final List<CloudTestConfigurationImpl> defaultConfigurations;
+  private final List<CloudConfigurationImpl> editableConfigurations;
+  private final List<CloudConfigurationImpl> defaultConfigurations;
   private final MyAddAction myAddAction = new MyAddAction();
   private final MyRemoveAction myRemoveAction = new MyRemoveAction();
   private final MyCopyActionButton myCopyActionButton = new MyCopyActionButton();
@@ -62,6 +65,8 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
   private final DefaultMutableTreeNode customRoot = new DefaultMutableTreeNode("Custom");
   private final DefaultMutableTreeNode defaultsRoot = new DefaultMutableTreeNode("Defaults");
+
+  private final Kind configurationKind;
 
   private JPanel myPanel;
   private final Splitter mySplitter = new Splitter(false);
@@ -80,16 +85,19 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
   // The configuration that is currently selected in the tree
   @Nullable
-  private CloudTestConfigurationImpl selectedConfiguration;
+  private CloudConfigurationImpl selectedConfiguration;
 
   private final AndroidFacet facet;
 
   public CloudConfigurationChooserDialog(Module module,
-                                         List<CloudTestConfigurationImpl> editableConfigurations,
-                                         List<CloudTestConfigurationImpl> defaultConfigurations,
-                                         final CloudTestConfigurationImpl initiallySelectedConfiguration) {
+                                         List<CloudConfigurationImpl> editableConfigurations,
+                                         List<CloudConfigurationImpl> defaultConfigurations,
+                                         @Nullable final CloudConfigurationImpl initiallySelectedConfiguration,
+                                         @NotNull Kind configurationKind) {
 
     super(module.getProject(), true);
+
+    this.configurationKind = configurationKind;
 
     myConfigurationInfoPanel.setPreferredSize(new Dimension(470, UIUtil.isUnderDarcula() ? 166 : 169));
     // Note that we are editing the list we were given.
@@ -112,14 +120,17 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
           updateConfigurationControls(false);
           DefaultMutableTreeNode selectedGroup = (DefaultMutableTreeNode)selectedPath.getPath()[1];
           if (selectedGroup.equals(customRoot)) {
-            myGroupDescriptionLabel.setText("User-defined configurations");
+            myGroupDescriptionLabel.setText("User-defined configurations. To add a new one click ");
+            myGroupDescriptionLabel.setIcon(IconUtil.getAddIcon());
+            myGroupDescriptionLabel.setHorizontalTextPosition(SwingConstants.LEFT);
           } else {
             myGroupDescriptionLabel.setText("Default configurations");
+            myGroupDescriptionLabel.setIcon(null);
           }
           selectedConfiguration = null;
         } else {
           updateConfigurationControls(true);
-          selectedConfiguration = (CloudTestConfigurationImpl) ((DefaultMutableTreeNode)selectedPath.getPath()[2]).getUserObject();
+          selectedConfiguration = (CloudConfigurationImpl) ((DefaultMutableTreeNode)selectedPath.getPath()[2]).getUserObject();
           myConfigurationName.setText(selectedConfiguration.getName());
           myConfigurationName.setEnabled(selectedConfiguration.isEditable());
         }
@@ -152,10 +163,9 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
           } else if (node == defaultsRoot) {
             append("Defaults", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
             setIcon(AllIcons.General.Settings);
-          } else if (node.getUserObject() instanceof CloudTestConfigurationImpl) {
-            CloudTestConfigurationImpl config = (CloudTestConfigurationImpl) node.getUserObject();
-            //TODO: Remove the cap > 100
-            boolean isInvalidConfiguration = config.getDeviceConfigurationCount() < 1 || config.getDeviceConfigurationCount() > 100;
+          } else if (node.getUserObject() instanceof CloudConfigurationImpl) {
+            CloudConfigurationImpl config = (CloudConfigurationImpl) node.getUserObject();
+            boolean isInvalidConfiguration = config.getDeviceConfigurationCount() < 1;
             boolean oldMySelected = mySelected;
             // This is a trick to avoid using white color for the selected element if it has to be red.
             if (isInvalidConfiguration) {
@@ -175,7 +185,10 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
     //Disposer.register(myDisposable, ???);
 
-    myConfigurationName.setText(initiallySelectedConfiguration.getName());
+    if (initiallySelectedConfiguration != null) {
+      myConfigurationName.setText(initiallySelectedConfiguration.getName());
+    }
+
     myConfigurationName.getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
       protected void textChanged(DocumentEvent e) {
@@ -196,10 +209,11 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     myConfigurationTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     treeModel.insertNodeInto(customRoot, rootNode, 0);
     treeModel.insertNodeInto(defaultsRoot, rootNode, 1);
-    for (CloudTestConfigurationImpl configuration : editableConfigurations) {
+    selectTreeNode(customRoot);
+    for (CloudConfigurationImpl configuration : editableConfigurations) {
       addConfigurationToTree(-1, configuration, configuration.equals(initiallySelectedConfiguration));
     }
-    for (CloudTestConfigurationImpl configuration : defaultConfigurations) {
+    for (CloudConfigurationImpl configuration : defaultConfigurations) {
       addConfigurationToTree(-1, configuration, configuration.equals(initiallySelectedConfiguration));
     }
 
@@ -225,7 +239,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   /**
    * Adds the given configuration to the appropriate place in the tree and selects it if desired.
    */
-  private void addConfigurationToTree(int index, CloudTestConfigurationImpl configuration, boolean makeSelected) {
+  private void addConfigurationToTree(int index, CloudConfigurationImpl configuration, boolean makeSelected) {
     configuration.addConfigurationChangeListener(this);
 
     final DefaultMutableTreeNode newChild = new DefaultMutableTreeNode(configuration);
@@ -260,7 +274,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   /**
    * Removes the given configuration from the tree.  We only look under the custom root.
    */
-  private void removeConfigurationFromTree(CloudTestConfigurationImpl configuration) {
+  private void removeConfigurationFromTree(CloudConfigurationImpl configuration) {
     configuration.removeConfigurationChangeListener(this);
     MutableTreeNode toRemove = (MutableTreeNode) TreeUtil.findNodeWithObject(configuration, myConfigurationTree.getModel(), customRoot);
     customRoot.remove(toRemove);
@@ -288,10 +302,10 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     return myToolbarDecorator.createPanel();
   }
 
-  LoadingCache<CloudTestConfigurationImpl, TwoPanelTree> dimensionTreeCache = CacheBuilder.newBuilder()
-    .build(new CacheLoader<CloudTestConfigurationImpl, TwoPanelTree>() {
+  LoadingCache<CloudConfigurationImpl, TwoPanelTree> dimensionTreeCache = CacheBuilder.newBuilder()
+    .build(new CacheLoader<CloudConfigurationImpl, TwoPanelTree>() {
       @Override
-      public TwoPanelTree load(CloudTestConfigurationImpl configuration) throws Exception {
+      public TwoPanelTree load(CloudConfigurationImpl configuration) throws Exception {
         final TwoPanelTree tree = new TwoPanelTree(configuration);
         final TwoPanelTreeSelectionListener treeSelectionListener = new TwoPanelTreeSelectionListener() {
           @Override
@@ -328,7 +342,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     });
 
 
-  private void updateConfigurationDetailsPanel(CloudTestConfigurationImpl configuration) {
+  private void updateConfigurationDetailsPanel(CloudConfigurationImpl configuration) {
 
     myConfigurationEditorPanel.removeAll();
 
@@ -350,7 +364,6 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     myConfigurationName.setVisible(isRealConfiguration);
     myConfigurationNameLabel.setVisible(isRealConfiguration);
     myGroupDescriptionLabel.setVisible(!isRealConfiguration);
-    getOKAction().setEnabled(isRealConfiguration);
   }
 
   private void expandAllRows(Tree tree) {
@@ -359,7 +372,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
   }
 
-  public CloudTestConfigurationImpl getSelectedConfiguration() {
+  public CloudConfigurationImpl getSelectedConfiguration() {
     return selectedConfiguration;
   }
 
@@ -441,9 +454,9 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     @Override
     public void actionPerformed(AnActionEvent e) {
       // selectedConfiguration should not be null here, but handle this scenario just in case.
-      CloudTestConfigurationImpl newConfiguration = selectedConfiguration != null
+      CloudConfigurationImpl newConfiguration = selectedConfiguration != null
                                                     ? selectedConfiguration.copy("Copy of ")
-                                                    : new CloudTestConfigurationImpl(facet);
+                                                    : new CloudConfigurationImpl(facet, configurationKind);
 
       addNewConfiguration(newConfiguration);
     }
@@ -467,7 +480,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
 
     private void doAdd() {
-      addNewConfiguration(new CloudTestConfigurationImpl(facet));
+      addNewConfiguration(new CloudConfigurationImpl(facet, configurationKind));
     }
 
     @Override
@@ -476,8 +489,8 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
   }
 
-  private void addNewConfiguration(CloudTestConfigurationImpl newConfiguration) {
-    newConfiguration.setIcon(CloudTestConfigurationProviderImpl.DEFAULT_ICON);
+  private void addNewConfiguration(CloudConfigurationImpl newConfiguration) {
+    newConfiguration.setIcon(CloudConfigurationProviderImpl.DEFAULT_ICON);
     int addIndex = selectedConfiguration == null
                    ? editableConfigurations.size()
                    : editableConfigurations.indexOf(selectedConfiguration) + 1;
@@ -546,7 +559,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     }
   }
 
-  private void moveConfigurationToIndex(int index, CloudTestConfigurationImpl configuration) {
+  private void moveConfigurationToIndex(int index, CloudConfigurationImpl configuration) {
     editableConfigurations.remove(configuration);
     editableConfigurations.add(index, configuration);
     removeConfigurationFromTree(configuration);

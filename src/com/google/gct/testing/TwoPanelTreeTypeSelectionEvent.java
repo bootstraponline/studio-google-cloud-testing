@@ -16,20 +16,20 @@
 package com.google.gct.testing;
 
 import com.google.gct.testing.dimension.CloudTestingType;
-import com.google.gct.testing.dimension.GoogleCloudTestingDimension;
+import com.google.gct.testing.dimension.CloudConfigurationDimension;
 
 class TwoPanelTreeTypeSelectionEvent {
 
-  private GoogleCloudTestingDimension currentDimension;
+  private CloudConfigurationDimension currentDimension;
 
   private CloudTestingType clickedType;
 
-  public TwoPanelTreeTypeSelectionEvent(GoogleCloudTestingDimension currentDimension, CloudTestingType clickedType) {
+  public TwoPanelTreeTypeSelectionEvent(CloudConfigurationDimension currentDimension, CloudTestingType clickedType) {
     this.currentDimension = currentDimension;
     this.clickedType = clickedType;
   }
 
-  public GoogleCloudTestingDimension getCurrentDimension() {
+  public CloudConfigurationDimension getCurrentDimension() {
     return currentDimension;
   }
 

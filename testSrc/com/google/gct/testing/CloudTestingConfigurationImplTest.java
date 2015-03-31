@@ -28,14 +28,14 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-public class GoogleCloudTestingConfigurationImplTest {
+public class CloudTestingConfigurationImplTest {
 
 
   @Test
   public void testConfigurationExpansion() throws IOException, ConfigurationException {
     //TODO: Will not run anymore since now it requires connecting to the remote API.
-    //CloudTestConfigurationImpl
-    //  configuration = new CloudTestConfigurationImpl("TestConfiguration", 8, asList("en", "de", "fr", "ro", "ru", "uk"));
+    //CloudConfigurationImpl
+    //  configuration = new CloudConfigurationImpl("TestConfiguration", 8, asList("en", "de", "fr", "ro", "ru", "uk"));
     //configuration.deviceDimension.enable(DeviceDimension.getFullDomain(), asList("Nexus5", "Nexus7"));
     //configuration.apiDimension.enable(ApiDimension.getFullDomain(), asList("19", "18"));
     //configuration.languageDimension.enable(LanguageDimension.getFullDomain(), asList("en", "de", "fr"));

@@ -76,7 +76,7 @@ public class ShowScreenshotsAction extends AnAction {
     ConfigurationInstance configurationInstance =
       ConfigurationInstance.parseFromResultsViewerDisplayString(selectedConfigurationNode.getName());
     Map<String,ConfigurationResult> results =
-      CloudTestConfigurationProviderImpl.getCloudResultsAdapter(rootNode.getTestRunId()).getResults();
+      CloudConfigurationProviderImpl.getCloudResultsAdapter(rootNode.getTestRunId()).getResults();
 
     if (results.get(configurationInstance.getEncodedString()).getScreenshotMetadata().isEmpty()) {
       showNoScreenshotsWarning(e);
@@ -94,7 +94,7 @@ public class ShowScreenshotsAction extends AnAction {
     ScreenshotComparisonDialog dialog =
       new ScreenshotComparisonDialog(
         e.getData(PlatformDataKeys.PROJECT), rootNode,
-        CloudTestConfigurationProviderImpl.getSelectedGoogleCloudTestingConfiguration(rootNode.getTestRunId()),
+        CloudConfigurationProviderImpl.getSelectedCloudConfiguration(rootNode.getTestRunId()),
         configurationInstance, anotherConfigurationInstance, allTests, getTestNameForNode(selectedLeaf), results);
 
     dialog.showDialog();

@@ -18,7 +18,7 @@ package com.google.gct.testing.dimension;
 import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.api.services.testing.model.AndroidModel;
 import com.google.common.collect.ImmutableList;
-import com.google.gct.testing.CloudTestConfigurationImpl;
+import com.google.gct.testing.CloudConfigurationImpl;
 import icons.AndroidIcons;
 
 import javax.swing.*;
@@ -28,7 +28,7 @@ import java.util.Map;
 
 import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
 
-public class DeviceDimension extends GoogleCloudTestingDimension {
+public class DeviceDimension extends CloudConfigurationDimension {
 
   public static final String DISPLAY_NAME = "Device";
 
@@ -42,7 +42,7 @@ public class DeviceDimension extends GoogleCloudTestingDimension {
   private static ImmutableList<Device> FULL_DOMAIN;
 
 
-  public DeviceDimension(CloudTestConfigurationImpl googleCloudTestingConfiguration) {
+  public DeviceDimension(CloudConfigurationImpl googleCloudTestingConfiguration) {
     super(googleCloudTestingConfiguration);
   }
 

@@ -15,11 +15,19 @@
  */
 package com.google.gct.testing;
 
+import com.android.tools.idea.run.CloudConfiguration.Kind;
+
 import java.util.LinkedList;
 import java.util.List;
 
-public class GoogleCloudTestingPersistentState {
+import static com.android.tools.idea.run.CloudConfiguration.Kind.MATRIX;
 
-  public List<GoogleCloudTestingPersistentConfiguration>
-    myGoogleCloudTestingPersistentConfigurations = new LinkedList<GoogleCloudTestingPersistentConfiguration>();
+public class CloudPersistentConfiguration {
+  public int id = 1;
+  public String name = "";
+  public Kind kind = MATRIX;
+  public List<String> devices = new LinkedList<String>();
+  public List<String> apiLevels = new LinkedList<String>();
+  public List<String> languages = new LinkedList<String>();
+  public List<String> orientations = new LinkedList<String>();
 }

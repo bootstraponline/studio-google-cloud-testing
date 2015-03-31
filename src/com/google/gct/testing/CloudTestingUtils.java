@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.CloudTestConfiguration;
+import com.android.tools.idea.run.CloudConfiguration;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
@@ -44,8 +44,7 @@ public class CloudTestingUtils {
 
   private static final String SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS = "show.google.cloud.testing.timestamps";
 
-  private static final CloudTestConfigurationProviderImpl TESTING_CONFIGURATION_FACTORY =
-    new CloudTestConfigurationProviderImpl();
+  private static final CloudConfigurationProviderImpl TESTING_CONFIGURATION_FACTORY = new CloudConfigurationProviderImpl();
 
   //GCT-specific message names.
   public static final String SET_TEST_RUN_ID = "setTestRunId";
@@ -63,10 +62,10 @@ public class CloudTestingUtils {
     return Boolean.getBoolean(SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS);
   }
 
-  public static CloudTestConfigurationImpl getConfigurationById(int id, AndroidFacet facet) {
-    for (CloudTestConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getTestingConfigurations(facet)) {
+  public static CloudConfigurationImpl getConfigurationById(int id, AndroidFacet facet) {
+    for (CloudConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getAllCloudConfigurations(facet)) {
       if (configuration.getId() == id) {
-        return (CloudTestConfigurationImpl) configuration;
+        return (CloudConfigurationImpl) configuration;
       }
     }
     return null;

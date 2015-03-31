@@ -100,8 +100,7 @@ public class CloudResultsLoader {
   private final Map<String, String> configurationProgress = new HashMap<String, String>();
 
 
-  public CloudResultsLoader(String cloudProjectId, IGoogleCloudTestRunListener testRunListener, String bucketName,
-                            TestMatrix testMatrix) {
+  public CloudResultsLoader(String cloudProjectId, IGoogleCloudTestRunListener testRunListener, String bucketName, TestMatrix testMatrix) {
     this.cloudProjectId = cloudProjectId;
     this.testRunListener = testRunListener;
     this.bucketName = bucketName;
@@ -401,7 +400,7 @@ public class CloudResultsLoader {
   //
   //  public long getFileSize() {
   //    try {
-  //      return getStorage().objects().get(bucketName, file.getPath()).execute().getSize().longValue();
+  //      return getStorage().objects().get(bucketName, file.getPath()).executeCloudMatrixTests().getSize().longValue();
   //    }
   //    catch (IOException e) {
   //      System.err.println("Failed to estimate a cloud file size: " + file.getName());

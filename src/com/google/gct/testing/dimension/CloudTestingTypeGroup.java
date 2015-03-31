@@ -18,14 +18,14 @@ package com.google.gct.testing.dimension;
 import java.util.LinkedList;
 import java.util.List;
 
-public class GoogleCloudTestingTypeGroup {
+public class CloudTestingTypeGroup {
 
   private final String name;
   private final String description;
 
   private final List<CloudTestingType> types = new LinkedList<CloudTestingType>();
 
-  public GoogleCloudTestingTypeGroup(String name, String description) {
+  public CloudTestingTypeGroup(String name, String description) {
     this.name = name;
     this.description = description;
   }
@@ -51,7 +51,7 @@ public class GoogleCloudTestingTypeGroup {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    GoogleCloudTestingTypeGroup that = (GoogleCloudTestingTypeGroup)o;
+    CloudTestingTypeGroup that = (CloudTestingTypeGroup)o;
 
     if (!name.equals(that.name)) return false;
 

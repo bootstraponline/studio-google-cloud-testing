@@ -15,5 +15,10 @@
  */
 package com.google.gct.testing;
 
-public class GoogleTestingListener {
+import java.util.LinkedList;
+import java.util.List;
+
+public class CloudPersistentState {
+
+  public List<CloudPersistentConfiguration> myCloudPersistentConfigurations = new LinkedList<CloudPersistentConfiguration>();
 }

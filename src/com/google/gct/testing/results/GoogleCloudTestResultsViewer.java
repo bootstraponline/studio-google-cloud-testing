@@ -41,7 +41,7 @@ public interface GoogleCloudTestResultsViewer extends Disposable {
   void setShowStatisticForProxyHandler(GoogleCloudTestingPropagateSelectionHandler handler);
 
   /**
-   * If handler for statistics was set this method will execute it
+   * If handler for statistics was set this method will executeCloudMatrixTests it
    */
   void showStatisticsForSelectedProxy();
 

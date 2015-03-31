@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.CloudTestConfiguration;
+import com.android.tools.idea.run.CloudConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class CloudTestConfigurationImpl extends CloudTestConfiguration {
+public class CloudConfigurationImpl extends CloudConfiguration {
 
   public static final int ALL_ID = Integer.MAX_VALUE;
 
@@ -38,6 +38,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
 
   private int id;
   private String name;
+  private Kind kind;
   private Icon icon;
   private final AndroidFacet facet;
   private boolean isEditable;
@@ -50,26 +51,28 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
   LanguageDimension languageDimension;
   OrientationDimension orientationDimension;
 
-  public CloudTestConfigurationImpl(int id, String name, Icon icon, AndroidFacet facet) {
+  public CloudConfigurationImpl(int id, String name, Kind kind, Icon icon, AndroidFacet facet) {
     if (id != ALL_ID && id >= nextAvailableID) {
       nextAvailableID = id + 1;
     }
     this.id = id;
     this.name = name;
+    this.kind = kind;
     this.icon = icon;
     this.facet = facet;
     isEditable = true;
     createDimensions();
   }
 
-  public CloudTestConfigurationImpl(String name, Icon icon, AndroidFacet facet) {
-    this(nextAvailableID++, name, icon, facet);
+  public CloudConfigurationImpl(String name, Kind kind, Icon icon, AndroidFacet facet) {
+    this(nextAvailableID++, name, kind, icon, facet);
   }
 
   @VisibleForTesting
-  CloudTestConfigurationImpl(String name, int minSdkVersion, List<String> locales) {
+  CloudConfigurationImpl(String name, Kind kind, int minSdkVersion, List<String> locales) {
     id = nextAvailableID++;
     this.name = name;
+    this.kind = kind;
     facet = null;
     isEditable = true;
     deviceDimension = new DeviceDimension(this);
@@ -78,10 +81,11 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     orientationDimension = new OrientationDimension(this);
   }
 
-  public CloudTestConfigurationImpl(AndroidFacet facet) {
+  public CloudConfigurationImpl(AndroidFacet facet, Kind kind) {
     id = nextAvailableID++;
     name = "Unnamed";
-    icon = CloudTestConfigurationProviderImpl.DEFAULT_ICON;
+    this.kind = kind;
+    icon = CloudConfigurationProviderImpl.DEFAULT_ICON;
     this.facet = facet;
     isEditable = true;
     createDimensions();
@@ -98,19 +102,23 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     return name;
   }
 
+  public Kind getKind() {
+    return kind;
+  }
+
   /**
    * A single number representation of a matrix configuration.
    */
   private int getHash() {
-    return (name + FluentIterable.from(getDimensions()).transform(new Function<GoogleCloudTestingDimension, String>() {
+    return (name + FluentIterable.from(getDimensions()).transform(new Function<CloudConfigurationDimension, String>() {
       @Override
-      public String apply(GoogleCloudTestingDimension dimension) {
+      public String apply(CloudConfigurationDimension dimension) {
         return getStringRepresentation(dimension);
       }
     }).toString()).hashCode();
   }
 
-  private String getStringRepresentation(GoogleCloudTestingDimension dimension) {
+  private String getStringRepresentation(CloudConfigurationDimension dimension) {
     StringBuffer sb = new StringBuffer();
     sb.append(dimension.getId());
     for (CloudTestingType type : dimension.getEnabledTypes()) {
@@ -136,7 +144,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     }
   }
 
-  public List<GoogleCloudTestingDimension> getDimensions() {
+  public List<CloudConfigurationDimension> getDimensions() {
     return ImmutableList.of(deviceDimension, apiDimension, languageDimension, orientationDimension);
   }
 
@@ -164,7 +172,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     return changeListeners.remove(listener);
   }
 
-  public void dimensionChanged(GoogleCloudTestingDimension dimension) {
+  public void dimensionChanged(CloudConfigurationDimension dimension) {
     for (ConfigurationChangeListener changeListener : changeListeners) {
       changeListener.configurationChanged(new ConfigurationChangeEvent(this));
     }
@@ -178,7 +186,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
   public int getDeviceConfigurationCount() {
     int product = 1;
 
-    for (GoogleCloudTestingDimension dimension : getDimensions()) {
+    for (CloudConfigurationDimension dimension : getDimensions()) {
       product *= dimension.getEnabledTypes().size();
     }
 
@@ -188,7 +196,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
   public int countCombinationsCollapsingOrientation() {
     int product = 1;
 
-    for (GoogleCloudTestingDimension dimension : getDimensions()) {
+    for (CloudConfigurationDimension dimension : getDimensions()) {
       if (dimension instanceof OrientationDimension) {
         product *= Math.min(dimension.getEnabledTypes().size(), 1);
       } else {
@@ -230,7 +238,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     StringBuffer bf = new StringBuffer();
 
     boolean firstDim = true;
-    for (GoogleCloudTestingDimension dimension : getDimensions()) {
+    for (CloudConfigurationDimension dimension : getDimensions()) {
       if(!firstDim) {
         bf.append(" && ");
       }
@@ -277,7 +285,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     }
   }
 
-  private StringBuffer prepareDimensionRequest(GoogleCloudTestingDimension dimension) {
+  private StringBuffer prepareDimensionRequest(CloudConfigurationDimension dimension) {
     StringBuffer bf = new StringBuffer();
     boolean firstType = true;
     for (CloudTestingType type : dimension.getEnabledTypes()) {
@@ -291,14 +299,14 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
   }
 
   @Override
-  public CloudTestConfigurationImpl clone() {
+  public CloudConfigurationImpl clone() {
     return copy(null);
   }
 
-  public CloudTestConfigurationImpl copy(String prefix) {
-    CloudTestConfigurationImpl newConfiguration = prefix == null
-                                                       ? new CloudTestConfigurationImpl(id, name, icon, facet) //clone
-                                                       : new CloudTestConfigurationImpl(prefix + name, icon, facet);
+  public CloudConfigurationImpl copy(String prefix) {
+    CloudConfigurationImpl newConfiguration = prefix == null
+                                                       ? new CloudConfigurationImpl(id, name, kind, icon, facet) //clone
+                                                       : new CloudConfigurationImpl(prefix + name, kind, icon, facet);
     newConfiguration.deviceDimension.enableAll(deviceDimension.getEnabledTypes());
     newConfiguration.apiDimension.enableAll(apiDimension.getEnabledTypes());
     newConfiguration.languageDimension.enableAll(languageDimension.getEnabledTypes());
@@ -306,10 +314,11 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     return newConfiguration;
   }
 
-  public GoogleCloudTestingPersistentConfiguration getPersistentConfiguration() {
-    GoogleCloudTestingPersistentConfiguration persistentConfiguration = new GoogleCloudTestingPersistentConfiguration();
+  public CloudPersistentConfiguration getPersistentConfiguration() {
+    CloudPersistentConfiguration persistentConfiguration = new CloudPersistentConfiguration();
     persistentConfiguration.id = id;
     persistentConfiguration.name = name;
+    persistentConfiguration.kind = kind;
     persistentConfiguration.devices = getEnabledTypes(deviceDimension);
     persistentConfiguration.apiLevels = getEnabledTypes(apiDimension);
     persistentConfiguration.languages = getEnabledTypes(languageDimension);
@@ -317,7 +326,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     return persistentConfiguration;
   }
 
-  private List<String> getEnabledTypes(GoogleCloudTestingDimension dimension) {
+  private List<String> getEnabledTypes(CloudConfigurationDimension dimension) {
     List<String> enabledTypes = new LinkedList<String>();
     for (CloudTestingType type : dimension.getEnabledTypes()) {
       enabledTypes.add(type.getId());
@@ -330,7 +339,7 @@ public class CloudTestConfigurationImpl extends CloudTestConfiguration {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    CloudTestConfigurationImpl that = (CloudTestConfigurationImpl)o;
+    CloudConfigurationImpl that = (CloudConfigurationImpl)o;
 
     //return getHash() == that.getHash() && id == that.id;
     return id == that.id;

@@ -19,8 +19,8 @@ import com.android.annotations.Nullable;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
-import com.google.gct.testing.dimension.GoogleCloudTestingDimension;
 import com.google.gct.testing.dimension.OrientationDimension;
 import com.google.gct.testing.results.GoogleCloudTestProxy;
 import com.google.gct.testing.ui.CopyImageToClipboard;
@@ -56,9 +56,9 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   private enum StaticImageKind {LOADING, NO_IMAGE};
 
-  public static final Function<GoogleCloudTestingTypeSelection, CloudTestingType> GET_SELECTED_TYPE = new Function<GoogleCloudTestingTypeSelection, CloudTestingType>() {
+  public static final Function<CloudConfigurationTypeSelection, CloudTestingType> GET_SELECTED_TYPE = new Function<CloudConfigurationTypeSelection, CloudTestingType>() {
     @Override
-    public CloudTestingType apply(GoogleCloudTestingTypeSelection input) {
+    public CloudTestingType apply(CloudConfigurationTypeSelection input) {
       return input.getType();
     }
   };
@@ -67,7 +67,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   private final ScreenshotComparisonDialog parent;
   private final AbstractTestProxy testTreeRoot;
-  private final CloudTestConfigurationImpl configuration;
+  private final CloudConfigurationImpl configuration;
   private ConfigurationInstance selectedConfigurationInstance;
   private TestName currentTest;
   private int currentStep;
@@ -82,7 +82,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
   private final WipePanel wipePanel;
 
-  private final List<GoogleCloudTestingTypeSelection> myTypeSelections = new LinkedList<GoogleCloudTestingTypeSelection>();
+  private final List<CloudConfigurationTypeSelection> myTypeSelections = new LinkedList<CloudConfigurationTypeSelection>();
   private JLabel myImageLabel;
 
   private static final int MAX_IMAGE_WIDTH = 533;
@@ -123,7 +123,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
 
 
   public ScreenshotComparisonPanel(ScreenshotComparisonDialog parent, @Nullable ScreenshotComparisonPanel clonedPanel,
-                                   AbstractTestProxy testTreeRoot, CloudTestConfigurationImpl configuration,
+                                   AbstractTestProxy testTreeRoot, CloudConfigurationImpl configuration,
                                    ConfigurationInstance configurationInstance, TestName currentTest, int currentStep,
                                    Map<String, ConfigurationResult> results) {
     lock = this;
@@ -175,7 +175,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     bagConstraints.ipadx = 5;
 
     int index = 0;
-    for (final GoogleCloudTestingDimension dimension : configuration.getDimensions()) {
+    for (final CloudConfigurationDimension dimension : configuration.getDimensions()) {
       JLabel label = new JLabel(dimension.getIcon());
       label.setToolTipText(dimension.getDisplayName());
 
@@ -218,7 +218,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
         });
 
         myConfigurationChooserPanel.add(comboBox, bagConstraints);
-        myTypeSelections.add(new GoogleCloudTestingTypeSelection() {
+        myTypeSelections.add(new CloudConfigurationTypeSelection() {
           @Override
           public CloudTestingType getType() {
             return (CloudTestingType)comboBox.getSelectedItem();
@@ -227,7 +227,7 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
       } else {
         final CloudTestingType type = Iterables.getOnlyElement(dimension.getEnabledTypes());
         myConfigurationChooserPanel.add(new JLabel(" " + type.getResultsViewerDisplayName()), bagConstraints);
-        myTypeSelections.add(new GoogleCloudTestingTypeSelection() {
+        myTypeSelections.add(new CloudConfigurationTypeSelection() {
           @Override
           public CloudTestingType getType() {
             return type;
@@ -525,6 +525,6 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
   }
 }
 
-interface GoogleCloudTestingTypeSelection {
+interface CloudConfigurationTypeSelection {
   public CloudTestingType getType();
 }

@@ -32,21 +32,21 @@
     <projectService serviceInterface="com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings"
                     serviceImplementation="com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings"/>
 
-    <moduleService serviceInterface="com.google.gct.testing.GoogleCloudTestingCustomPersistentConfigurations"
-                    serviceImplementation="com.google.gct.testing.GoogleCloudTestingCustomPersistentConfigurations"/>
+    <moduleService serviceInterface="com.google.gct.testing.CloudCustomPersistentConfigurations"
+                    serviceImplementation="com.google.gct.testing.CloudCustomPersistentConfigurations"/>
 
-    <moduleService serviceInterface="com.google.gct.testing.GoogleCloudTestingDefaultPersistentConfigurations"
-                    serviceImplementation="com.google.gct.testing.GoogleCloudTestingDefaultPersistentConfigurations"/>
+    <moduleService serviceInterface="com.google.gct.testing.CloudDefaultPersistentConfigurations"
+                    serviceImplementation="com.google.gct.testing.CloudDefaultPersistentConfigurations"/>
   </extensions>
 
   <extensions defaultExtensionNs="com.android.tools.idea">
-    <run.cloudTestingConfigurationProvider id="myCloudTestConfigurationProvider" order="first" implementation="com.google.gct.testing.CloudTestConfigurationProviderImpl"/>  
+    <run.cloudConfigurationProvider id="myCloudConfigurationProvider" order="first" implementation="com.google.gct.testing.CloudConfigurationProviderImpl"/>
 </extensions>
 
 
 
   <extensionPoints>
-    <extensionPoint name="googleTestingListener" interface="com.google.gct.testing.GoogleTestingListener"/>
+    <extensionPoint name="cloudTestingListener" interface="com.google.gct.testing.CloudTestingListener"/>
   </extensionPoints>
 
 </idea-plugin>

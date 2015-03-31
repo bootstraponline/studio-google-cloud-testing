@@ -23,7 +23,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
-import com.google.gct.testing.CloudTestConfigurationImpl;
+import com.google.gct.testing.CloudConfigurationImpl;
 import com.intellij.openapi.vfs.VirtualFile;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 
 import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
 
-public class LanguageDimension extends GoogleCloudTestingDimension {
+public class LanguageDimension extends CloudConfigurationDimension {
 
   public static final String DISPLAY_NAME = "Locale";
 
@@ -52,7 +52,7 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
   private final List<Language> supportedLanguages;
 
 
-  public LanguageDimension(CloudTestConfigurationImpl googleCloudTestingConfiguration, AndroidFacet facet) {
+  public LanguageDimension(CloudConfigurationImpl googleCloudTestingConfiguration, AndroidFacet facet) {
     super(googleCloudTestingConfiguration);
     final List<String> locales = getLocales(facet);
     supportedLanguages = Lists.newArrayList(Iterables.filter(getFullDomain(), new Predicate<Language>() {
@@ -74,7 +74,7 @@ public class LanguageDimension extends GoogleCloudTestingDimension {
   }
 
   @VisibleForTesting
-  public LanguageDimension(CloudTestConfigurationImpl googleCloudTestingConfiguration, final List<String> locales) {
+  public LanguageDimension(CloudConfigurationImpl googleCloudTestingConfiguration, final List<String> locales) {
     super(googleCloudTestingConfiguration);
     supportedLanguages = Lists.newArrayList(Iterables.filter(getFullDomain(), new Predicate<Language>() {
       @Override

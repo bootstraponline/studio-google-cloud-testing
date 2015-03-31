@@ -23,7 +23,7 @@ import com.google.api.services.testing.model.*;
 import com.google.api.services.toolresults.model.History;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.gct.testing.CloudTestConfigurationImpl;
+import com.google.gct.testing.CloudConfigurationImpl;
 import com.google.gct.testing.CloudTestingUtils;
 import com.google.gct.testing.dimension.CloudTestingType;
 import org.apache.http.NameValuePair;
@@ -110,7 +110,7 @@ public class CloudTestsLauncher {
    */
   public static TestMatrix triggerTestApi(
     String cloudProjectId, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath, String testSpecification,
-    String instrumentationTestRunner, CloudTestConfigurationImpl cloudTestConfiguration, String appPackage, String testPackage) {
+    String instrumentationTestRunner, CloudConfigurationImpl cloudTestConfiguration, String appPackage, String testPackage) {
 
     if (instrumentationTestRunner.isEmpty()) {
       instrumentationTestRunner = TEST_RUNNER_CLASS;

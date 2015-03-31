@@ -49,7 +49,7 @@ public class GoogleCloudTestResultsConnectionUtil {
    * and attaches it to given Process handler.
    *
    * You can use this method in run configuration's CommandLineState. You should
-   * just override "execute" method of your custom command line state and return
+   * just override "executeCloudMatrixTests" method of your custom command line state and return
    * test runner's console.
    *
    * NB: For debug purposes please enable "debug mode". In this mode test runner will also validate
@@ -61,7 +61,7 @@ public class GoogleCloudTestResultsConnectionUtil {
    * @param processHandler Process handler
    * @param consoleProperties Console properties for test console actions
    * @return Console view
-   * @throws com.intellij.execution.ExecutionException If IDEA cannot execute process this Exception will
+   * @throws com.intellij.execution.ExecutionException If IDEA cannot executeCloudMatrixTests process this Exception will
    * be caught and shown in error message box
    */
   public static BaseTestsOutputConsoleView createAndAttachConsole(@NotNull final String testFrameworkName,
@@ -144,7 +144,7 @@ public class GoogleCloudTestResultsConnectionUtil {
    * and attaches it to given Process handler.
    *
    * You can use this method in run configuration's CommandLineState. You should
-   * just override "execute" method of your custom command line state and return
+   * just override "executeCloudMatrixTests" method of your custom command line state and return
    * test runner's console.
    *
    * E.g:
@@ -154,7 +154,7 @@ public class GoogleCloudTestResultsConnectionUtil {
    *   // ...
    *
    *   @Override
-   *   public ExecutionResult execute(@NotNull final Executor executor,
+   *   public ExecutionResult executeCloudMatrixTests(@NotNull final Executor executor,
    *                                  @NotNull final ProgramRunner runner) throws ExecutionException {
    *
    *     final ProcessHandler processHandler = startProcess();
@@ -182,7 +182,7 @@ public class GoogleCloudTestResultsConnectionUtil {
    * @param config User run configuration settings
    * @param executor Executor
    * @return Console view
-   * @throws com.intellij.execution.ExecutionException If IDEA cannot execute process this Exception will
+   * @throws com.intellij.execution.ExecutionException If IDEA cannot executeCloudMatrixTests process this Exception will
    * be caught and shown in error message box
    */
   public static ConsoleView createAndAttachConsole(@NotNull final String testFrameworkName, @NotNull final ProcessHandler processHandler,

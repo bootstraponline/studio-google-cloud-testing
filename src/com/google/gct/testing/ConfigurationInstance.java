@@ -20,8 +20,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
-import com.google.gct.testing.dimension.GoogleCloudTestingDimension;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -67,7 +67,7 @@ public class ConfigurationInstance {
   private static ConfigurationInstance parse(Function<CloudTestingType, String> typeToNameFunction, String delimiter, String input) {
     ConfigurationInstance result= new ConfigurationInstance();
     ArrayList<CloudTestingType> allTypes = Lists.newArrayList(Iterables.concat(
-      CloudTestConfigurationProviderImpl.getAllDimensionTypes().values()));
+      CloudConfigurationProviderImpl.getAllDimensionTypes().values()));
 
     ImmutableMap<String,CloudTestingType> nameToTypeMap = Maps.uniqueIndex(allTypes, typeToNameFunction);
 
@@ -79,7 +79,7 @@ public class ConfigurationInstance {
 
   private static void recordType(ConfigurationInstance result, CloudTestingType type) {
     String dimensionName = null;
-    for (Map.Entry<String, List<? extends CloudTestingType>> entry : CloudTestConfigurationProviderImpl.getAllDimensionTypes().entrySet()) {
+    for (Map.Entry<String, List<? extends CloudTestingType>> entry : CloudConfigurationProviderImpl.getAllDimensionTypes().entrySet()) {
       if (entry.getValue().contains(type)) {
         dimensionName = entry.getKey();
         break;
@@ -91,7 +91,7 @@ public class ConfigurationInstance {
     result.typesByDimensionName.put(dimensionName, type);
   }
 
-  public CloudTestingType getTypeForDimension(GoogleCloudTestingDimension dimension) {
+  public CloudTestingType getTypeForDimension(CloudConfigurationDimension dimension) {
     return typesByDimensionName.get(dimension.getDisplayName());
   }
 

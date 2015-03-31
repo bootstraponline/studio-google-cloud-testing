@@ -15,17 +15,17 @@
  */
 package com.google.gct.testing.dimension;
 
-import com.google.gct.testing.CloudTestConfigurationImpl;
+import com.google.gct.testing.CloudConfigurationImpl;
 
 public class ConfigurationChangeEvent {
 
-  private final CloudTestConfigurationImpl configuration;
+  private final CloudConfigurationImpl configuration;
 
-  public ConfigurationChangeEvent(CloudTestConfigurationImpl configuration) {
+  public ConfigurationChangeEvent(CloudConfigurationImpl configuration) {
     this.configuration = configuration;
   }
 
-  public CloudTestConfigurationImpl getConfiguration() {
+  public CloudConfigurationImpl getConfiguration() {
     return configuration;
   }
 }
