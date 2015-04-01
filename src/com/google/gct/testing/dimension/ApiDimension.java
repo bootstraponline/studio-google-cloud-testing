@@ -60,8 +60,9 @@ public class ApiDimension extends CloudConfigurationDimension {
   //  ImmutableSet.of(KITKAT_19, JELLY_BEAN_18, JELLY_BEAN_17, JELLY_BEAN_16, ICE_CREAM_SANDWICH_15, ICE_CREAM_SANDWICH_14);
 
   private static ImmutableList<ApiLevel> FULL_DOMAIN;
-
+  private static ApiLevel defaultApi;
   private final int minSdkVersion;
+
 
   public ApiDimension(CloudConfigurationImpl googleCloudTestingConfiguration, AndroidFacet facet) {
     super(googleCloudTestingConfiguration);
@@ -109,7 +110,13 @@ public class ApiDimension extends CloudConfigurationDimension {
           details.put("Release date", version.getReleaseDate());
           Distribution distribution = version.getDistribution();
           details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
-          apiLevels.add(new ApiLevel(version.getId(), version.getCodeName(), version.getVersionString(), version.getApiLevel(), details));
+          ApiLevel apiLevel =
+            new ApiLevel(version.getId(), version.getCodeName(), version.getVersionString(), version.getApiLevel(), details);
+          apiLevels.add(apiLevel);
+          List<String> tags = version.getTags();
+          if (tags != null && tags.contains("default")) {
+            defaultApi = apiLevel;
+          }
         }
       }
       // Sort them in descending order of api version.
@@ -117,6 +124,13 @@ public class ApiDimension extends CloudConfigurationDimension {
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
     }
     return FULL_DOMAIN;
+  }
+
+  public static ApiLevel getDefaultApi() {
+    if (defaultApi == null) {
+      getFullDomain();
+    }
+    return defaultApi;
   }
 
   @Override

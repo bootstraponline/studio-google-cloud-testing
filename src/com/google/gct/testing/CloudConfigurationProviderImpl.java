@@ -115,11 +115,19 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   private List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, Kind kind) {
-    if (kind == SINGLE_DEVICE) { // No default single device configurations.
-      return Lists.newArrayList();
+    if (kind == SINGLE_DEVICE) {
+      CloudConfigurationImpl defaultConfiguration = new CloudConfigurationImpl(
+        CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, "Default Device", SINGLE_DEVICE, AndroidIcons.Display, facet);
+      defaultConfiguration.deviceDimension.enable(DeviceDimension.getDefaultDevice());
+      defaultConfiguration.apiDimension.enable(ApiDimension.getDefaultApi());
+      defaultConfiguration.languageDimension.enable(LanguageDimension.getDefaultLanguage());
+      defaultConfiguration.orientationDimension.enable(OrientationDimension.getDefaultOrientation());
+      defaultConfiguration.setNonEditable();
+      return ImmutableList.of(defaultConfiguration);
     }
+
     CloudConfigurationImpl allConfiguration =
-      new CloudConfigurationImpl(CloudConfigurationImpl.ALL_ID, "All Compatible", MATRIX, AndroidIcons.Display, facet);
+      new CloudConfigurationImpl(CloudConfigurationImpl.ALL_CONFIGURATION_ID, "All Compatible", MATRIX, AndroidIcons.Display, facet);
     allConfiguration.deviceDimension.enableAll();
     allConfiguration.apiDimension.enableAll();
     allConfiguration.languageDimension.enableAll();
@@ -137,7 +145,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     List<CloudPersistentConfiguration> cloudPersistentConfigurations =
       CloudCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myCloudPersistentConfigurations;
     return Lists.newArrayList(Iterables.concat(deserializeConfigurations(cloudPersistentConfigurations, true, facet),
-                                               getDefaultConfigurations(facet, MATRIX)));
+                                               getDefaultConfigurations(facet, MATRIX),
+                                               getDefaultConfigurations(facet, SINGLE_DEVICE)));
   }
 
   @Nullable

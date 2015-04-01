@@ -34,6 +34,7 @@ public class OrientationDimension extends CloudConfigurationDimension {
   //public static final Orientation LANDSCAPE = new Orientation("landscape", "Landscape");
 
   private static ImmutableList<Orientation> FULL_DOMAIN;
+  private static Orientation defaultOrientation;
 
   public OrientationDimension(CloudConfigurationImpl googleCloudTestingConfiguration) {
     super(googleCloudTestingConfiguration);
@@ -49,16 +50,28 @@ public class OrientationDimension extends CloudConfigurationDimension {
       ImmutableList.Builder<Orientation> fullDomainBuilder = new ImmutableList.Builder<Orientation>();
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
-        List<com.google.api.services.testing.model.Orientation> orientations =
+        List<com.google.api.services.testing.model.Orientation> modelOrientations =
           androidDeviceCatalog.getRuntimeConfiguration().getOrientations();
-        for (com.google.api.services.testing.model.Orientation orientation : orientations) {
-          fullDomainBuilder.add(new Orientation(orientation.getId(), orientation.getName()));
+        for (com.google.api.services.testing.model.Orientation modelOrientation : modelOrientations) {
+          Orientation orientation = new Orientation(modelOrientation.getId(), modelOrientation.getName());
+          fullDomainBuilder.add(orientation);
+          List<String> tags = modelOrientation.getTags();
+          if (tags != null && tags.contains("default")) {
+            defaultOrientation = orientation;
+          }
         }
       }
       FULL_DOMAIN = fullDomainBuilder.build();
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
     }
     return FULL_DOMAIN;
+  }
+
+  public static Orientation getDefaultOrientation() {
+    if (defaultOrientation == null) {
+      getFullDomain();
+    }
+    return defaultOrientation;
   }
 
   @Override

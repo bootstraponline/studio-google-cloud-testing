@@ -32,7 +32,8 @@ import java.util.Set;
 
 public class CloudConfigurationImpl extends CloudConfiguration {
 
-  public static final int ALL_ID = Integer.MAX_VALUE;
+  public static final int ALL_CONFIGURATION_ID = Integer.MAX_VALUE;
+  public static final int DEFAULT_DEVICE_CONFIGURATION_ID = Integer.MAX_VALUE - 1;
 
   private static int nextAvailableID = 1;
 
@@ -52,7 +53,7 @@ public class CloudConfigurationImpl extends CloudConfiguration {
   OrientationDimension orientationDimension;
 
   public CloudConfigurationImpl(int id, String name, Kind kind, Icon icon, AndroidFacet facet) {
-    if (id != ALL_ID && id >= nextAvailableID) {
+    if (!isPredefinedId(id) && id >= nextAvailableID) {
       nextAvailableID = id + 1;
     }
     this.id = id;
@@ -62,6 +63,10 @@ public class CloudConfigurationImpl extends CloudConfiguration {
     this.facet = facet;
     isEditable = true;
     createDimensions();
+  }
+
+  private boolean isPredefinedId(int id) {
+    return id == ALL_CONFIGURATION_ID || id == DEFAULT_DEVICE_CONFIGURATION_ID;
   }
 
   public CloudConfigurationImpl(String name, Kind kind, Icon icon, AndroidFacet facet) {

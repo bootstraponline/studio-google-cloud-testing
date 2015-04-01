@@ -41,13 +41,15 @@ public class LanguageDimension extends CloudConfigurationDimension {
 
   private static ImmutableList<Language> FULL_DOMAIN;
 
-  private static final Language defaultLanguage;
+  private static final Language localDefaultLanguage;
 
   static {
     //TODO: Make sure we do not "guess" incorrectly the user's language.
     Language userLanguage = getLanguage(System.getProperty("user.language"));
-    defaultLanguage = userLanguage != null ? new Language(userLanguage, true) : null;
+    localDefaultLanguage = userLanguage != null ? new Language(userLanguage, true) : null;
   }
+
+  private static Language defaultLanguage;
 
   private final List<Language> supportedLanguages;
 
@@ -67,9 +69,13 @@ public class LanguageDimension extends CloudConfigurationDimension {
         return lang1.getResultsViewerDisplayName().compareTo(lang2.getResultsViewerDisplayName());
       }
     });
-    if (defaultLanguage != null) {
-      supportedLanguages.remove(defaultLanguage);
-      supportedLanguages.add(0, defaultLanguage);
+    addLocalDefaultLocale();
+  }
+
+  private void addLocalDefaultLocale() {
+    if (localDefaultLanguage != null) {
+      supportedLanguages.remove(localDefaultLanguage);
+      supportedLanguages.add(0, localDefaultLanguage);
     }
   }
 
@@ -82,10 +88,7 @@ public class LanguageDimension extends CloudConfigurationDimension {
         return locales.contains(input.getId());
       }
     }));
-    if (defaultLanguage != null) {
-      supportedLanguages.remove(defaultLanguage);
-      supportedLanguages.add(0, defaultLanguage);
-    }
+    addLocalDefaultLocale();
   }
 
   private List<String> getLocales(AndroidFacet facet) {
@@ -128,13 +131,25 @@ public class LanguageDimension extends CloudConfigurationDimension {
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
         for (Locale locale : androidDeviceCatalog.getRuntimeConfiguration().getLocales()) {
-          fullDomainBuilder.add(new Language(locale.getId(), locale.getName(), locale.getRegion(), false));
+          Language language = new Language(locale.getId(), locale.getName(), locale.getRegion(), false);
+          fullDomainBuilder.add(language);
+          List<String> tags = locale.getTags();
+          if (tags != null && tags.contains("default")) {
+            defaultLanguage = language;
+          }
         }
       }
       FULL_DOMAIN = fullDomainBuilder.build();
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
     }
     return FULL_DOMAIN;
+  }
+
+  public static Language getDefaultLanguage() {
+    if (defaultLanguage == null) {
+      getFullDomain();
+    }
+    return defaultLanguage;
   }
 
   public static Language getLanguage(final String locale) {
@@ -170,22 +185,22 @@ public class LanguageDimension extends CloudConfigurationDimension {
     private final String id;
     private final String name;
     private final String region;
-    private final boolean isDefault;
+    private final boolean isLocalDefault;
 
-    public Language(Language language, boolean isDefault) {
-      this(language.id, language.name, language.region, isDefault);
+    public Language(Language language, boolean isLocalDefault) {
+      this(language.id, language.name, language.region, isLocalDefault);
     }
 
     //public Language(String id, String name, String region) {
     //  this(id, name, region, false);
     //}
 
-    public Language(String id, String name, String region, boolean isDefault) {
+    public Language(String id, String name, String region, boolean isLocalDefault) {
       this.id = id;
       this.name = name;
       this.region = region;
       this.details = ImmutableMap.of();
-      this.isDefault = isDefault;
+      this.isLocalDefault = isLocalDefault;
     }
 
     @Override
@@ -196,7 +211,7 @@ public class LanguageDimension extends CloudConfigurationDimension {
 
     @Override
     public String getConfigurationDialogDisplayName() {
-      return getResultsViewerDisplayName() + (isDefault ? " - default" : "");
+      return getResultsViewerDisplayName() + (isLocalDefault ? " - default" : "");
     }
 
     @Override

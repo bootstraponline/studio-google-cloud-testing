@@ -40,7 +40,7 @@ public class DeviceDimension extends CloudConfigurationDimension {
   //  new Device("GalaxyS5", "Samsung", "Galaxy S5", ImmutableMap.of("RAM", "2GB", "Disk", "16-32GB", "Display", "1080x1920", "Min API Level", "19"));
 
   private static ImmutableList<Device> FULL_DOMAIN;
-
+  private static Device defaultDevice;
 
   public DeviceDimension(CloudConfigurationImpl googleCloudTestingConfiguration) {
     super(googleCloudTestingConfiguration);
@@ -59,13 +59,25 @@ public class DeviceDimension extends CloudConfigurationDimension {
         for (AndroidModel model : androidDeviceCatalog.getModels()) {
           Map<String, String> details = new HashMap<String, String>();
           details.put("Display", model.getScreenX() + "x" + model.getScreenY());
-          fullDomainBuilder.add(new Device(model.getId(), model.getName(), model.getManufacturer(), model.getForm(), details));
+          Device device = new Device(model.getId(), model.getName(), model.getManufacturer(), model.getForm(), details);
+          fullDomainBuilder.add(device);
+          List<String> tags = model.getTags();
+          if (tags != null && tags.contains("default")) {
+            defaultDevice = device;
+          }
         }
       }
       FULL_DOMAIN = fullDomainBuilder.build();
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
     }
     return FULL_DOMAIN;
+  }
+
+  public static Device getDefaultDevice() {
+    if (defaultDevice == null) {
+      getFullDomain();
+    }
+    return defaultDevice;
   }
 
   @Override
