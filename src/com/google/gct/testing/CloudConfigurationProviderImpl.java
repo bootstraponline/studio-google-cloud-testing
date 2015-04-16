@@ -15,10 +15,12 @@
  */
 package com.google.gct.testing;
 
+import com.android.ddmlib.IDevice;
 import com.android.tools.idea.run.CloudConfiguration;
 import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.android.tools.idea.run.CloudConfigurationProvider;
 import com.android.tools.idea.sdk.IdeSdks;
+import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
 import com.google.api.services.testing.model.AndroidDevice;
@@ -37,6 +39,7 @@ import com.google.gct.testing.launcher.CloudTestsLauncher;
 import com.google.gct.testing.results.GoogleCloudTestListener;
 import com.google.gct.testing.results.GoogleCloudTestResultsConnectionUtil;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
+import com.google.gct.testing.ui.GhostCloudDevice;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -88,6 +91,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
         return (CloudConfigurationImpl) configuration;
       }
     };
+
+
+  private final Set<GhostCloudDevice> ghostCloudDevices = Sets.newHashSet();
 
   public static Map<String, List<? extends CloudTestingType>> getAllDimensionTypes() {
     Map<String, List<? extends CloudTestingType>> dimensionTypes = new HashMap<String, List<? extends CloudTestingType>>();
@@ -280,37 +286,58 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                                                                                  "The returned cloud device is null\n\n");
     }
 
+    GhostCloudDevice ghostCloudDevice = new GhostCloudDevice(createdDevice);
+    synchronized (ghostCloudDevices) {
+      ghostCloudDevices.add(ghostCloudDevice);
+    }
     final long POLLING_INTERVAL = 10 * 1000; // 10 seconds
     final long INITIAL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
     long stopTime = System.currentTimeMillis() + INITIAL_TIMEOUT;
     String sdkPath = IdeSdks.getAndroidSdkPath().getAbsolutePath() + "/platform-tools";
     File dir = new File(sdkPath);
-    while (System.currentTimeMillis() < stopTime) {
-      try {
+    try {
+      while (System.currentTimeMillis() < stopTime) {
         createdDevice = getTest().projects().devices().get(cloudProjectId, createdDevice.getId()).execute();
         System.out.println("Polling for device... (time: " + System.currentTimeMillis() + ", status: " + createdDevice.getState() + ")");
         if (createdDevice.getState().equals("READY")) {
-        //if (createdDevice.getDeviceDetails().getConnectionInfo() != null) {
+          //if (createdDevice.getDeviceDetails().getConnectionInfo() != null) {
           String ipAddress = createdDevice.getDeviceDetails().getConnectionInfo().getIpAddress();
           Integer adbPort = createdDevice.getDeviceDetails().getConnectionInfo().getAdbPort();
           System.out.println("Device ready with IP address:port " + ipAddress + ":" + adbPort);
           Runtime rt = Runtime.getRuntime();
-          //Process startServer = rt.exec("./adb start-server", null, dir);
-          //startServer.waitFor();
           Process connect = rt.exec("./adb connect " + ipAddress + ":" + adbPort, null, dir);
           connect.waitFor();
+          // Do not wait for "finally" to remove the ghost device
+          // to minimize the time both a ghost device and an actual cloud device are present in the devices table.
+          synchronized (ghostCloudDevices) {
+            ghostCloudDevices.remove(ghostCloudDevice);
+          }
           return;
         }
         Thread.sleep(POLLING_INTERVAL);
-      } catch (IOException e) {
-        showCloudDevicePollingError(e, createdDevice.getId());
-      } catch (InterruptedException e) {
-        showCloudDevicePollingError(e, createdDevice.getId());
+      }
+      CloudTestingUtils.showErrorMessage(null, "Timed out connecting to a cloud device", "Timed out connecting to a cloud device!\n" +
+                                                                                         "Timed out connecting to a cloud device:\n\n" +
+                                                                                         createdDevice.getId());
+    } catch (IOException e) {
+      showCloudDevicePollingError(e, createdDevice.getId());
+    } catch (InterruptedException e) {
+      showCloudDevicePollingError(e, createdDevice.getId());
+    } finally {
+      synchronized (ghostCloudDevices) {
+        ghostCloudDevices.remove(ghostCloudDevice);
       }
     }
-    CloudTestingUtils.showErrorMessage(null, "Timed out connecting to a cloud device", "Timed out connecting to a cloud device!\n" +
-                                                                                       "Timed out connecting to a cloud device:\n\n" +
-                                                                                       createdDevice.getId());
+  }
+
+  @NotNull
+  @Override
+  public Collection<IDevice> getLaunchingCloudDevices() {
+    synchronized (ghostCloudDevices) {
+      HashSet<IDevice> launchingCloudDevices = Sets.newHashSet();
+      launchingCloudDevices.addAll(ghostCloudDevices);
+      return launchingCloudDevices;
+    }
   }
 
   private void showCloudDevicePollingError(Exception e, String deviceId) {
