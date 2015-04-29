@@ -20,6 +20,8 @@ import com.android.tools.idea.run.CloudConfiguration;
 import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.android.tools.idea.run.CloudConfigurationProvider;
 import com.android.tools.idea.sdk.IdeSdks;
+//import com.glavsoft.viewer.Viewer;
+import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
@@ -39,12 +41,10 @@ import com.google.gct.testing.launcher.CloudTestsLauncher;
 import com.google.gct.testing.results.GoogleCloudTestListener;
 import com.google.gct.testing.results.GoogleCloudTestResultsConnectionUtil;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
-import com.google.gct.testing.ui.GhostCloudDevice;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
 import com.intellij.execution.Executor;
-import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.module.Module;
@@ -73,6 +73,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   private static final String TEST_RUN_ID_PREFIX = "GoogleCloudTest:";
   private static final Map<String, CloudConfigurationImpl> testRunIdToCloudConfiguration = new HashMap<String, CloudConfigurationImpl>();
   private static final Map<String, CloudResultsAdapter> testRunIdToCloudResultsAdapter = new HashMap<String, CloudResultsAdapter>();
+  // Do not use MultiMap to ensure proper reuse of serial numbers (IP:port).
+  private static final Map<String, String> serialNumberToConfigurationInstance = Maps.newHashMap();
 
   public static final Icon DEFAULT_ICON = AndroidIcons.AndroidFile;
 
@@ -93,7 +95,11 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     };
 
 
-  private final Set<GhostCloudDevice> ghostCloudDevices = Sets.newHashSet();
+  private static String lastCloudProjectId;
+
+  private static final Set<GhostCloudDevice> ghostCloudDevices = Sets.newHashSet();
+
+  private static CloudConfigurationProviderImpl instance = null;
 
   public static Map<String, List<? extends CloudTestingType>> getAllDimensionTypes() {
     Map<String, List<? extends CloudTestingType>> dimensionTypes = new HashMap<String, List<? extends CloudTestingType>>();
@@ -102,6 +108,13 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     dimensionTypes.put(LanguageDimension.DISPLAY_NAME, LanguageDimension.getFullDomain());
     dimensionTypes.put(OrientationDimension.DISPLAY_NAME, OrientationDimension.getFullDomain());
     return dimensionTypes;
+  }
+
+  public static CloudConfigurationProviderImpl getInstance() {
+    if (instance == null) {
+      instance = new CloudConfigurationProviderImpl();
+    }
+    return instance;
   }
 
   @NotNull
@@ -262,8 +275,13 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       return;
     }
 
-    String[] dimensionValues =
-      cloudConfiguration.computeConfigurationInstances(ConfigurationInstance.ENCODED_NAME_DELIMITER).get(0).split("-");
+    lastCloudProjectId = cloudProjectId;
+    String configurationInstance = cloudConfiguration.computeConfigurationInstances(ConfigurationInstance.ENCODED_NAME_DELIMITER).get(0);
+    launchCloudDevice(configurationInstance);
+  }
+
+  public void launchCloudDevice(String configurationInstance) {
+    String[] dimensionValues = configurationInstance.split("-");
     Device device = new Device().setAndroidDevice(
       new AndroidDevice()
         .setAndroidModelId(dimensionValues[0])
@@ -273,12 +291,12 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
     Device createdDevice = null;
     try {
-      createdDevice = getTest().projects().devices().create(cloudProjectId, device).execute();
+      createdDevice = getTest().projects().devices().create(lastCloudProjectId, device).execute();
     }
     catch (IOException e) {
       CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
-                                                                                "Exception while launching a cloud device\n\n" +
-                                                                                e.getMessage());
+                                                                                 "Exception while launching a cloud device\n\n" +
+                                                                                 e.getMessage());
       return;
     }
     if (createdDevice == null) {
@@ -297,21 +315,35 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     File dir = new File(sdkPath);
     try {
       while (System.currentTimeMillis() < stopTime) {
-        createdDevice = getTest().projects().devices().get(cloudProjectId, createdDevice.getId()).execute();
+        createdDevice = getTest().projects().devices().get(lastCloudProjectId, createdDevice.getId()).execute();
         System.out.println("Polling for device... (time: " + System.currentTimeMillis() + ", status: " + createdDevice.getState() + ")");
         if (createdDevice.getState().equals("READY")) {
           //if (createdDevice.getDeviceDetails().getConnectionInfo() != null) {
           String ipAddress = createdDevice.getDeviceDetails().getConnectionInfo().getIpAddress();
           Integer adbPort = createdDevice.getDeviceDetails().getConnectionInfo().getAdbPort();
-          System.out.println("Device ready with IP address:port " + ipAddress + ":" + adbPort);
+          Integer vncPort = createdDevice.getDeviceDetails().getConnectionInfo().getVncPort();
+          String vncPassword = createdDevice.getDeviceDetails().getConnectionInfo().getVncPassword();
+          //TODO: Remove this temporary password.
+          if ("abc".length() > 1) {
+            vncPassword = "zeecloud";
+          }
+          String deviceAddress = ipAddress + ":" + adbPort;
+          System.out.println("Device ready with IP address:port " + deviceAddress);
           Runtime rt = Runtime.getRuntime();
-          Process connect = rt.exec("./adb connect " + ipAddress + ":" + adbPort, null, dir);
+          Process connect = rt.exec("./adb connect " + deviceAddress, null, dir);
           connect.waitFor();
+          serialNumberToConfigurationInstance.put(deviceAddress, configurationInstance);
           // Do not wait for "finally" to remove the ghost device
           // to minimize the time both a ghost device and an actual cloud device are present in the devices table.
           synchronized (ghostCloudDevices) {
             ghostCloudDevices.remove(ghostCloudDevice);
           }
+          // Make sure the device is unlocked.
+          Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, dir);
+          unlock.waitFor();
+          // Open the VNC window for the cloud device.
+          //String[] viewerArgs = new String[]{"-port=" + vncPort, "-host=" + ipAddress, "-password=" + vncPassword, "-fullScreen=false"};
+          //Viewer.main(viewerArgs);
           return;
         }
         Thread.sleep(POLLING_INTERVAL);
@@ -328,6 +360,10 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
         ghostCloudDevices.remove(ghostCloudDevice);
       }
     }
+  }
+
+  public static String getConfigurationInstanceForSerialNumber(String serialNumber) {
+    return serialNumberToConfigurationInstance.get(serialNumber);
   }
 
   @NotNull
@@ -364,6 +400,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       // Should handle only matrix configurations.
       return null;
     }
+
+    lastCloudProjectId = cloudProjectId;
 
     AndroidTestRunConfiguration testRunConfiguration = (AndroidTestRunConfiguration) runningState.getConfiguration();
     AndroidTestConsoleProperties properties =

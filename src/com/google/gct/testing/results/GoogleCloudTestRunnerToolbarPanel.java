@@ -16,6 +16,7 @@
 package com.google.gct.testing.results;
 
 
+import com.google.gct.testing.DebugConfigurationAction;
 import com.google.gct.testing.ShowScreenshotsAction;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.testframework.TestConsoleProperties;
@@ -40,6 +41,7 @@ public class GoogleCloudTestRunnerToolbarPanel extends SMTRunnerToolbarPanel {
 
     super.appendAdditionalActions(actionGroup, properties, environment, parent);
     actionGroup.addAction(new ShowScreenshotsAction());
+    actionGroup.addAction(new DebugConfigurationAction());
   }
 
 }

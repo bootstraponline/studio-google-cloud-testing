@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.gct.testing.ui;
+package com.google.gct.testing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;

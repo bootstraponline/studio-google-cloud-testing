@@ -328,6 +328,10 @@ public class CloudResultsLoader {
       throw new RuntimeException("Failed to retrieve bucket objects: ", e);
     }
 
+    if (storageObjects == null) {
+      return;
+    }
+
     Iterable<BucketFileMetadata> files = Iterables.transform(storageObjects, TO_BUCKET_FILE);
     //ArrayList<ScreenshotDownloadThread> downloadThreads = new ArrayList<ScreenshotDownloadThread>();
     for (BucketFileMetadata file : files) {
