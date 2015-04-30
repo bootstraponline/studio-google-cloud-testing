@@ -40,9 +40,13 @@ public class GhostCloudDevice implements IDevice {
   @NonNull
   @Override
   public String getSerialNumber() {
+    return "N/A";
+  }
+
+  public String getEncodedConfigurationInstance() {
     AndroidDevice androidDevice = device.getAndroidDevice();
-    return (androidDevice.getAndroidModelId() + "-" + androidDevice.getAndroidVersionId() + "-" +
-           androidDevice.getLocale() + "-" + androidDevice.getOrientation()).toLowerCase();
+    return androidDevice.getAndroidModelId() + "-" + androidDevice.getAndroidVersionId() + "-" +
+           androidDevice.getLocale() + "-" + androidDevice.getOrientation();
   }
 
   @Nullable

@@ -58,6 +58,7 @@ import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -374,6 +375,28 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       launchingCloudDevices.addAll(ghostCloudDevices);
       return launchingCloudDevices;
     }
+  }
+
+  @Nullable
+  @Override
+  public Icon getCloudDeviceIcon() {
+    try {
+      return new ImageIcon(ImageIO.read(CloudConfigurationProviderImpl.class.getResourceAsStream("CloudDevice.png")));
+    } catch (Throwable e) {
+      return null;
+    }
+  }
+
+  @Nullable
+  @Override
+  public String getCloudDeviceConfiguration(IDevice device) {
+    String encodedConfigurationInstance = device instanceof GhostCloudDevice
+                                          ? ((GhostCloudDevice)device).getEncodedConfigurationInstance()
+                                          : serialNumberToConfigurationInstance.get(device.getSerialNumber());
+    if (encodedConfigurationInstance != null) {
+      return ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getResultsViewerDisplayString();
+    }
+    return null;
   }
 
   private void showCloudDevicePollingError(Exception e, String deviceId) {
