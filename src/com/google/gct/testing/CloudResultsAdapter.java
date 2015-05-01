@@ -20,6 +20,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -39,15 +40,17 @@ public class CloudResultsAdapter {
   private final Set<ConfigurationResult> markedAsPendingConfigurations = new HashSet<ConfigurationResult>();
   // The set of configurations that were marked as finished in the test results tree.
   private final Set<ConfigurationResult> markedAsFinishedConfigurations = new HashSet<ConfigurationResult>();
-  private final PollingTicker pollingTicker = new PollingTicker();
+  private final PollingTicker pollingTicker;
 
 
   public CloudResultsAdapter(String cloudProjectId, String bucketName, GoogleCloudTestingResultParser resultParser,
-                             List<String> expectedConfigurationInstances, String testRunId, TestMatrix testMatrix) {
+                             List<String> expectedConfigurationInstances, String testRunId, @Nullable TestMatrix testMatrix,
+                             @Nullable CloudMatrixExecutionCancellator matrixExecutionCancellator) {
     this.cloudProjectId = cloudProjectId;
     loader = new CloudResultsLoader(cloudProjectId, resultParser.getTestRunListener(), bucketName, testMatrix);
     this.resultParser = resultParser;
     this.expectedConfigurationInstances = expectedConfigurationInstances;
+    pollingTicker = new PollingTicker(matrixExecutionCancellator);
     // Update the tree's root node with the index of the adapter that communicates with the tree through this parser.
     resultParser.getTestRunListener().setTestRunId(testRunId);
   }
@@ -153,6 +156,11 @@ public class CloudResultsAdapter {
     private static final int POLLING_INTERVAL = 3 * 1000; // 3 seconds
 
     private long stopTime;
+    private final CloudMatrixExecutionCancellator matrixExecutionCancellator;
+
+    public PollingTicker(@Nullable CloudMatrixExecutionCancellator matrixExecutionCancellator) {
+      this.matrixExecutionCancellator = matrixExecutionCancellator;
+    }
 
     public void resetTimeout() {
       long newStopTime = System.currentTimeMillis() + DYNAMIC_TIMEOUT;
@@ -166,6 +174,9 @@ public class CloudResultsAdapter {
       boolean allResultsArrived = false;
       stopTime = System.currentTimeMillis() + INITIAL_TIMEOUT;
       while (System.currentTimeMillis() < stopTime) {
+        if (matrixExecutionCancellator != null && matrixExecutionCancellator.isCancelled()) {
+          break;
+        }
         allResultsArrived = poll();
         if (allResultsArrived) {
           break;

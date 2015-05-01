@@ -427,10 +427,10 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     lastCloudProjectId = cloudProjectId;
 
     AndroidTestRunConfiguration testRunConfiguration = (AndroidTestRunConfiguration) runningState.getConfiguration();
-    AndroidTestConsoleProperties properties =
-      new AndroidTestConsoleProperties(testRunConfiguration, executor);
-    ConsoleView console = GoogleCloudTestResultsConnectionUtil
-      .createAndAttachConsole("Cloud Testing", runningState.getProcessHandler(), properties, runningState.getEnvironment());
+    AndroidTestConsoleProperties properties = new AndroidTestConsoleProperties(testRunConfiguration, executor);
+    CloudMatrixExecutionCancellator matrixExecutionCancellator = new CloudMatrixExecutionCancellator();
+    ConsoleView console = GoogleCloudTestResultsConnectionUtil.createAndAttachConsole(
+      "Cloud Testing", runningState.getProcessHandler(), properties, runningState.getEnvironment(), matrixExecutionCancellator);
     Disposer.register(project, console);
 
     GoogleCloudTestingResultParser
@@ -444,13 +444,13 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     GoogleCloudTestingDeveloperConfigurable.GoogleCloudTestingDeveloperState googleCloudTestingDeveloperState =
       GoogleCloudTestingDeveloperSettings.getInstance(project).getState();
     if (!googleCloudTestingDeveloperState.shouldUseFakeBucket) {
-      performTestsInCloud(cloudConfiguration, cloudProjectId, runningState, cloudResultParser);
+      performTestsInCloud(cloudConfiguration, cloudProjectId, runningState, cloudResultParser, matrixExecutionCancellator);
     }
     else {
       String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingDeveloperState.fakeBucketName + System.currentTimeMillis();
       CloudResultsAdapter cloudResultsAdapter =
         new CloudResultsAdapter(cloudProjectId, googleCloudTestingDeveloperState.fakeBucketName, cloudResultParser,
-                                expectedConfigurationInstances, testRunId, null);
+                                expectedConfigurationInstances, testRunId, null, null);
       addCloudConfiguration(testRunId, cloudConfiguration);
       addCloudResultsAdapter(testRunId, cloudResultsAdapter);
       cloudResultsAdapter.startPolling();
@@ -459,7 +459,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   private void performTestsInCloud(final CloudConfigurationImpl cloudTestingConfiguration, final String cloudProjectId,
-                                   final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser) {
+                                   final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser,
+                                   final CloudMatrixExecutionCancellator matrixExecutionCancellator) {
     if (cloudTestingConfiguration != null && cloudTestingConfiguration.getDeviceConfigurationCount() > 0) {
       final List<String> expectedConfigurationInstances =
         cloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
@@ -472,10 +473,16 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           String appPackage = runningState.getFacet().getAndroidModuleInfo().getPackage();
           String testPackage = appPackage + ".test";
 
+          if (matrixExecutionCancellator.isCancelled()) {
+            return;
+          }
           runningState.getProcessHandler().notifyTextAvailable(
             prepareProgressString("Creating Cloud Storage bucket " + bucketName + "...", ""), ProcessOutputTypes.STDOUT);
           CloudTestsLauncher.createBucket(cloudProjectId, bucketName);
 
+          if (matrixExecutionCancellator.isCancelled()) {
+            return;
+          }
           List<String> apkPaths = getApkPaths(runningState);
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading app APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
@@ -488,6 +495,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           }
           String appApkName = CloudTestsLauncher.uploadFile(bucketName, appApk).getName();
 
+          if (matrixExecutionCancellator.isCancelled()) {
+            return;
+          }
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading test APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
           File testApk = findAppropriateApk(apkPaths, true);
@@ -499,6 +509,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           }
           String testApkName = CloudTestsLauncher.uploadFile(bucketName, testApk).getName();
 
+          if (matrixExecutionCancellator.isCancelled()) {
+            return;
+          }
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking cloud test API...", "\n"),
                                                                ProcessOutputTypes.STDOUT);
           String testSpecification = CloudTestingUtils.prepareTestSpecification(testRunConfiguration);
@@ -509,9 +522,12 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                             cloudTestingConfiguration, appPackage, testPackage);
 
           if (testMatrix != null) {
+            matrixExecutionCancellator.setCloudProjectId(cloudProjectId);
+            matrixExecutionCancellator.setTestMatrixId(testMatrix.getTestMatrixId());
             String testRunId = TEST_RUN_ID_PREFIX + bucketName;
             CloudResultsAdapter cloudResultsAdapter =
-              new CloudResultsAdapter(cloudProjectId, bucketName, cloudResultParser, expectedConfigurationInstances, testRunId, testMatrix);
+              new CloudResultsAdapter(cloudProjectId, bucketName, cloudResultParser, expectedConfigurationInstances, testRunId, testMatrix,
+                                      matrixExecutionCancellator);
             addCloudConfiguration(testRunId, cloudTestingConfiguration);
             addCloudResultsAdapter(testRunId, cloudResultsAdapter);
             cloudResultsAdapter.startPolling();
