@@ -27,6 +27,7 @@ import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
 import com.google.api.services.testing.model.AndroidDevice;
 import com.google.api.services.testing.model.Device;
+import com.google.api.services.testing.model.ResultStorage;
 import com.google.api.services.testing.model.TestMatrix;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -522,6 +523,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                             cloudTestingConfiguration, appPackage, testPackage);
 
           if (testMatrix != null) {
+            runningState.getProcessHandler().notifyTextAvailable(
+              "You can also view test results, along with other runs against this app, on the web:\n"
+              + getTuxLink(cloudProjectId, testMatrix.getResultStorage()) + " \n\n\n", ProcessOutputTypes.STDOUT);
             matrixExecutionCancellator.setCloudProjectId(cloudProjectId);
             matrixExecutionCancellator.setTestMatrixId(testMatrix.getTestMatrixId());
             String testRunId = TEST_RUN_ID_PREFIX + bucketName;
@@ -541,6 +545,12 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
         }
       }).start();
     }
+  }
+
+  private static String getTuxLink(String cloudProjectId, ResultStorage resultStorage) {
+    return "https://pantheon.corp.google.com/project/" + cloudProjectId
+           + "/clouddev/toolresults/histories/" + resultStorage.getToolResultsHistoryId()
+           + "/executions/" + resultStorage.getToolResultsExecutionId();
   }
 
   private String listAllApks(List<String> apkPaths) {
