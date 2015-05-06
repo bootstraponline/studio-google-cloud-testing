@@ -25,6 +25,7 @@ import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
+import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.testing.model.AndroidDevice;
 import com.google.api.services.testing.model.Device;
 import com.google.api.services.testing.model.ResultStorage;
@@ -68,6 +69,7 @@ import java.util.*;
 
 import static com.android.tools.idea.run.CloudConfiguration.Kind.MATRIX;
 import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
@@ -252,8 +254,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     try {
       Storage.Buckets.List listBuckets = CloudAuthenticator.getStorage().buckets().list(cloudProjectId);
       buckets = listBuckets.execute();
-    } catch (Throwable t) {
-      message = t.getMessage();
+    } catch (Exception e) {
+      message = e.getMessage();
       // ignore
     } finally {
       if (buckets == null) {
@@ -383,7 +385,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   public Icon getCloudDeviceIcon() {
     try {
       return new ImageIcon(ImageIO.read(CloudConfigurationProviderImpl.class.getResourceAsStream("CloudDevice.png")));
-    } catch (Throwable e) {
+    } catch (Exception e) {
       return null;
     }
   }
@@ -457,6 +459,26 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       cloudResultsAdapter.startPolling();
     }
     return new DefaultExecutionResult(console, runningState.getProcessHandler());
+  }
+
+  @Override
+  protected boolean canBeEnabled() {
+    final String publicBucketName = "cloud-testing-plugin-enablement";
+    final String triggerFileName = "ENABLED";
+    try {
+      Storage.Objects.List objects = CloudAuthenticator.getPublicStorage().objects().list(publicBucketName);
+      List<StorageObject> storageObjects = objects.execute().getItems();
+      if (storageObjects != null) {
+        for (StorageObject storageObject : storageObjects) {
+          if (triggerFileName.equals(storageObject.getName())) {
+            return true;
+          }
+        }
+      }
+    } catch (Exception e) {
+      // ignore
+    }
+    return false;
   }
 
   private void performTestsInCloud(final CloudConfigurationImpl cloudTestingConfiguration, final String cloudProjectId,

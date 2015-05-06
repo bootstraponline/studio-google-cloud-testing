@@ -42,6 +42,14 @@ public class CloudAuthenticator {
   private static long lastDiscoveryServiceInvocationTimestamp = -1;
 
 
+  public static Storage getPublicStorage() {
+    if (httpTransport == null) {
+      httpTransport = createHttpTransport();
+    }
+    // A storage accessible to anyone without authentication and authorization (null credential).
+    return new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), null).build();
+  }
+
   public static Storage getStorage() {
     prepareCredential();
     if (storage == null) {

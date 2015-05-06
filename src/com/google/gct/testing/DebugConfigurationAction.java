@@ -52,7 +52,7 @@ public class DebugConfigurationAction extends AnAction {
     try {
       ICON = new ImageIcon(ImageIO.read(DebugConfigurationAction.class.getResourceAsStream("CloudDebug.png")));
     }
-    catch (Throwable e) { // If something goes wrong, just use the original debug icon.
+    catch (Exception e) { // If something goes wrong, just use the original debug icon.
       ICON = AllIcons.General.Debug;
     }
   }
