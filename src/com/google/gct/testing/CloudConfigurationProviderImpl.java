@@ -548,7 +548,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   private static String getTuxLink(String cloudProjectId, ResultStorage resultStorage) {
-    return "https://pantheon.corp.google.com/project/" + cloudProjectId
+    return "https://console.developers.google.com/project/" + cloudProjectId
            + "/clouddev/toolresults/histories/" + resultStorage.getToolResultsHistoryId()
            + "/executions/" + resultStorage.getToolResultsExecutionId();
   }
