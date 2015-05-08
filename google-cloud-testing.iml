@@ -54,7 +54,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/google-api-services-testing-v1-rev20150323-1.20.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/google-api-services-testing-v1-rev20150305-1.20.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

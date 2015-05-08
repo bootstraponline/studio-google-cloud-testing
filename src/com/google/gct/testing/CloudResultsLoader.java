@@ -19,6 +19,7 @@ import com.google.api.client.http.HttpHeaders;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.testing.model.AndroidDevice;
+import com.google.api.services.testing.model.ResultStorage;
 import com.google.api.services.testing.model.TestExecution;
 import com.google.api.services.testing.model.TestMatrix;
 import com.google.common.base.Function;
@@ -28,6 +29,8 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.gct.testing.results.IGoogleCloudTestRunListener;
+import com.intellij.execution.process.ProcessHandler;
+import com.intellij.execution.process.ProcessOutputTypes;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
@@ -89,20 +92,24 @@ public class CloudResultsLoader {
 
   private final String cloudProjectId;
   private final IGoogleCloudTestRunListener testRunListener;
+  private final ProcessHandler processHandler;
   private final String bucketName;
   private final String testMatrixId;
   private final Set<String> allConfigurationInstances = new HashSet<String>();
   private final Set<String> finishedConfigurationInstances = new HashSet<String>();
   private long loadedScreenshotSize = 0;
   private int consecutivePollFailuresCount = 0;
+  private boolean webLinkReported = false;
 
   // Encoded configuration instance -> progress accumulated so far.
   private final Map<String, String> configurationProgress = new HashMap<String, String>();
 
 
-  public CloudResultsLoader(String cloudProjectId, IGoogleCloudTestRunListener testRunListener, String bucketName, TestMatrix testMatrix) {
+  public CloudResultsLoader(String cloudProjectId, IGoogleCloudTestRunListener testRunListener, ProcessHandler processHandler,
+                            String bucketName, TestMatrix testMatrix) {
     this.cloudProjectId = cloudProjectId;
     this.testRunListener = testRunListener;
+    this.processHandler = processHandler;
     this.bucketName = bucketName;
     // testMatrix is null for runs with a fake bucket.
     if (testMatrix != null) {
@@ -211,42 +218,74 @@ public class CloudResultsLoader {
   }
 
   private void updateResultsFromTestMatrix(Map<String, ConfigurationResult> results, @NotNull TestMatrix testMatrix) {
-    for (TestExecution testExecution : testMatrix.getTestExecutions()) {
-      String encodedConfigurationInstance = getEncodedConfigurationNameForTestExecution(testExecution);
-      if (finishedConfigurationInstances.contains(encodedConfigurationInstance)) {
-        continue;
-      }
-      String testExecutionState = testExecution.getState();
-      if (testExecutionState.equals("UNSUPPORTED_ENVIRONMENT")) {
-        String diffProgress = "Skipped triggering the test execution: Incompatible API level for requested model\n";
-        // Probably, no previous progress could be expected in this scenario, but it would not hurt considering it anyway.
-        String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-        reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
-        ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
-        result.setTriggeringError(true);
-        finishedConfigurationInstances.add(encodedConfigurationInstance);
-      } else if (!testExecutionState.equals("QUEUED")) {
-        if (testExecutionState.equals("ERROR")) {
-          String diffProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
-          String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-          if (!previousProgress.endsWith(diffProgress)) {
-            reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
-          }
-        } else if (testExecutionState.equals("IN_PROGRESS")) {
-          String newProgress = testExecution.getTestDetails().getProgressDetails();
-          String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-          if (newProgress != null && !newProgress.equals(previousProgress)) {
-            reportNewProgress(encodedConfigurationInstance, previousProgress, newProgress);
-          }
-        }
-        ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
-        result.setComplete(testExecutionState.equals("FINISHED"));
-        result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
-        if (result.isNoProgressExpected()) {
-          finishedConfigurationInstances.add(encodedConfigurationInstance);
-        }
+    String testMatrixState = testMatrix.getState();
+    if (testMatrixState.equals("VALIDATING")) {
+      return;
+    }
+    if (!webLinkReported) {
+      webLinkReported = true;
+      if (!testMatrixState.equals("INVALID")) {
+        processHandler.notifyTextAvailable("You can also view test results, along with other runs against this app, on the web:\n" +
+                                           getTuxLink(cloudProjectId, testMatrix.getResultStorage()) + " \n\n\n",
+                                           ProcessOutputTypes.STDOUT);
       }
     }
+    for (TestExecution testExecution : testMatrix.getTestExecutions()) {
+      updateResultsFromTestExecution(results, testExecution);
+    }
+  }
+
+  private void updateResultsFromTestExecution(Map<String, ConfigurationResult> results, TestExecution testExecution) {
+    String encodedConfigurationInstance = getEncodedConfigurationNameForTestExecution(testExecution);
+    if (finishedConfigurationInstances.contains(encodedConfigurationInstance)) {
+      return;
+    }
+    String testExecutionState = testExecution.getState();
+    if (testExecutionState.equals("UNSUPPORTED_ENVIRONMENT")) {
+      handleTriggeringError(results, encodedConfigurationInstance,
+                            "Skipped triggering the test execution: Incompatible API level for requested model\n");
+    } else if (testExecutionState.equals("INCOMPATIBLE_ENVIRONMENT")) {
+      // It is not expected to happen for Android Studio client.
+      handleTriggeringError(results, encodedConfigurationInstance, "The given APK is not compatible with this configuration\n");
+    } else if (testExecutionState.equals("INVALID")) {
+      // It is not expected to happen for Android Studio client.
+      handleTriggeringError(results, encodedConfigurationInstance, "The provided APK is invalid\n");
+    } else if (!testExecutionState.equals("QUEUED")) {
+      if (testExecutionState.equals("ERROR")) {
+        String diffProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
+        String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+        if (!previousProgress.endsWith(diffProgress)) {
+          reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
+        }
+      } else if (testExecutionState.equals("IN_PROGRESS")) {
+        String newProgress = testExecution.getTestDetails().getProgressDetails();
+        String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+        if (newProgress != null && !newProgress.equals(previousProgress)) {
+          reportNewProgress(encodedConfigurationInstance, previousProgress, newProgress);
+        }
+      }
+      ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
+      result.setComplete(testExecutionState.equals("FINISHED"));
+      result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
+      if (result.isNoProgressExpected()) {
+        finishedConfigurationInstances.add(encodedConfigurationInstance);
+      }
+    }
+  }
+
+  private void handleTriggeringError(Map<String, ConfigurationResult> results, String encodedConfigurationInstance, String diffProgress) {
+    // Probably, no previous progress could be expected in this scenario, but it would not hurt considering it anyway.
+    String previousProgress = getPreviousProgress(encodedConfigurationInstance);
+    reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
+    ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
+    result.setTriggeringError(true);
+    finishedConfigurationInstances.add(encodedConfigurationInstance);
+  }
+
+  private static String getTuxLink(String cloudProjectId, ResultStorage resultStorage) {
+    return "https://console.developers.google.com/project/" + cloudProjectId
+           + "/clouddev/toolresults/histories/" + resultStorage.getToolResultsHistoryId()
+           + "/executions/" + resultStorage.getToolResultsExecutionId();
   }
 
   private String getEncodedConfigurationNameForTestExecution(TestExecution testExecution) {

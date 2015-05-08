@@ -20,6 +20,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
+import com.intellij.execution.process.ProcessHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -43,11 +44,11 @@ public class CloudResultsAdapter {
   private final PollingTicker pollingTicker;
 
 
-  public CloudResultsAdapter(String cloudProjectId, String bucketName, GoogleCloudTestingResultParser resultParser,
-                             List<String> expectedConfigurationInstances, String testRunId, @Nullable TestMatrix testMatrix,
-                             @Nullable CloudMatrixExecutionCancellator matrixExecutionCancellator) {
+  public CloudResultsAdapter(String cloudProjectId, String bucketName, ProcessHandler processHandler,
+                             GoogleCloudTestingResultParser resultParser, List<String> expectedConfigurationInstances, String testRunId,
+                             @Nullable TestMatrix testMatrix, @Nullable CloudMatrixExecutionCancellator matrixExecutionCancellator) {
     this.cloudProjectId = cloudProjectId;
-    loader = new CloudResultsLoader(cloudProjectId, resultParser.getTestRunListener(), bucketName, testMatrix);
+    loader = new CloudResultsLoader(cloudProjectId, resultParser.getTestRunListener(), processHandler, bucketName, testMatrix);
     this.resultParser = resultParser;
     this.expectedConfigurationInstances = expectedConfigurationInstances;
     pollingTicker = new PollingTicker(matrixExecutionCancellator);

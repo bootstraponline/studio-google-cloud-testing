@@ -20,7 +20,6 @@ import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Bucket;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.testing.model.*;
-import com.google.api.services.toolresults.model.History;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.CloudConfigurationImpl;
@@ -41,7 +40,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.google.gct.testing.launcher.CloudAuthenticator.*;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 
 public class CloudTestsLauncher {
@@ -118,13 +118,14 @@ public class CloudTestsLauncher {
 
     TestMatrix testMatrix = new TestMatrix();
 
+    testMatrix.setClientInfo(new ClientInfo().setName("Android Studio"));
+
     testMatrix.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
       new AndroidInstrumentationTest().setAppApk(new FileReference().setGcsPath(appApkGcsPath))
         .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
         .setTestRunnerClass(instrumentationTestRunner).setTestTargets(Lists.newArrayList(testSpecification))));
 
-    testMatrix.setResultStorage(new ResultStorage().setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath))
-                                  .setToolResultsHistoryId(getHistoryId(cloudProjectId, appPackage)));
+    testMatrix.setResultStorage(new ResultStorage().setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath)));
 
     AndroidMatrix androidMatrix = new AndroidMatrix();
 
@@ -151,29 +152,6 @@ public class CloudTestsLauncher {
                                                                                  e.getMessage());
     }
     return triggeredTestMatrix;
-  }
-
-  private static String getHistoryId(String cloudProjectId, String applicationName) {
-    String historyName = applicationName + " (Android Studio)";
-    try {
-      List<History> histories =
-        getToolresults().projects().histories().list(cloudProjectId).setFilterByDisplayName(historyName).execute().getHistories();
-      if (histories != null && !histories.isEmpty()) {
-        return histories.get(0).getHistoryId();
-      }
-    } catch (Exception e) {
-      // Ignore, just create a new history.
-    }
-    try {
-      return getToolresults().projects().histories().create(cloudProjectId,
-                                                            new History().setDisplayName(historyName)).execute().getHistoryId();
-    }
-    catch (Exception e) {
-      CloudTestingUtils.showErrorMessage(null, "Error creating history id", "Failed to create history id for test execution!\n" +
-                                                                            "Exception while creating a test execution history id\n\n" +
-                                                                            e.getMessage());
-      return "";
-    }
   }
 
   /**

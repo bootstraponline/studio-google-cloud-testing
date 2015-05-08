@@ -28,7 +28,6 @@ import com.google.api.services.storage.model.Buckets;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.testing.model.AndroidDevice;
 import com.google.api.services.testing.model.Device;
-import com.google.api.services.testing.model.ResultStorage;
 import com.google.api.services.testing.model.TestMatrix;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -69,7 +68,6 @@ import java.util.*;
 
 import static com.android.tools.idea.run.CloudConfiguration.Kind.MATRIX;
 import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
@@ -452,8 +450,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     else {
       String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingDeveloperState.fakeBucketName + System.currentTimeMillis();
       CloudResultsAdapter cloudResultsAdapter =
-        new CloudResultsAdapter(cloudProjectId, googleCloudTestingDeveloperState.fakeBucketName, cloudResultParser,
-                                expectedConfigurationInstances, testRunId, null, null);
+        new CloudResultsAdapter(cloudProjectId, googleCloudTestingDeveloperState.fakeBucketName, runningState.getProcessHandler(),
+                                cloudResultParser, expectedConfigurationInstances, testRunId, null, null);
       addCloudConfiguration(testRunId, cloudConfiguration);
       addCloudResultsAdapter(testRunId, cloudResultsAdapter);
       cloudResultsAdapter.startPolling();
@@ -535,7 +533,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           if (matrixExecutionCancellator.isCancelled()) {
             return;
           }
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking cloud test API...", "\n"),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking cloud test API...", ""),
                                                                ProcessOutputTypes.STDOUT);
           String testSpecification = CloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
@@ -545,15 +543,14 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                             cloudTestingConfiguration, appPackage, testPackage);
 
           if (testMatrix != null) {
-            runningState.getProcessHandler().notifyTextAvailable(
-              "You can also view test results, along with other runs against this app, on the web:\n"
-              + getTuxLink(cloudProjectId, testMatrix.getResultStorage()) + " \n\n\n", ProcessOutputTypes.STDOUT);
+            runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Validating APKs...", "\n\n"),
+                                                                 ProcessOutputTypes.STDOUT);
             matrixExecutionCancellator.setCloudProjectId(cloudProjectId);
             matrixExecutionCancellator.setTestMatrixId(testMatrix.getTestMatrixId());
             String testRunId = TEST_RUN_ID_PREFIX + bucketName;
             CloudResultsAdapter cloudResultsAdapter =
-              new CloudResultsAdapter(cloudProjectId, bucketName, cloudResultParser, expectedConfigurationInstances, testRunId, testMatrix,
-                                      matrixExecutionCancellator);
+              new CloudResultsAdapter(cloudProjectId, bucketName, runningState.getProcessHandler(), cloudResultParser,
+                                      expectedConfigurationInstances, testRunId, testMatrix, matrixExecutionCancellator);
             addCloudConfiguration(testRunId, cloudTestingConfiguration);
             addCloudResultsAdapter(testRunId, cloudResultsAdapter);
             cloudResultsAdapter.startPolling();
@@ -567,12 +564,6 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
         }
       }).start();
     }
-  }
-
-  private static String getTuxLink(String cloudProjectId, ResultStorage resultStorage) {
-    return "https://console.developers.google.com/project/" + cloudProjectId
-           + "/clouddev/toolresults/histories/" + resultStorage.getToolResultsHistoryId()
-           + "/executions/" + resultStorage.getToolResultsExecutionId();
   }
 
   private String listAllApks(List<String> apkPaths) {
