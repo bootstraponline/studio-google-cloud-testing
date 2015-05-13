@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.google.gct.testing.CloudTestingUtils.createConfigurationChooserGbc;
 
 public class CloudConfigurationChooserDialog extends DialogWrapper implements ConfigurationChangeListener {
@@ -107,7 +108,11 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
     facet = AndroidFacet.getInstance(module);
 
-    setTitle("Matrix Configurations");
+    if (configurationKind == SINGLE_DEVICE) {
+      setTitle("Single Device Configurations");
+    } else {
+      setTitle("Matrix Configurations");
+    }
 
     getOKAction().setEnabled(true);
 

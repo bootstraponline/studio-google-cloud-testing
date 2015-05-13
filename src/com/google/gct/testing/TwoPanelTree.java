@@ -21,11 +21,15 @@ import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.CloudTestingTypeGroup;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.CheckboxTree;
+import com.intellij.ui.CheckboxTreeBase.CheckPolicy;
+import com.intellij.ui.CheckboxTreeBase.NodeState;
 import com.intellij.ui.CheckedTreeNode;
+import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBList;
 import com.intellij.util.containers.HashMap;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -33,6 +37,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -43,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static javax.swing.tree.TreeSelectionModel.SINGLE_TREE_SELECTION;
 
 
@@ -74,7 +81,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   // Listeners
   List<TwoPanelTreeSelectionListener> listeners = new LinkedList<TwoPanelTreeSelectionListener>();
-  private JLabel myConfigurationCountLabel;
+  private JLabel myConfigurationCountLabel = new JLabel();
 
   public TwoPanelTree(CloudConfigurationImpl configuration) {
     this.configuration = configuration;
@@ -100,10 +107,12 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   public void init() {
     myPanel.add(topPanel, BorderLayout.NORTH);
-    populateTopPanel();
-    bottomPanel.setBackground(UIUtil.getListBackground());
-    myPanel.add(bottomPanel, BorderLayout.SOUTH);
-    populateBottomPanel();
+    if (configuration.getKind() != SINGLE_DEVICE) {
+      populateTopPanel();
+      bottomPanel.setBackground(UIUtil.getListBackground());
+      myPanel.add(bottomPanel, BorderLayout.SOUTH);
+      populateBottomPanel();
+    }
 
     mySplitter.setFirstComponent(leftPanel);
     JScrollPane scrollPane = new JScrollPane(rightPanel);
@@ -134,8 +143,6 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   private void populateBottomPanel() {
     bottomPanel.setBorder(BorderFactory.createLineBorder(UIUtil.getBorderColor(), 1));
-    // TODO: Update number of configurations when appropriate
-    myConfigurationCountLabel = new JLabel();
     updateConfigurationCountLabel();
     bottomPanel.add(myConfigurationCountLabel);
   }
@@ -196,11 +203,6 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
         }
       }
     }));
-    //topPanel.add(makeTextButton("Hide unselected", new MouseAdapter() {
-    //  public void mouseClicked(final MouseEvent e) {
-    //    System.out.println("Clicked " + "Hide unselected");
-    //  }
-    //}));
   }
 
   private void updateCurrentCheckboxTree(Function<CheckedTreeNode, Void> updateFunction) {
@@ -225,8 +227,6 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   private void updateUI(CheckboxTree checkboxTree) {
     checkboxTree.updateUI();
     BasicTreeUI ui = (BasicTreeUI) checkboxTree.getUI();
-    //ui.setRightChildIndent(0);
-    //ui.setLeftChildIndent(0);
   }
 
   private JLabel makeTextButton(final String text, MouseAdapter mouseAdapter) {
@@ -241,12 +241,15 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   public void addDimension(CloudConfigurationDimension dimension) {
 
-    // add this dimension as a list item
+    // Add this dimension as a list item.
     listModel.addElement(dimension);
 
-    // create a new tree with root node for this dimension
-    CheckboxTree tree = new CheckboxTree();
     CheckedTreeNode rootNode = new CheckedTreeNode(dimension); // Not really necessary since parent not visible
+    CheckPolicy radioButtonsCheckPolicy = new CheckPolicy(false, false, false, false);
+    // Create a new tree with root node for this dimension.
+    CheckboxTree tree = configuration.getKind() == SINGLE_DEVICE
+                        ? new CheckboxTree(new CheckboxTree.CheckboxTreeCellRenderer(){}, rootNode, radioButtonsCheckPolicy)
+                        : new CheckboxTree();
     DefaultTreeModel treeModel = new DefaultTreeModel(rootNode);
     tree.setModel(treeModel);
 
@@ -272,48 +275,10 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       }
     }
 
-    // record the tree
+    // Record the tree.
     treeMap.put(dimension, tree);
 
-    tree.setCellRenderer(new CheckboxTree.CheckboxTreeCellRenderer() {
-      @Override
-      public void customizeRenderer(final JTree tree,
-                                    Object value,
-                                    final boolean selected,
-                                    final boolean expanded,
-                                    final boolean leaf,
-                                    final int row,
-                                    final boolean hasFocus) {
-
-        if (value instanceof DefaultMutableTreeNode) {
-          Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
-          if (userObject instanceof CloudTestingType) {
-            CloudTestingType cloudTestingType = (CloudTestingType)userObject;
-            getTextRenderer().append(cloudTestingType.getConfigurationDialogDisplayName());
-            updateTreeState(tree, (CheckedTreeNode)value, cloudTestingType);
-          } else if (userObject instanceof CloudTestingTypeGroup) {
-            CloudTestingTypeGroup group = (CloudTestingTypeGroup)userObject;
-            getTextRenderer().append(group.getName());
-            CloudTestingType type = (CloudTestingType) ((CheckedTreeNode) ((DefaultMutableTreeNode)value).getChildAt(0)).getUserObject();
-            updateTreeState(tree, (CheckedTreeNode)value, type);
-          }
-        }
-      }
-
-      private void updateTreeState(JTree tree, CheckedTreeNode node, CloudTestingType cloudTestingType) {
-        if (node.isEnabled()) {
-          //getTextRenderer().setForeground(Color.BLACK);
-        } else {
-          //getTextRenderer().setForeground(Color.LIGHT_GRAY);
-          CloudConfigurationDimension cloudConfigurationDimension = (CloudConfigurationDimension)((CheckedTreeNode) tree.getModel().getRoot()).getUserObject();
-          boolean isChecked = cloudConfigurationDimension.getEnabledTypes().contains(cloudTestingType);
-          node.setChecked(isChecked);
-          for (int childIndex = 0; childIndex < node.getChildCount(); childIndex++) {
-            ((CheckedTreeNode) node.getChildAt(childIndex)).setChecked(isChecked);
-          }
-        }
-      }
-    });
+    tree.setCellRenderer(configuration.getKind() == SINGLE_DEVICE ? new RadioButtonRenderer() : new CheckBoxRenderer());
 
     treeModel.reload();
 
@@ -374,13 +339,24 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   }
 
   private void updateState() {
-    CloudConfigurationDimension currentDimension = getSelectedDimension();
-    CheckboxTree currentTree = treeMap.get(currentDimension);
+    CheckboxTree currentTree = treeMap.get(getSelectedDimension());
 
     if (currentTree == null || currentTree.getSelectionPath() == null) {
       return;
     }
 
+    if (configuration.getKind() == SINGLE_DEVICE) {
+      updateRadioButtonTreeState(currentTree);
+    } else {
+      updateCheckBoxTreeState(currentTree);
+    }
+
+    updateConfigurationCountLabel();
+    list.updateUI();
+  }
+
+  private void updateCheckBoxTreeState(CheckboxTree currentTree) {
+    CloudConfigurationDimension currentDimension = getSelectedDimension();
     CheckedTreeNode selectedNode = (CheckedTreeNode) currentTree.getSelectionPath().getLastPathComponent();
     Object userObject = selectedNode.getUserObject();
     if (userObject instanceof CloudTestingType) {
@@ -405,12 +381,207 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
         listener.groupSelectionChanged(new TwoPanelTreeTypeGroupSelectionEvent(currentDimension, clickedGroup));
       }
     }
-
-    updateConfigurationCountLabel();
-    list.updateUI();
   }
 
-  class EnhancedCellRenderer implements ListCellRenderer {
+  private void updateRadioButtonTreeState(CheckboxTree currentTree) {
+    CloudConfigurationDimension currentDimension = getSelectedDimension();
+    CheckedTreeNode selectedNode = (CheckedTreeNode) currentTree.getSelectionPath().getLastPathComponent();
+    Object userObject = selectedNode.getUserObject();
+    if (userObject instanceof CloudTestingType) {
+      CloudTestingType clickedType = (CloudTestingType)userObject;
+      if (selectedNode.isEnabled() && (selectedNode.isChecked() || !isAnythingChecked(currentTree))) {
+        uncheckAll(currentTree);
+        selectedNode.setChecked(true);
+        currentDimension.disableAll();
+        currentDimension.enable(clickedType);
+        currentDimension.dimensionChanged();
+      }
+      for (TwoPanelTreeSelectionListener listener : listeners) {
+        listener.typeSelectionChanged(new TwoPanelTreeTypeSelectionEvent(currentDimension, clickedType));
+      }
+    } else {
+      CloudTestingTypeGroup clickedGroup = (CloudTestingTypeGroup) userObject;
+      for (TwoPanelTreeSelectionListener listener : listeners) {
+        listener.groupSelectionChanged(new TwoPanelTreeTypeGroupSelectionEvent(currentDimension, clickedGroup));
+      }
+    }
+  }
+
+  private void uncheckAll(CheckboxTree currentTree) {
+    TreeNode root = (TreeNode)currentTree.getModel().getRoot();
+    for (int i = 0; i < root.getChildCount(); i++) {
+      CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
+      firstLevelChild.setChecked(false);
+      if (!firstLevelChild.isLeaf()) {
+        for (int j = 0; j < firstLevelChild.getChildCount(); j++) {
+          ((CheckedTreeNode)firstLevelChild.getChildAt(j)).setChecked(false);
+        }
+      }
+    }
+  }
+
+  private boolean isAnythingChecked(CheckboxTree currentTree) {
+    TreeNode root = (TreeNode)currentTree.getModel().getRoot();
+    for (int i = 0; i < root.getChildCount(); i++) {
+      CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
+      if (firstLevelChild.isChecked()) {
+        return true;
+      }
+      if (!firstLevelChild.isLeaf()) {
+        for (int j = 0; j < firstLevelChild.getChildCount(); j++) {
+          if (((CheckedTreeNode)firstLevelChild.getChildAt(j)).isChecked()) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  private static class CheckBoxRenderer extends CheckboxTree.CheckboxTreeCellRenderer {
+    @Override
+    public void customizeRenderer(final JTree tree, Object value, final boolean selected, final boolean expanded, final boolean leaf,
+                                  final int row, final boolean hasFocus) {
+
+      if (value instanceof DefaultMutableTreeNode) {
+        Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
+        if (userObject instanceof CloudTestingType) {
+          CloudTestingType cloudTestingType = (CloudTestingType)userObject;
+          getTextRenderer().append(cloudTestingType.getConfigurationDialogDisplayName());
+          updateTreeState(tree, (CheckedTreeNode)value, cloudTestingType);
+        } else if (userObject instanceof CloudTestingTypeGroup) {
+          CloudTestingTypeGroup group = (CloudTestingTypeGroup)userObject;
+          getTextRenderer().append(group.getName());
+          CloudTestingType type = (CloudTestingType) ((CheckedTreeNode) ((DefaultMutableTreeNode)value).getChildAt(0)).getUserObject();
+          updateTreeState(tree, (CheckedTreeNode)value, type);
+        }
+      }
+    }
+
+    private void updateTreeState(JTree tree, CheckedTreeNode node, CloudTestingType cloudTestingType) {
+      if (node.isEnabled()) {
+        //getTextRenderer().setForeground(Color.BLACK);
+      } else {
+        //getTextRenderer().setForeground(Color.LIGHT_GRAY);
+        CloudConfigurationDimension dimension = (CloudConfigurationDimension)((CheckedTreeNode) tree.getModel().getRoot()).getUserObject();
+        boolean isChecked = dimension.getEnabledTypes().contains(cloudTestingType);
+        node.setChecked(isChecked);
+        for (int childIndex = 0; childIndex < node.getChildCount(); childIndex++) {
+          ((CheckedTreeNode) node.getChildAt(childIndex)).setChecked(isChecked);
+        }
+      }
+    }
+  }
+
+  private static class RadioButtonRenderer extends JPanel implements TreeCellRenderer {
+    private final ColoredTreeCellRenderer myTextRenderer;
+    public final JRadioButton myRadioButton;
+    private final boolean myUsePartialStatusForParentNodes;
+
+    public RadioButtonRenderer() {
+      this(true);
+    }
+
+    public RadioButtonRenderer(boolean opaque) {
+      this(opaque, true);
+    }
+
+    public RadioButtonRenderer(boolean opaque, final boolean usePartialStatusForParentNodes) {
+      super(new BorderLayout());
+      myUsePartialStatusForParentNodes = usePartialStatusForParentNodes;
+      myRadioButton = new JRadioButton();
+      myTextRenderer = new ColoredTreeCellRenderer() {
+        @Override
+        public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row,
+                                          boolean hasFocus) {}
+      };
+      myTextRenderer.setOpaque(opaque);
+      add(myRadioButton, BorderLayout.WEST);
+      add(myTextRenderer, BorderLayout.CENTER);
+    }
+
+    public void updateTreeState(JTree tree, CheckedTreeNode node, CloudTestingType cloudTestingType) {
+      if (node.isEnabled()) {
+        //getTextRenderer().setForeground(Color.BLACK);
+      } else {
+        //getTextRenderer().setForeground(Color.LIGHT_GRAY);
+        CloudConfigurationDimension dimension = (CloudConfigurationDimension)((CheckedTreeNode) tree.getModel().getRoot()).getUserObject();
+        boolean isChecked = dimension.getEnabledTypes().contains(cloudTestingType);
+        node.setChecked(isChecked);
+      }
+    }
+
+    @Override
+    public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row,
+                                                  boolean hasFocus) {
+
+      invalidate();
+      if (value instanceof CheckedTreeNode) {
+        CheckedTreeNode node = (CheckedTreeNode)value;
+
+        NodeState state = getNodeStatus(node);
+        myRadioButton.setVisible(leaf);
+
+        myRadioButton.setSelected(state != NodeState.CLEAR);
+        myRadioButton.setEnabled(node.isEnabled() && state != NodeState.PARTIAL);
+        myRadioButton.setOpaque(false);
+        myRadioButton.setBackground(null);
+        setBackground(null);
+      } else {
+        myRadioButton.setVisible(false);
+      }
+
+      myTextRenderer.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+
+      if (UIUtil.isUnderGTKLookAndFeel()) {
+        final Color background = selected ? UIUtil.getTreeSelectionBackground() : UIUtil.getTreeTextBackground();
+        UIUtil.changeBackGround(this, background);
+      }
+      else if (UIUtil.isUnderNimbusLookAndFeel()) {
+        UIUtil.changeBackGround(this, UIUtil.TRANSPARENT_COLOR);
+      }
+
+      revalidate();
+
+      if (value instanceof DefaultMutableTreeNode) {
+        Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
+        if (userObject instanceof CloudTestingType) {
+          CloudTestingType googleCloudTestingType = (CloudTestingType)userObject;
+          myTextRenderer.append(googleCloudTestingType.getConfigurationDialogDisplayName());
+          updateTreeState(tree, (CheckedTreeNode)value, googleCloudTestingType);
+        } else if (userObject instanceof CloudTestingTypeGroup) {
+          CloudTestingTypeGroup group = (CloudTestingTypeGroup)userObject;
+          myTextRenderer.append(group.getName());
+          CloudTestingType type = (CloudTestingType)((CheckedTreeNode)((DefaultMutableTreeNode)value).getChildAt(0)).getUserObject();
+          updateTreeState(tree, (CheckedTreeNode)value, type);
+        }
+      }
+      return this;
+    }
+
+    private NodeState getNodeStatus(final CheckedTreeNode node) {
+      final boolean checked = node.isChecked();
+      if (node.getChildCount() == 0 || !myUsePartialStatusForParentNodes) return checked ? NodeState.FULL : NodeState.CLEAR;
+
+      NodeState result = null;
+
+      for (int i = 0; i < node.getChildCount(); i++) {
+        TreeNode child = node.getChildAt(i);
+        NodeState childStatus = child instanceof CheckedTreeNode ? getNodeStatus((CheckedTreeNode)child) :
+                                checked ? NodeState.FULL : NodeState.CLEAR;
+        if (childStatus == NodeState.PARTIAL) return NodeState.PARTIAL;
+        if (result == null) {
+          result = childStatus;
+        } else if (result != childStatus) {
+          return NodeState.PARTIAL;
+        }
+      }
+      return result == null ? NodeState.CLEAR : result;
+    }
+  }
+
+
+  private static class EnhancedCellRenderer implements ListCellRenderer {
     protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 
     public Component getListCellRendererComponent(JList list, Object value, int index,

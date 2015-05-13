@@ -30,6 +30,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
+
 public class CloudConfigurationImpl extends CloudConfiguration {
 
   public static final int ALL_CONFIGURATION_ID = Integer.MAX_VALUE;
@@ -139,7 +141,14 @@ public class CloudConfigurationImpl extends CloudConfiguration {
 
   @Override
   public String getDisplayName() {
-    return name + " (" + getDeviceConfigurationCount() + ")";
+    int deviceConfigurationCount = getDeviceConfigurationCount();
+    if (kind != SINGLE_DEVICE) {
+      return name + " (" + deviceConfigurationCount + ")";
+    }
+    if (deviceConfigurationCount > 0) { // Should be exactly 1
+      return name;
+    }
+    return name + " (not configured)";
   }
 
   public void setName(String name) {
