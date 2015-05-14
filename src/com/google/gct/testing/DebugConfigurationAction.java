@@ -17,6 +17,7 @@ package com.google.gct.testing;
 
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
+import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
 import com.google.gct.testing.results.GoogleCloudTestingResultsForm;
 import com.intellij.execution.ExecutionException;
@@ -37,10 +38,11 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import org.jetbrains.android.run.TargetSelectionMode;
 import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.io.IOException;
 
 public class DebugConfigurationAction extends AnAction {
 
@@ -60,6 +62,23 @@ public class DebugConfigurationAction extends AnAction {
 
   public DebugConfigurationAction() {
     super(TEXT, DESCRIPTION, ICON);
+    getTemplatePresentation().setEnabled(false);
+  }
+
+  @Override
+  public void update(AnActionEvent actionEvent) {
+    GoogleCloudTestTreeView sender = actionEvent.getData(GoogleCloudTestTreeView.CLOUD_TEST_RUNNER_VIEW);
+
+    if (sender == null) {
+      return;
+    }
+
+    AbstractTestProxy selectedNode = ((GoogleCloudTestingResultsForm)sender.getResultsViewer()).getTreeView().getSelectedTest();
+    if (selectedNode == null || isRootNode(selectedNode)) {
+      actionEvent.getPresentation().setEnabled(false);
+    } else {
+      actionEvent.getPresentation().setEnabled(true);
+    }
   }
 
   @Override
@@ -73,33 +92,47 @@ public class DebugConfigurationAction extends AnAction {
 
     Project project = actionEvent.getData(PlatformDataKeys.PROJECT);
 
-    AbstractTestProxy selectedLeaf =
-      getFirstLeaf(((GoogleCloudTestingResultsForm)sender.getResultsViewer()).getTreeView().getSelectedTest());
+    AbstractTestProxy selectedNode = ((GoogleCloudTestingResultsForm)sender.getResultsViewer()).getTreeView().getSelectedTest();
 
-    if (selectedLeaf.getParent() == null || selectedLeaf.getParent().getParent() == null) {
-      //This leaf is not a test. Most probably it is a pending configuration, so ignore.
-      CloudTestingUtils.showBalloonMessage(project, "Tests were not yet executed for this configuration", MessageType.WARNING, 3);
-      return;
+    assert !isRootNode(selectedNode); // The action should have been disabled for the root node.
+
+    String configurationName;
+    String className = null;
+    String methodName = null;
+    if (isRootNode(selectedNode.getParent())) {
+      // User selected a configuration node.
+      configurationName = selectedNode.getName();
+    } else if (isRootNode(selectedNode.getParent().getParent())) {
+      // User selected a class node.
+      className = selectedNode.getName();
+      configurationName = selectedNode.getParent().getName();
+    } else {
+      // User selected a method node.
+      methodName = selectedNode.getName();
+      className = selectedNode.getParent().getName();
+      configurationName = selectedNode.getParent().getParent().getName();
     }
 
-    AbstractTestProxy selectedConfigurationNode = selectedLeaf.getParent().getParent();
-    ConfigurationInstance configurationInstance =
-      ConfigurationInstance.parseFromResultsViewerDisplayString(selectedConfigurationNode.getName());
-
-    ApplicationManager.getApplication().executeOnPooledThread(new DebuggingStater(environment, project, configurationInstance));
+    ApplicationManager.getApplication()
+      .executeOnPooledThread(new DebuggingStater(environment, project, configurationName, className, methodName));
   }
 
   private class DebuggingStater extends Thread {
     private final ExecutionEnvironment environment;
     private final Project project;
     private final ConfigurationInstance configurationInstance;
+    private final String className;
+    private final String methodName;
     private final RunProfile runProfile;
     private final ProgramRunner runner;
 
-    private DebuggingStater(ExecutionEnvironment environment, Project project, ConfigurationInstance configurationInstance) {
+    private DebuggingStater(ExecutionEnvironment environment, Project project, @NotNull String configurationName,
+                            @Nullable String className, @Nullable String methodName) {
       this.environment = environment;
       this.project = project;
-      this.configurationInstance = configurationInstance;
+      configurationInstance = ConfigurationInstance.parseFromResultsViewerDisplayString(configurationName);
+      this.className = className;
+      this.methodName = methodName;
       runProfile = environment.getRunProfile();
       runner = RunnerRegistry.getInstance().getRunner(DefaultDebugExecutor.getDebugExecutorInstance().getId(), runProfile);
     }
@@ -136,10 +169,7 @@ public class DebugConfigurationAction extends AnAction {
           }
         }
 
-        // Clone the run configuration such that we do not need to reuse and restore the original one.
-        final AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) ((AndroidTestRunConfiguration)runProfile).clone();
-        runConfiguration.setTargetSelectionMode(TargetSelectionMode.CLOUD_DEVICE_DEBUGGING);
-        runConfiguration.CLOUD_DEVICE_SERIAL_NUMBER = device.getSerialNumber();
+        final AndroidTestRunConfiguration runConfiguration = prepareTestRunConfiguration(device.getSerialNumber());
         SwingUtilities.invokeLater(new Runnable() {
           @Override
           public void run() {
@@ -155,6 +185,23 @@ public class DebugConfigurationAction extends AnAction {
           }
         });
       }
+    }
+
+    private AndroidTestRunConfiguration prepareTestRunConfiguration(String deviceSerialNumber) {
+      // Clone the run configuration such that we do not need to reuse and restore the original one.
+      final AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) ((AndroidTestRunConfiguration)runProfile).clone();
+      runConfiguration.setTargetSelectionMode(TargetSelectionMode.CLOUD_DEVICE_DEBUGGING);
+      runConfiguration.CLOUD_DEVICE_SERIAL_NUMBER = deviceSerialNumber;
+      if (className != null) {
+        runConfiguration.CLASS_NAME = className;
+        if (methodName != null) {
+          runConfiguration.METHOD_NAME = methodName;
+          runConfiguration.TESTING_TYPE = AndroidTestRunConfiguration.TEST_METHOD;
+        } else {
+          runConfiguration.TESTING_TYPE = AndroidTestRunConfiguration.TEST_CLASS;
+        }
+      }
+      return runConfiguration;
     }
 
     private IDevice getMatchingDevice() {
@@ -174,11 +221,8 @@ public class DebugConfigurationAction extends AnAction {
     }
   }
 
-  private AbstractTestProxy getFirstLeaf(AbstractTestProxy testNode) {
-    while (!testNode.isLeaf()) {
-      return getFirstLeaf(testNode.getChildren().get(0));
-    }
-    return testNode;
+  private boolean isRootNode(AbstractTestProxy node) {
+    return node instanceof GoogleCloudRootTestProxy;
   }
 
 }
