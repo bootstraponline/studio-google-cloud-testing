@@ -19,6 +19,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.results.GoogleCloudTestProxy;
+import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestResultsViewer;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
 import com.google.gct.testing.results.GoogleCloudTestingResultsForm;
@@ -52,6 +53,7 @@ public class ShowScreenshotsAction extends AnAction {
 
   public ShowScreenshotsAction() {
     super(TEXT, DESCRIPTION, ICON);
+    getTemplatePresentation().setEnabled(false);
   }
 
   @Override
@@ -62,7 +64,7 @@ public class ShowScreenshotsAction extends AnAction {
     }
 
     final GoogleCloudTestResultsViewer resultsViewer = sender.getResultsViewer();
-    final GoogleCloudTestProxy.GoogleCloudRootTestProxy rootNode = ((GoogleCloudTestingResultsForm)resultsViewer).getTestsRootNode();
+    final GoogleCloudRootTestProxy rootNode = ((GoogleCloudTestingResultsForm)resultsViewer).getTestsRootNode();
 
     AbstractTestProxy selectedLeaf = getFirstLeaf(((GoogleCloudTestingResultsForm)resultsViewer).getTreeView().getSelectedTest());
 
@@ -154,35 +156,19 @@ public class ShowScreenshotsAction extends AnAction {
   }
 
   @Override
-  public void update(final AnActionEvent e) {
-    final Presentation presentation = e.getPresentation();
+  public void update(AnActionEvent actionEvent) {
+    GoogleCloudTestTreeView sender = actionEvent.getData(GoogleCloudTestTreeView.CLOUD_TEST_RUNNER_VIEW);
 
-    // visible only in SMTRunnerTestTreeView 
-    //presentation.setVisible(e.getData(SMTRunnerTestTreeView.SM_TEST_RUNNER_VIEW) != null);
-    // enabled if some proxy is selected
-    presentation.setEnabled(getSelectedTestProxy(e) != null);
+    if (sender == null) {
+      return;
+    }
+
+    AbstractTestProxy selectedNode = ((GoogleCloudTestingResultsForm)sender.getResultsViewer()).getTreeView().getSelectedTest();
+    if (selectedNode == null || selectedNode instanceof GoogleCloudRootTestProxy) {
+      actionEvent.getPresentation().setEnabled(false);
+    } else {
+      actionEvent.getPresentation().setEnabled(true);
+    }
   }
 
-  //@Override
-  //public void update(AnActionEvent e) {
-  //  e.getPresentation().setEnabled(isEnabled(e.getDataContext()));
-  //}
-  //
-  //private boolean isEnabled(DataContext dataContext) {
-  //  if (myModel == null) {
-  //    return false;
-  //  }
-  //
-  //  if (CommonDataKeys.PROJECT.getData(dataContext) == null) {
-  //    return false;
-  //  }
-  //
-  //  return !myModel.getRoot().isInProgress();
-  //}
-
-
-  @Nullable
-  private static Object getSelectedTestProxy(final AnActionEvent e) {
-    return AbstractTestProxy.DATA_KEY.getData(e.getDataContext());
-  }
 }
