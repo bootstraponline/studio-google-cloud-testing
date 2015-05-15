@@ -284,7 +284,7 @@ public class CloudResultsLoader {
 
   private static String getTuxLink(String cloudProjectId, ResultStorage resultStorage) {
     return "https://console.developers.google.com/project/" + cloudProjectId
-           + "/clouddev/toolresults/histories/" + resultStorage.getToolResultsHistoryId()
+           + "/testlab/mobile/histories/" + resultStorage.getToolResultsHistoryId()
            + "/executions/" + resultStorage.getToolResultsExecutionId();
   }
 
