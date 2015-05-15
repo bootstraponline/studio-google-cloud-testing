@@ -319,6 +319,11 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       while (System.currentTimeMillis() < stopTime) {
         createdDevice = getTest().projects().devices().get(lastCloudProjectId, createdDevice.getId()).execute();
         System.out.println("Polling for device... (time: " + System.currentTimeMillis() + ", status: " + createdDevice.getState() + ")");
+        if (createdDevice.getState().equals("DEVICE_ERROR")) {
+          CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+                                                                                     "The polled cloud device has ERROR state\n\n");
+          return;
+        }
         if (createdDevice.getState().equals("READY")) {
           //if (createdDevice.getDeviceDetails().getConnectionInfo() != null) {
           String ipAddress = createdDevice.getDeviceDetails().getConnectionInfo().getIpAddress();
