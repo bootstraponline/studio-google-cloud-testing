@@ -136,10 +136,13 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
   private List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, Kind kind) {
     if (kind == SINGLE_DEVICE) {
+      DeviceDimension.Device defaultDevice = DeviceDimension.getDefaultDevice();
+      ApiDimension.ApiLevel defaultApi = ApiDimension.getDefaultApi();
+      String defaultDeviceName = defaultDevice.getConfigurationDialogDisplayName() + " API " + defaultApi.getId();
       CloudConfigurationImpl defaultConfiguration = new CloudConfigurationImpl(
-        CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, "Default Device", SINGLE_DEVICE, AndroidIcons.Display, facet);
-      defaultConfiguration.deviceDimension.enable(DeviceDimension.getDefaultDevice());
-      defaultConfiguration.apiDimension.enable(ApiDimension.getDefaultApi());
+        CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, defaultDeviceName, SINGLE_DEVICE, AndroidIcons.Display, facet);
+      defaultConfiguration.deviceDimension.enable(defaultDevice);
+      defaultConfiguration.apiDimension.enable(defaultApi);
       defaultConfiguration.languageDimension.enable(LanguageDimension.getDefaultLanguage());
       defaultConfiguration.orientationDimension.enable(OrientationDimension.getDefaultOrientation());
       defaultConfiguration.setNonEditable();
