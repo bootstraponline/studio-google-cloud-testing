@@ -28,7 +28,6 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
 import com.intellij.execution.runners.ProgramRunner;
 import com.intellij.execution.testframework.AbstractTestProxy;
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.LangDataKeys;
@@ -41,27 +40,15 @@ import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 
 public class DebugConfigurationAction extends AnAction {
 
   private final static String TEXT = "Debug Configuration in Cloud";
   private final static String DESCRIPTION = "Debug Configuration on a Cloud Device";
-  private static Icon ICON;
-
-  static {
-    try {
-      ICON = new ImageIcon(ImageIO.read(DebugConfigurationAction.class.getResourceAsStream("CloudDebug.png")));
-    }
-    catch (Exception e) { // If something goes wrong, just use the original debug icon.
-      ICON = AllIcons.General.Debug;
-    }
-  }
-
 
   public DebugConfigurationAction() {
-    super(TEXT, DESCRIPTION, ICON);
+    super(TEXT, DESCRIPTION, CloudTestingUtils.CLOUD_DEBUG_ICON);
     getTemplatePresentation().setEnabled(false);
   }
 

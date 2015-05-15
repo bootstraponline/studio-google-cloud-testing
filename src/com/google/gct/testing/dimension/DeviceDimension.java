@@ -19,7 +19,7 @@ import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.api.services.testing.model.AndroidModel;
 import com.google.common.collect.ImmutableList;
 import com.google.gct.testing.CloudConfigurationImpl;
-import icons.AndroidIcons;
+import com.google.gct.testing.CloudTestingUtils;
 
 import javax.swing.*;
 import java.util.HashMap;
@@ -92,7 +92,7 @@ public class DeviceDimension extends CloudConfigurationDimension {
 
   @Override
   public Icon getIcon() {
-    return AndroidIcons.Views.DeviceScreen;
+    return CloudTestingUtils.CLOUD_DEVICE_ICON;
   }
 
   @Override

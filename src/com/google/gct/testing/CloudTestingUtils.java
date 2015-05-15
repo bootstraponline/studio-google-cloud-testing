@@ -16,6 +16,7 @@
 package com.google.gct.testing;
 
 import com.android.tools.idea.run.CloudConfiguration;
+import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
@@ -28,11 +29,13 @@ import com.intellij.openapi.wm.StatusBar;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.UIUtil;
+import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
@@ -53,6 +56,24 @@ public class CloudTestingUtils {
   public static final String TEST_CONFIGURATION_PROGRESS = "testConfigurationProgress";
   public static final String TEST_CONFIGURATION_SCHEDULED = "testConfigurationScheduled";
   public static final String TEST_CONFIGURATION_FINISHED = "testConfigurationFinished";
+
+  public static Icon CLOUD_DEVICE_ICON;
+  public static Icon CLOUD_DEBUG_ICON;
+
+  static {
+    try {
+      CLOUD_DEBUG_ICON = new ImageIcon(ImageIO.read(CloudTestingUtils.class.getResourceAsStream("CloudDebug.png")));
+    }
+    catch (Exception e) { // If something goes wrong, just use the original debug icon.
+      CLOUD_DEBUG_ICON = AllIcons.General.Debug;
+    }
+    try {
+      CLOUD_DEVICE_ICON = new ImageIcon(ImageIO.read(CloudTestingUtils.class.getResourceAsStream("CloudDevice.png")));
+    } catch (Exception e) { // If something goes wrong, just use the default device icon.
+      CLOUD_DEVICE_ICON = AndroidIcons.Views.DeviceScreen;
+    }
+  }
+
 
   public static enum ConfigurationStopReason {
     FINISHED, INFRASTRUCTURE_FAILURE, TRIGGERING_ERROR, TIMED_OUT

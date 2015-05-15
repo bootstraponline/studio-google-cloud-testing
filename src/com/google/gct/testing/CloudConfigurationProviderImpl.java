@@ -59,7 +59,6 @@ import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -386,11 +385,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   @Nullable
   @Override
   public Icon getCloudDeviceIcon() {
-    try {
-      return new ImageIcon(ImageIO.read(CloudConfigurationProviderImpl.class.getResourceAsStream("CloudDevice.png")));
-    } catch (Exception e) {
-      return null;
-    }
+    return CloudTestingUtils.CLOUD_DEVICE_ICON;
   }
 
   @Nullable
