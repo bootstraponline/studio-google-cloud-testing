@@ -17,6 +17,7 @@ package com.google.gct.testing.dimension;
 
 import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.api.services.testing.model.AndroidVersion;
+import com.google.api.services.testing.model.Date;
 import com.google.api.services.testing.model.Distribution;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
@@ -107,7 +108,8 @@ public class ApiDimension extends CloudConfigurationDimension {
       if (androidDeviceCatalog != null) {
         for (AndroidVersion version : androidDeviceCatalog.getVersions()) {
           Map<String, String> details = new HashMap<String, String>();
-          details.put("Release date", version.getReleaseDate());
+          Date date = version.getReleaseDate();
+          details.put("Release date", String.format("%4d-%02d-%02d", date.getYear(), date.getMonth(), date.getDay()));
           Distribution distribution = version.getDistribution();
           details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
           ApiLevel apiLevel =
