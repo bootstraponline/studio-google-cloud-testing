@@ -50,6 +50,8 @@ import java.util.Map;
 import java.util.Random;
 
 import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
+import static com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES;
+import static com.intellij.ui.SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
 import static javax.swing.tree.TreeSelectionModel.SINGLE_TREE_SELECTION;
 
 
@@ -447,15 +449,26 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
         Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
         if (userObject instanceof CloudTestingType) {
           CloudTestingType cloudTestingType = (CloudTestingType)userObject;
-          getTextRenderer().append(cloudTestingType.getConfigurationDialogDisplayName());
+          getTextRenderer().append(cloudTestingType.getConfigurationDialogDisplayName(),
+                                   ((CheckedTreeNode) value).isChecked() ? REGULAR_BOLD_ATTRIBUTES : REGULAR_ATTRIBUTES);
           updateTreeState(tree, (CheckedTreeNode)value, cloudTestingType);
         } else if (userObject instanceof CloudTestingTypeGroup) {
           CloudTestingTypeGroup group = (CloudTestingTypeGroup)userObject;
-          getTextRenderer().append(group.getName());
+          getTextRenderer().append(group.getName(),
+                                   hasCheckedChildren((CheckedTreeNode) value) ? REGULAR_BOLD_ATTRIBUTES : REGULAR_ATTRIBUTES);
           CloudTestingType type = (CloudTestingType) ((CheckedTreeNode) ((DefaultMutableTreeNode)value).getChildAt(0)).getUserObject();
           updateTreeState(tree, (CheckedTreeNode)value, type);
         }
       }
+    }
+
+    private boolean hasCheckedChildren(CheckedTreeNode node) {
+      for (int i = 0; i < node.getChildCount(); i++) {
+        if (((CheckedTreeNode)node.getChildAt(i)).isChecked()) {
+          return true;
+        }
+      }
+      return false;
     }
 
     private void updateTreeState(JTree tree, CheckedTreeNode node, CloudTestingType cloudTestingType) {
@@ -547,11 +560,13 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
         Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
         if (userObject instanceof CloudTestingType) {
           CloudTestingType googleCloudTestingType = (CloudTestingType)userObject;
-          myTextRenderer.append(googleCloudTestingType.getConfigurationDialogDisplayName());
+
+          myTextRenderer.append(googleCloudTestingType.getConfigurationDialogDisplayName(),
+                                myRadioButton.isSelected() ? REGULAR_BOLD_ATTRIBUTES : REGULAR_ATTRIBUTES);
           updateTreeState(tree, (CheckedTreeNode)value, googleCloudTestingType);
         } else if (userObject instanceof CloudTestingTypeGroup) {
           CloudTestingTypeGroup group = (CloudTestingTypeGroup)userObject;
-          myTextRenderer.append(group.getName());
+          myTextRenderer.append(group.getName(), myRadioButton.isSelected() ? REGULAR_BOLD_ATTRIBUTES : REGULAR_ATTRIBUTES);
           CloudTestingType type = (CloudTestingType)((CheckedTreeNode)((DefaultMutableTreeNode)value).getChildAt(0)).getUserObject();
           updateTreeState(tree, (CheckedTreeNode)value, type);
         }
