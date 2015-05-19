@@ -41,14 +41,6 @@ public class LanguageDimension extends CloudConfigurationDimension {
 
   private static ImmutableList<Language> FULL_DOMAIN;
 
-  private static final Language localDefaultLanguage;
-
-  static {
-    //TODO: Make sure we do not "guess" incorrectly the user's language.
-    Language userLanguage = getLanguage(System.getProperty("user.language"));
-    localDefaultLanguage = userLanguage != null ? new Language(userLanguage, true) : null;
-  }
-
   private static Language defaultLanguage;
 
   private final List<Language> supportedLanguages;
@@ -73,7 +65,10 @@ public class LanguageDimension extends CloudConfigurationDimension {
   }
 
   private void addLocalDefaultLocale() {
-    if (localDefaultLanguage != null) {
+    //TODO: Make sure we do not "guess" incorrectly the user's language.
+    Language userLanguage = getLanguage(System.getProperty("user.language"));
+    if (userLanguage != null) {
+      Language localDefaultLanguage = new Language(userLanguage, true);
       supportedLanguages.remove(localDefaultLanguage);
       supportedLanguages.add(0, localDefaultLanguage);
     }
@@ -126,7 +121,7 @@ public class LanguageDimension extends CloudConfigurationDimension {
   }
 
   public static List<Language> getFullDomain() {
-    if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+    if (isFullDomainMissing() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Language> fullDomainBuilder = new ImmutableList.Builder<Language>();
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
@@ -139,10 +134,17 @@ public class LanguageDimension extends CloudConfigurationDimension {
           }
         }
       }
-      FULL_DOMAIN = fullDomainBuilder.build();
+      // Do not reset a valid full domain if some intermittent issues happened.
+      if (isFullDomainMissing() || !fullDomainBuilder.build().isEmpty()) {
+        FULL_DOMAIN = fullDomainBuilder.build();
+      }
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
     }
     return FULL_DOMAIN;
+  }
+
+  private static boolean isFullDomainMissing() {
+    return FULL_DOMAIN == null || FULL_DOMAIN.isEmpty();
   }
 
   public static Language getDefaultLanguage() {

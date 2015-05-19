@@ -102,7 +102,7 @@ public class ApiDimension extends CloudConfigurationDimension {
   }
 
   public static List<? extends CloudTestingType> getFullDomain() {
-    if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+    if (isFullDomainMissing() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       List<ApiLevel> apiLevels = new LinkedList<ApiLevel>();
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
@@ -121,11 +121,18 @@ public class ApiDimension extends CloudConfigurationDimension {
           }
         }
       }
-      // Sort them in descending order of api version.
-      FULL_DOMAIN = ImmutableList.copyOf(Ordering.from(API_LEVEL_COMPARATOR).reverse().sortedCopy(apiLevels));
+      // Do not reset a valid full domain if some intermittent issues happened.
+      if (isFullDomainMissing() || !apiLevels.isEmpty()) {
+        // Sort them in descending order of api version.
+        FULL_DOMAIN = ImmutableList.copyOf(Ordering.from(API_LEVEL_COMPARATOR).reverse().sortedCopy(apiLevels));
+      }
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
     }
     return FULL_DOMAIN;
+  }
+
+  private static boolean isFullDomainMissing() {
+    return FULL_DOMAIN == null || FULL_DOMAIN.isEmpty();
   }
 
   public static ApiLevel getDefaultApi() {

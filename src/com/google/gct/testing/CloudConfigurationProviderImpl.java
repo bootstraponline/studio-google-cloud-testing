@@ -138,6 +138,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     if (kind == SINGLE_DEVICE) {
       DeviceDimension.Device defaultDevice = DeviceDimension.getDefaultDevice();
       ApiDimension.ApiLevel defaultApi = ApiDimension.getDefaultApi();
+      if (defaultDevice == null || defaultApi == null) {
+        return ImmutableList.of();
+      }
       String defaultDeviceName = defaultDevice.getConfigurationDialogDisplayName() + " API " + defaultApi.getId();
       CloudConfigurationImpl defaultConfiguration = new CloudConfigurationImpl(
         CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, defaultDeviceName, SINGLE_DEVICE, AndroidIcons.Display, facet);

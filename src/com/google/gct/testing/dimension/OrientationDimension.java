@@ -46,7 +46,7 @@ public class OrientationDimension extends CloudConfigurationDimension {
   }
 
   public static List<? extends CloudTestingType> getFullDomain() {
-    if (FULL_DOMAIN == null || FULL_DOMAIN.isEmpty() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
+    if (isFullDomainMissing() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Orientation> fullDomainBuilder = new ImmutableList.Builder<Orientation>();
       AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
@@ -61,10 +61,17 @@ public class OrientationDimension extends CloudConfigurationDimension {
           }
         }
       }
-      FULL_DOMAIN = fullDomainBuilder.build();
+      // Do not reset a valid full domain if some intermittent issues happened.
+      if (isFullDomainMissing() || !fullDomainBuilder.build().isEmpty()) {
+        FULL_DOMAIN = fullDomainBuilder.build();
+      }
       resetDiscoveryTestApiUpdateTimestamp(DISPLAY_NAME);
     }
     return FULL_DOMAIN;
+  }
+
+  private static boolean isFullDomainMissing() {
+    return FULL_DOMAIN == null || FULL_DOMAIN.isEmpty();
   }
 
   public static Orientation getDefaultOrientation() {
