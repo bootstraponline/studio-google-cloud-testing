@@ -17,11 +17,13 @@ package com.google.gct.testing;
 
 import com.android.annotations.Nullable;
 import com.android.tools.idea.run.CloudConfiguration.Kind;
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.gct.testing.dimension.ConfigurationChangeEvent;
 import com.google.gct.testing.dimension.ConfigurationChangeListener;
+import com.google.gct.testing.util.CloudTestingTracking;
 import com.intellij.execution.ExecutionBundle;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -110,8 +112,12 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
     if (configurationKind == SINGLE_DEVICE) {
       setTitle("Single Device Configurations");
+      UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.CONFIGURE_CLOUD_DEVICE,
+                                            CloudTestingTracking.SESSION_LABEL, null);
     } else {
       setTitle("Matrix Configurations");
+      UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.CONFIGURE_MATRIX,
+                                            CloudTestingTracking.SESSION_LABEL, null);
     }
 
     getOKAction().setEnabled(true);

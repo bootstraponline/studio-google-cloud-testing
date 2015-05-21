@@ -17,9 +17,11 @@ package com.google.gct.testing;
 
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
 import com.google.gct.testing.results.GoogleCloudTestingResultsForm;
+import com.google.gct.testing.util.CloudTestingTracking;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.RunnerRegistry;
 import com.intellij.execution.configurations.RunProfile;
@@ -82,6 +84,9 @@ public class DebugConfigurationAction extends AnAction {
     AbstractTestProxy selectedNode = ((GoogleCloudTestingResultsForm)sender.getResultsViewer()).getTreeView().getSelectedTest();
 
     assert !isRootNode(selectedNode); // The action should have been disabled for the root node.
+
+    UsageTracker.getInstance().trackEvent(
+      CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.DEBUG_FROM_RESULTS, CloudTestingTracking.SESSION_LABEL, null);
 
     String configurationName;
     String className = null;

@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing;
 
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
@@ -22,6 +23,7 @@ import com.google.gct.testing.ui.AddCompareScreenshotPanel;
 import com.google.gct.testing.ui.AddScreenshotListener;
 import com.google.gct.testing.ui.WipePanel;
 import com.google.gct.testing.ui.WipePanelCallback;
+import com.google.gct.testing.util.CloudTestingTracking;
 import com.intellij.execution.testframework.AbstractTestProxy;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -71,7 +73,7 @@ public class ScreenshotComparisonDialog {
   private AddCompareScreenshotPanel addScreenshotPanel;
   private ActionButton myDecrementStepButton;
   private ActionButton myIncrementStepButton;
-  private Function<ConfigurationResult,String> getName;
+  private volatile int loadedScreenshotsCount = 0;
 
 
   public ScreenshotComparisonDialog(Project project,
@@ -151,6 +153,9 @@ public class ScreenshotComparisonDialog {
     updateMaxStep();
     updateScreenshotName();
     builder.show();
+
+    UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.COMPARE_SCREENSHOTS_OPENED,
+                                          CloudTestingTracking.SESSION_LABEL, loadedScreenshotsCount);
   }
 
   public Window getWindow() {
@@ -337,6 +342,12 @@ public class ScreenshotComparisonDialog {
     updateStepLabel();
     if (step != oldStep) {
       notifyHeaderListenersAboutStep(true);
+    }
+  }
+
+  public void incrementLoadedScreenshotsCount() {
+    synchronized (this) {
+      loadedScreenshotsCount++;
     }
   }
 }

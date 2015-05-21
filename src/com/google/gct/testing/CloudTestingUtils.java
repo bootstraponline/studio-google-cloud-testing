@@ -16,6 +16,8 @@
 package com.google.gct.testing;
 
 import com.android.tools.idea.run.CloudConfiguration;
+import com.android.tools.idea.stats.UsageTracker;
+import com.google.gct.testing.util.CloudTestingTracking;
 import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
@@ -126,6 +128,8 @@ public class CloudTestingUtils {
                                     + ">Report this issue</a> (please copy/paste the text below into the form)<br><br>"
                                     + getDetailedErrorMessage(errorMessage.substring(newLineIndex + 1)) + "</html>"
                                   : "No details...";
+    UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.BACKEND_ERROR,
+                                          CloudTestingTracking.SESSION_LABEL + "|" + userErrorMessage, null);
     showCascadingErrorMessages(project, errorDialogTitle, userErrorMessage, detailedErrorMessage);
   }
 

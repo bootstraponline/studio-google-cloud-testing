@@ -323,6 +323,9 @@ public class ScreenshotComparisonPanel implements ScreenshotComparisonHeaderPane
     @Override
     public void run() {
       loadedImage = configurationResult.getScreenshotForTestAndStep(test, step); // A long-running operation.
+      if (loadedImage != null) {
+        parent.incrementLoadedScreenshotsCount();
+      }
       if (isObsolete()) {
         return;
       }

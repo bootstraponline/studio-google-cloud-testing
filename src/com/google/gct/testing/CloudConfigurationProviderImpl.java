@@ -21,6 +21,7 @@ import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.android.tools.idea.run.CloudConfigurationProvider;
 import com.android.tools.idea.sdk.IdeSdks;
 //import com.glavsoft.viewer.Viewer;
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
@@ -42,6 +43,7 @@ import com.google.gct.testing.launcher.CloudTestsLauncher;
 import com.google.gct.testing.results.GoogleCloudTestListener;
 import com.google.gct.testing.results.GoogleCloudTestResultsConnectionUtil;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
+import com.google.gct.testing.util.CloudTestingTracking;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -274,6 +276,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
   @Override
   public void launchCloudDevice(int selectedConfigurationId, @NotNull String cloudProjectId, @NotNull AndroidFacet facet) {
+    UsageTracker.getInstance()
+      .trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.LAUNCH_CLOUD_DEVICE, CloudTestingTracking.SESSION_LABEL, null);
 
     CloudConfigurationImpl cloudConfiguration = CloudTestingUtils.getConfigurationById(selectedConfigurationId, facet);
 
@@ -416,6 +420,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   @Override
   public ExecutionResult executeCloudMatrixTests(int selectedConfigurationId, String cloudProjectId, AndroidRunningState runningState,
                                                  Executor executor) throws ExecutionException {
+    UsageTracker.getInstance()
+      .trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.RUN_TEST_MATRIX, CloudTestingTracking.SESSION_LABEL, null);
 
     Project project = runningState.getFacet().getModule().getProject();
 

@@ -15,20 +15,20 @@
  */
 package com.google.gct.testing;
 
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.gct.testing.results.GoogleCloudTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestResultsViewer;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
 import com.google.gct.testing.results.GoogleCloudTestingResultsForm;
+import com.google.gct.testing.util.CloudTestingTracking;
 import com.intellij.execution.testframework.AbstractTestProxy;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
-import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.ui.MessageType;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,6 +58,9 @@ public class ShowScreenshotsAction extends AnAction {
 
   @Override
   public void actionPerformed(final AnActionEvent e) {
+    UsageTracker.getInstance().trackEvent(
+      CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.COMPARE_SCREENSHOTS_CLICKED, CloudTestingTracking.SESSION_LABEL, null);
+
     final GoogleCloudTestTreeView sender = e.getData(GoogleCloudTestTreeView.CLOUD_TEST_RUNNER_VIEW);
     if (sender == null) {
       return;
