@@ -114,8 +114,8 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
 
   private String prepareProgressString(String progressMessage) {
     return CloudTestingUtils.shouldShowProgressTimestamps()
-      ? progressMessage.substring(0, progressMessage.length() - 1) + "\t" + System.currentTimeMillis() + "\n"
-      : progressMessage;
+           ? progressMessage + "\t" + System.currentTimeMillis() + "\n"
+           : progressMessage + "\n";
   }
 
   @Override

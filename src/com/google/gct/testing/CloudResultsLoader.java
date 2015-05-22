@@ -16,12 +16,13 @@
 package com.google.gct.testing;
 
 import com.google.api.client.http.HttpHeaders;
+import com.google.api.client.util.Maps;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.testing.model.AndroidDevice;
-import com.google.api.services.testing.model.ResultStorage;
 import com.google.api.services.testing.model.TestExecution;
 import com.google.api.services.testing.model.TestMatrix;
+import com.google.api.services.testing.model.ToolResultsExecution;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -77,10 +78,10 @@ public class CloudResultsLoader {
         if (optionalBytes.isPresent()) {
           String progressLine = new String(optionalBytes.get());
           String encodedConfigurationInstance = file.getEncodedConfigurationInstance();
-          String previousProgressLine = getPreviousProgress(encodedConfigurationInstance);
-          if (!progressLine.equals(previousProgressLine)) {
+          List<String> previousProgress = getPreviousProgress(encodedConfigurationInstance);
+          if (!previousProgress.contains(progressLine)) {
             newDataReceived = true;
-            configurationProgress.put(encodedConfigurationInstance, progressLine);
+            previousProgress.add(progressLine);
             testRunListener.testConfigurationProgress(
               ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getResultsViewerDisplayString(), progressLine);
           }
@@ -102,7 +103,7 @@ public class CloudResultsLoader {
   private boolean webLinkReported = false;
 
   // Encoded configuration instance -> progress accumulated so far.
-  private final Map<String, String> configurationProgress = new HashMap<String, String>();
+  private final Map<String, List<String>> configurationProgress = Maps.newHashMap();
 
 
   public CloudResultsLoader(String cloudProjectId, IGoogleCloudTestRunListener testRunListener, ProcessHandler processHandler,
@@ -226,8 +227,7 @@ public class CloudResultsLoader {
       webLinkReported = true;
       if (!testMatrixState.equals("INVALID")) {
         processHandler.notifyTextAvailable("You can also view test results, along with other runs against this app, on the web:\n" +
-                                           getTuxLink(cloudProjectId, testMatrix.getResultStorage()) + " \n\n\n",
-                                           ProcessOutputTypes.STDOUT);
+                                           getWebResultsLink(testMatrix) + " \n\n\n", ProcessOutputTypes.STDOUT);
       }
     }
     for (TestExecution testExecution : testMatrix.getTestExecutions()) {
@@ -243,25 +243,27 @@ public class CloudResultsLoader {
     String testExecutionState = testExecution.getState();
     if (testExecutionState.equals("UNSUPPORTED_ENVIRONMENT")) {
       handleTriggeringError(results, encodedConfigurationInstance,
-                            "Skipped triggering the test execution: Incompatible API level for requested model\n");
+                            "Skipped triggering the test execution: Incompatible API level for requested model");
     } else if (testExecutionState.equals("INCOMPATIBLE_ENVIRONMENT")) {
       // It is not expected to happen for Android Studio client.
-      handleTriggeringError(results, encodedConfigurationInstance, "The given APK is not compatible with this configuration\n");
+      handleTriggeringError(results, encodedConfigurationInstance, "The given APK is not compatible with this configuration");
     } else if (testExecutionState.equals("INVALID")) {
       // It is not expected to happen for Android Studio client.
-      handleTriggeringError(results, encodedConfigurationInstance, "The provided APK is invalid\n");
-    } else if (!testExecutionState.equals("QUEUED")) {
+      handleTriggeringError(results, encodedConfigurationInstance, "The provided APK is invalid");
+    } else if (!testExecutionState.equals("PENDING")) {
       if (testExecutionState.equals("ERROR")) {
-        String diffProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorDetails() + "\n";
-        String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-        if (!previousProgress.endsWith(diffProgress)) {
-          reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
+        String newProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorMessage();
+        List<String> previousProgress = getPreviousProgress(encodedConfigurationInstance);
+        if (previousProgress.isEmpty() || !previousProgress.get(previousProgress.size() - 1).endsWith(newProgress)) {
+          reportNewProgress(encodedConfigurationInstance, newProgress);
         }
-      } else if (testExecutionState.equals("IN_PROGRESS")) {
-        String newProgress = testExecution.getTestDetails().getProgressDetails();
-        String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-        if (newProgress != null && !newProgress.equals(previousProgress)) {
-          reportNewProgress(encodedConfigurationInstance, previousProgress, newProgress);
+      } else if (testExecutionState.equals("RUNNING")) {
+        List<String> progressMessages = testExecution.getTestDetails().getProgressMessages();
+        List<String> previousProgress = getPreviousProgress(encodedConfigurationInstance);
+        if (previousProgress.size() < progressMessages.size()) {
+          for (int i = previousProgress.size(); i < progressMessages.size(); i++) {
+            reportNewProgress(encodedConfigurationInstance, progressMessages.get(i));
+          }
         }
       }
       ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
@@ -273,19 +275,24 @@ public class CloudResultsLoader {
     }
   }
 
-  private void handleTriggeringError(Map<String, ConfigurationResult> results, String encodedConfigurationInstance, String diffProgress) {
-    // Probably, no previous progress could be expected in this scenario, but it would not hurt considering it anyway.
-    String previousProgress = getPreviousProgress(encodedConfigurationInstance);
-    reportNewProgress(encodedConfigurationInstance, previousProgress, previousProgress + diffProgress);
+  private void handleTriggeringError(Map<String, ConfigurationResult> results, String encodedConfigurationInstance, String newProgress) {
+    reportNewProgress(encodedConfigurationInstance, newProgress);
     ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
     result.setTriggeringError(true);
     finishedConfigurationInstances.add(encodedConfigurationInstance);
   }
 
-  private static String getTuxLink(String cloudProjectId, ResultStorage resultStorage) {
+  /**
+   * Invoke only after the APK validation is finished. Otherwise, result storage data is not available yet.
+   */
+  private String getWebResultsLink(@NotNull TestMatrix testMatrix) {
+    ToolResultsExecution toolResultsExecution = testMatrix.getResultStorage().getToolResultsExecution();
+    if (toolResultsExecution == null) { // Should never happen if the APK validation is finished.
+      return "";
+    }
     return "https://console.developers.google.com/project/" + cloudProjectId
-           + "/testlab/mobile/histories/" + resultStorage.getToolResultsHistoryId()
-           + "/executions/" + resultStorage.getToolResultsExecutionId();
+           + "/testlab/mobile/histories/" + toolResultsExecution.getHistoryId()
+           + "/executions/" + toolResultsExecution.getExecutionId();
   }
 
   private String getEncodedConfigurationNameForTestExecution(TestExecution testExecution) {
@@ -296,16 +303,11 @@ public class CloudResultsLoader {
            + androidDevice.getOrientation();
   }
 
-  private boolean failedToTriggerTest(String testExecutionId) {
-    return testExecutionId.startsWith("Error ") || testExecutionId.startsWith("Skipped ");
-  }
-
-  private void reportNewProgress(String encodedConfigurationInstance, String previousProgress, String newProgress) {
+  private void reportNewProgress(String encodedConfigurationInstance, String newProgress) {
     newDataReceived = true;
-    configurationProgress.put(encodedConfigurationInstance, newProgress);
-    String diffProgress = newProgress.substring(previousProgress.length());
+    getPreviousProgress(encodedConfigurationInstance).add(newProgress);
     testRunListener.testConfigurationProgress(
-      ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getResultsViewerDisplayString(), diffProgress);
+      ConfigurationInstance.parseFromEncodedString(encodedConfigurationInstance).getResultsViewerDisplayString(), newProgress);
   }
 
   private ConfigurationResult getOrCreateConfigurationResult(String encodedConfigurationInstance,
@@ -319,14 +321,20 @@ public class CloudResultsLoader {
     return result;
   }
 
-  private static boolean isInfrastructureFailure(String progress) {
-    String[] progressLines = progress.split("\n");
-    return progressLines[progressLines.length - 1].startsWith(INFRASTRUCTURE_FAILURE_PREFIX);
+  private static boolean isInfrastructureFailure(List<String> progressMessages) {
+    if (progressMessages.isEmpty()) {
+      return false;
+    }
+    return progressMessages.get(progressMessages.size() - 1).startsWith(INFRASTRUCTURE_FAILURE_PREFIX);
   }
 
-  private String getPreviousProgress(String encodedConfigurationInstance) {
-    String progress = configurationProgress.get(encodedConfigurationInstance);
-    return progress == null ? "" : progress;
+  private List<String> getPreviousProgress(String encodedConfigurationInstance) {
+    List<String> progressMessages = configurationProgress.get(encodedConfigurationInstance);
+    if (progressMessages == null) {
+      progressMessages = new LinkedList<String>();
+      configurationProgress.put(encodedConfigurationInstance, progressMessages);
+    }
+    return progressMessages;
   }
 
   private void loadResultFiles(Map<String, ConfigurationResult> results) {
