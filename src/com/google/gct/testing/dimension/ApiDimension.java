@@ -109,7 +109,8 @@ public class ApiDimension extends CloudConfigurationDimension {
         for (AndroidVersion version : androidDeviceCatalog.getVersions()) {
           Map<String, String> details = new HashMap<String, String>();
           Date date = version.getReleaseDate();
-          details.put("Release date", String.format("%4d-%02d-%02d", date.getYear(), date.getMonth(), date.getDay()));
+          details.put("Release date",
+                      date == null ? "???" : String.format("%4d-%02d-%02d", date.getYear(), date.getMonth(), date.getDay()));
           Distribution distribution = version.getDistribution();
           details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
           ApiLevel apiLevel =
