@@ -22,6 +22,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
+import com.google.gct.testing.dimension.DeviceDimension;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -52,6 +53,8 @@ public class ConfigurationInstance {
   public static final String ENCODED_NAME_DELIMITER = "-";
 
   private final Map<String, CloudTestingType> typesByDimensionName = new LinkedHashMap<String, CloudTestingType>();
+  private boolean isVirtual = false;
+
 
   private ConfigurationInstance() {
   }
@@ -88,7 +91,14 @@ public class ConfigurationInstance {
     if (dimensionName == null) {
       throw new NoSuchElementException("Could not find the corresponding dimension for type: " + type.getResultsViewerDisplayName());
     }
+    if (type instanceof DeviceDimension.Device) {
+      result.isVirtual = ((DeviceDimension.Device) type).isVirtual();
+    }
     result.typesByDimensionName.put(dimensionName, type);
+  }
+
+  public boolean isVirtual() {
+    return isVirtual;
   }
 
   public CloudTestingType getTypeForDimension(CloudConfigurationDimension dimension) {

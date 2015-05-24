@@ -105,8 +105,14 @@ public class DebugConfigurationAction extends AnAction {
       configurationName = selectedNode.getParent().getParent().getName();
     }
 
+    ConfigurationInstance configurationInstance = ConfigurationInstance.parseFromResultsViewerDisplayString(configurationName);
+    if (!configurationInstance.isVirtual()) {
+      CloudTestingUtils.showBalloonMessage(project, "Debugging on physical devices is not supported yet", MessageType.WARNING, 10);
+      return;
+    }
+
     ApplicationManager.getApplication()
-      .executeOnPooledThread(new DebuggingStater(environment, project, configurationName, className, methodName));
+      .executeOnPooledThread(new DebuggingStater(environment, project, configurationInstance, className, methodName));
   }
 
   private class DebuggingStater extends Thread {
@@ -118,11 +124,11 @@ public class DebugConfigurationAction extends AnAction {
     private final RunProfile runProfile;
     private final ProgramRunner runner;
 
-    private DebuggingStater(ExecutionEnvironment environment, Project project, @NotNull String configurationName,
+    private DebuggingStater(ExecutionEnvironment environment, Project project, @NotNull ConfigurationInstance configurationInstance,
                             @Nullable String className, @Nullable String methodName) {
       this.environment = environment;
       this.project = project;
-      configurationInstance = ConfigurationInstance.parseFromResultsViewerDisplayString(configurationName);
+      this.configurationInstance = configurationInstance;
       this.className = className;
       this.methodName = methodName;
       runProfile = environment.getRunProfile();

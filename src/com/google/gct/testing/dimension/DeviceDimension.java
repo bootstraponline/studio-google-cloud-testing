@@ -129,7 +129,7 @@ public class DeviceDimension extends CloudConfigurationDimension {
 
     @Override
     public String getGroupDescription() {
-      return form.equals("VIRTUAL")
+      return isVirtual()
              ? "Android OS running on Google Compute Engine."
              : "An actual physical device managed by Google.";
     }
@@ -137,6 +137,15 @@ public class DeviceDimension extends CloudConfigurationDimension {
     @Override
     public String getConfigurationDialogDisplayName() {
       return manufacturer + " " + name;
+    }
+
+    @Override
+    public String getResultsViewerDisplayName() {
+      return getConfigurationDialogDisplayName() + (isVirtual() ? " (virtual)" : "");
+    }
+
+    public boolean isVirtual() {
+      return form.equals("VIRTUAL");
     }
 
     @Override
