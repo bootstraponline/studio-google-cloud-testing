@@ -153,6 +153,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   double logGrowth = 0.02;
   Random rand = new Random(42);
 
+  // TODO: This blows off for a reasonably big number of combinations (e.g., >15K).
   private double computeCoverage(int combinations) {
     if (combinations == 0) {
       return 0;
@@ -164,7 +165,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   private void updateConfigurationCountLabel() {
     int numberOfConfigurations = configuration.getDeviceConfigurationCount();
-    double coverage = computeCoverage(configuration.countCombinationsCollapsingOrientation()) * 100d;
+    //double coverage = computeCoverage(configuration.countCombinationsCollapsingOrientation()) * 100d;
     //TODO: Put back the covered % after it is not fake (or it is needed for demo purposes).
     //myConfigurationCountLabel.setText("<html>Tests will run on <b>" + numberOfConfigurations + " configurations</b> and cover <b>" +
     //                                  (int) Math.ceil(coverage) + "%</b> of current users.</html>");
