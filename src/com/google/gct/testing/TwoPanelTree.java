@@ -534,8 +534,9 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
         CheckedTreeNode node = (CheckedTreeNode)value;
 
         NodeState state = getNodeStatus(node);
-        myRadioButton.setVisible(leaf);
 
+        myRadioButton.setVisible(true);
+        myRadioButton.setMargin(new Insets(-5, -3, -5, -5));
         myRadioButton.setSelected(state != NodeState.CLEAR);
         myRadioButton.setEnabled(node.isEnabled() && state != NodeState.PARTIAL);
         myRadioButton.setOpaque(false);
@@ -553,6 +554,16 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       }
       else if (UIUtil.isUnderNimbusLookAndFeel()) {
         UIUtil.changeBackGround(this, UIUtil.TRANSPARENT_COLOR);
+      }
+
+      if (!leaf) {
+        // Disable group radio buttons.
+        myRadioButton.setEnabled(false);
+      }
+
+      if (!myRadioButton.isEnabled() && UIUtil.isUnderDarcula()) {
+        // Show visually that radio buttons are disabled (should be done explicitly in Darcula mode).
+        myRadioButton.setBackground(CloudTestingUtils.makeDarker(Color.LIGHT_GRAY, 7));
       }
 
       revalidate();
