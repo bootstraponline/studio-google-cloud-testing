@@ -15,7 +15,11 @@
  */
 package com.google.gct.testing;
 
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
+import com.android.builder.model.BaseArtifact;
 import com.android.ddmlib.IDevice;
+import com.android.tools.idea.gradle.IdeaAndroidProject;
 import com.android.tools.idea.run.CloudConfiguration;
 import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.android.tools.idea.run.CloudConfigurationProvider;
@@ -63,7 +67,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.*;
 
@@ -516,16 +519,40 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           if (matrixExecutionCancellator.isCancelled()) {
             return;
           }
-          List<String> apkPaths = getApkPaths(runningState);
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading app APK...", ""),
-                                                               ProcessOutputTypes.STDOUT);
-          File appApk = findAppropriateApk(apkPaths, false);
-          if (appApk == null) {
-            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading app APK",
-                                               "Failed to find a supported app APK format!\n" +
-                                               "There is no supported app APK among the existing ones\n\n" + listAllApks(apkPaths));
+
+          IdeaAndroidProject ideaAndroidProject = runningState.getFacet().getIdeaAndroidProject();
+          if (ideaAndroidProject == null) {
+            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
+                                               "Your project is not an idea android project!\n");
             return;
           }
+
+          AndroidArtifact mainArtifact = ideaAndroidProject.getSelectedVariant().getMainArtifact();
+          List<AndroidArtifactOutput> mainOutputs = Lists.newArrayList(mainArtifact.getOutputs());
+          if (mainOutputs.isEmpty()) {
+            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error finding app APK",
+                                               "Could not find your app APK!\n");
+            return;
+          }
+          File appApk = mainOutputs.get(0).getMainOutputFile().getOutputFile();
+
+          BaseArtifact testArtifactInfo = ideaAndroidProject.findSelectedTestArtifactInSelectedVariant();
+          if (!(testArtifactInfo instanceof AndroidArtifact)) {
+            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
+                                               "Your test artifact is not an android artifact!\n");
+            return;
+          }
+
+          List<AndroidArtifactOutput> testOutputs = Lists.newArrayList(((AndroidArtifact)testArtifactInfo).getOutputs());
+          if (testOutputs.isEmpty()) {
+            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error finding test APK",
+                                               "Could not find your test APK!\n");
+            return;
+          }
+          File testApk = testOutputs.get(0).getMainOutputFile().getOutputFile();
+
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading app APK...", ""),
+                                                               ProcessOutputTypes.STDOUT);
           String appApkName = CloudTestsLauncher.uploadFile(bucketName, appApk).getName();
 
           if (matrixExecutionCancellator.isCancelled()) {
@@ -533,13 +560,6 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           }
           runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading test APK...", ""),
                                                                ProcessOutputTypes.STDOUT);
-          File testApk = findAppropriateApk(apkPaths, true);
-          if (testApk == null) {
-            CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading test APK",
-                                               "Failed to find a supported test APK format!\n" +
-                                               "There is no supported test APK among the existing ones\n\n" + listAllApks(apkPaths));
-            return;
-          }
           String testApkName = CloudTestsLauncher.uploadFile(bucketName, testApk).getName();
 
           if (matrixExecutionCancellator.isCancelled()) {
@@ -578,44 +598,44 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     }
   }
 
-  private String listAllApks(List<String> apkPaths) {
-    List<String> allApks = new ArrayList<String>();
-    for (String apkPath : apkPaths) {
-      allApks.addAll(Arrays.asList(new File(apkPath).list(new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String name) {
-          return name.endsWith(".apk");
-        }
-      })));
-    }
-    String apkList = "";
-    for (String apk : allApks) {
-      apkList += apk + "\n";
-    }
-    return apkList;
-  }
-
-  private File findAppropriateApk(List<String> apkPaths, final boolean isTestApk) {
-    List<File> allApkFiles = new ArrayList<File>();
-    for (String apkPath : apkPaths) {
-      allApkFiles.addAll(Arrays.asList(new File(apkPath).listFiles(new FilenameFilter() {
-        @Override
-        public boolean accept(File dir, String name) {
-          return name.endsWith(".apk") && (isTestApk ? name.contains("-test") : !name.contains("-test"));
-        }
-      })));
-    }
-    if (allApkFiles.size() == 0) {
-      return null;
-    }
-
-    return Collections.max(allApkFiles, new Comparator<File>() {
-      @Override
-      public int compare(File file1, File file2) {
-        return (int)(file1.lastModified() - file2.lastModified());
-      }
-    });
-  }
+  //private String listAllApks(List<String> apkPaths) {
+  //  List<String> allApks = new ArrayList<String>();
+  //  for (String apkPath : apkPaths) {
+  //    allApks.addAll(Arrays.asList(new File(apkPath).list(new FilenameFilter() {
+  //      @Override
+  //      public boolean accept(File dir, String name) {
+  //        return name.endsWith(".apk");
+  //      }
+  //    })));
+  //  }
+  //  String apkList = "";
+  //  for (String apk : allApks) {
+  //    apkList += apk + "\n";
+  //  }
+  //  return apkList;
+  //}
+  //
+  //private File findAppropriateApk(List<String> apkPaths, final boolean isTestApk) {
+  //  List<File> allApkFiles = new ArrayList<File>();
+  //  for (String apkPath : apkPaths) {
+  //    allApkFiles.addAll(Arrays.asList(new File(apkPath).listFiles(new FilenameFilter() {
+  //      @Override
+  //      public boolean accept(File dir, String name) {
+  //        return name.endsWith(".apk") && (isTestApk ? name.contains("-test") : !name.contains("-test"));
+  //      }
+  //    })));
+  //  }
+  //  if (allApkFiles.size() == 0) {
+  //    return null;
+  //  }
+  //
+  //  return Collections.max(allApkFiles, new Comparator<File>() {
+  //    @Override
+  //    public int compare(File file1, File file2) {
+  //      return (int)(file1.lastModified() - file2.lastModified());
+  //    }
+  //  });
+  //}
 
   //private File findAppropriateApk(String apkPath, String moduleName, final boolean isTestApk) {
   //  File apkFolder = new File(apkPath);
@@ -637,13 +657,13 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   //  return null;
   //}
 
-  private List<String> getApkPaths(AndroidRunningState runningState) {
-    String buildPath = runningState.getFacet().getModule().getModuleFile().getParent().getPath() + "/build";
-    List<String> apkPaths = new LinkedList<String>();
-    addPathIfExists(apkPaths, buildPath + "/apk/");
-    addPathIfExists(apkPaths, buildPath + "/outputs/apk/");
-    return apkPaths;
-  }
+  //private List<String> getApkPaths(AndroidRunningState runningState) {
+  //  String buildPath = runningState.getFacet().getModule().getModuleFile().getParent().getPath() + "/build";
+  //  List<String> apkPaths = new LinkedList<String>();
+  //  addPathIfExists(apkPaths, buildPath + "/apk/");
+  //  addPathIfExists(apkPaths, buildPath + "/outputs/apk/");
+  //  return apkPaths;
+  //}
 
   private void addPathIfExists(List<String> apkPaths, String apkPath) {
     if (new File(apkPath).exists()) {
