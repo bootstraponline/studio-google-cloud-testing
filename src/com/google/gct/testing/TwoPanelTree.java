@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing;
 
+import com.google.api.client.util.Maps;
 import com.google.common.base.Function;
 import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
@@ -34,11 +35,10 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeWillExpandListener;
 import javax.swing.plaf.basic.BasicTreeUI;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeCellRenderer;
-import javax.swing.tree.TreeNode;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -75,7 +75,9 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   private final JPanel bottomPanel;
 
   // Trees
-  private Map<CloudConfigurationDimension,CheckboxTree> treeMap;
+  private Map<CloudConfigurationDimension, CheckboxTree> treeMap;
+  private final Map<CheckboxTree, Boolean> userToggledTrees = Maps.newHashMap();
+  private boolean isAutoToggled = false;
   private JBList list;
 
   // The configuration which we need to keep in sync with this view
@@ -250,11 +252,27 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     CheckedTreeNode rootNode = new CheckedTreeNode(dimension); // Not really necessary since parent not visible
     CheckPolicy radioButtonsCheckPolicy = new CheckPolicy(false, false, false, false);
     // Create a new tree with root node for this dimension.
-    CheckboxTree tree = configuration.getKind() == SINGLE_DEVICE
-                        ? new CheckboxTree(new CheckboxTree.CheckboxTreeCellRenderer(){}, rootNode, radioButtonsCheckPolicy)
-                        : new CheckboxTree();
+    final CheckboxTree tree = configuration.getKind() == SINGLE_DEVICE
+                              ? new CheckboxTree(new CheckboxTree.CheckboxTreeCellRenderer(){}, rootNode, radioButtonsCheckPolicy)
+                              : new CheckboxTree();
     DefaultTreeModel treeModel = new DefaultTreeModel(rootNode);
     tree.setModel(treeModel);
+
+    tree.addTreeWillExpandListener(new TreeWillExpandListener() {
+      @Override
+      public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+        if (!isAutoToggled) {
+          userToggledTrees.put(tree, true);
+        }
+      }
+
+      @Override
+      public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+        if (!isAutoToggled) {
+          userToggledTrees.put(tree, true);
+        }
+      }
+    });
 
     // Tweak tree appearence
     tree.setRootVisible(false);
@@ -271,7 +289,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       } else {
         CheckedTreeNode groupNode = new CheckedTreeNode(group);
         rootNode.add(groupNode);
-        groupNode.setEnabled(dimension.isEditable());
+        groupNode.setEnabled(dimension.isEditable() && configuration.getKind() != SINGLE_DEVICE);
         for (CloudTestingType type : types) {
           addChildNode(groupNode, type, dimension);
         }
@@ -323,6 +341,27 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   @Override
   public void mouseClicked(MouseEvent e) {
+    CheckboxTree currentTree = treeMap.get(getSelectedDimension());
+
+    if (currentTree == null || currentTree.getSelectionPath() == null) {
+      return;
+    }
+
+    CheckedTreeNode selectedNode = (CheckedTreeNode) currentTree.getSelectionPath().getLastPathComponent();
+    if (!selectedNode.isEnabled() && selectedNode.getUserObject() instanceof CloudTestingTypeGroup) {
+      if (userToggledTrees.get(currentTree) != Boolean.TRUE) {
+        isAutoToggled = true;
+        TreePath selectedPath = new TreePath(selectedNode.getPath());
+        if (currentTree.isExpanded(selectedPath)) {
+          currentTree.collapsePath(selectedPath);
+        } else {
+          currentTree.expandPath(selectedPath);
+        }
+        isAutoToggled = false;
+      }
+    }
+    userToggledTrees.put(currentTree, false);
+
     updateState();
   }
 
@@ -392,7 +431,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     Object userObject = selectedNode.getUserObject();
     if (userObject instanceof CloudTestingType) {
       CloudTestingType clickedType = (CloudTestingType)userObject;
-      if (selectedNode.isEnabled() && (selectedNode.isChecked() || !isAnythingChecked(currentTree))) {
+      if (selectedNode.isEnabled() && (selectedNode.isChecked() || !isAnyLeafChecked(currentTree))) {
         uncheckAll(currentTree);
         selectedNode.setChecked(true);
         currentDimension.disableAll();
@@ -423,7 +462,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     }
   }
 
-  private boolean isAnythingChecked(CheckboxTree currentTree) {
+  private boolean isAnyLeafChecked(CheckboxTree currentTree) {
     TreeNode root = (TreeNode)currentTree.getModel().getRoot();
     for (int i = 0; i < root.getChildCount(); i++) {
       CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
