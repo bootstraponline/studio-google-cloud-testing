@@ -466,10 +466,11 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     TreeNode root = (TreeNode)currentTree.getModel().getRoot();
     for (int i = 0; i < root.getChildCount(); i++) {
       CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
-      if (firstLevelChild.isChecked()) {
-        return true;
-      }
-      if (!firstLevelChild.isLeaf()) {
+      if (firstLevelChild.isLeaf()) {
+        if (firstLevelChild.isChecked()) {
+          return true;
+        }
+      } else {
         for (int j = 0; j < firstLevelChild.getChildCount(); j++) {
           if (((CheckedTreeNode)firstLevelChild.getChildAt(j)).isChecked()) {
             return true;
