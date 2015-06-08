@@ -64,7 +64,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   // Contains a list of the roots
   private final JPanel leftPanel;
   // Contains the tree view
-  private final JPanel rightPanel;
+  private final JScrollPane rightScrollPane;
   // Contains the left and right panels
   private final Splitter mySplitter;
   // Panel to contain the splitter to display the border.
@@ -97,7 +97,8 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     mySplitter.getDivider().setBorder(BorderFactory.createLineBorder(UIUtil.getBorderColor()));
     mySplitter.setProportion(0.3f);
     leftPanel = new JPanel(new BorderLayout());
-    rightPanel = new JPanel(new BorderLayout());
+    rightScrollPane = new JScrollPane();
+    rightScrollPane.setBorder(BorderFactory.createEmptyBorder());
 
     FlowLayout flowLayout = new FlowLayout(FlowLayout.RIGHT);
     flowLayout.setHgap(15);
@@ -119,9 +120,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     }
 
     mySplitter.setFirstComponent(leftPanel);
-    JScrollPane scrollPane = new JScrollPane(rightPanel);
-    scrollPane.setBorder(null);
-    mySplitter.setSecondComponent(scrollPane);
+    mySplitter.setSecondComponent(rightScrollPane);
     mySplitterPanel.add(mySplitter, BorderLayout.CENTER);
     myPanel.add(mySplitterPanel, BorderLayout.CENTER);
 
@@ -321,13 +320,52 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   @Override
   public void valueChanged(ListSelectionEvent e) {
-    // Switch to the tree corresponding to the selected dimension
-    rightPanel.removeAll();
+    // Switch to the tree corresponding to the selected dimension.
     CheckboxTree currentTree = treeMap.get(getSelectedDimension());
-    rightPanel.add(currentTree, BorderLayout.CENTER);
-    rightPanel.updateUI();
+    rightScrollPane.setViewportView(currentTree);
+    rightScrollPane.updateUI();
+    prepareForViewing(currentTree);
     for (TwoPanelTreeSelectionListener listener : listeners) {
       listener.dimensionSelectionChanged(new TwoPanelTreeDimensionSelectionEvent(getSelectedDimension()));
+    }
+  }
+
+  private void prepareForViewing(CheckboxTree tree) {
+    TreeNode root = (TreeNode)tree.getModel().getRoot();
+    if (!isAnyLeafChecked(tree)) {
+      for (int i = 0; i < root.getChildCount(); i++) {
+        CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
+        if (firstLevelChild.getChildCount() > 0) {
+          // Expand the first group when there are no selected leafs.
+          tree.expandPath(new TreePath(firstLevelChild.getPath()));
+          return;
+        }
+      }
+    } else {
+      boolean hasEncounteredCheckedLeaf = false;
+      for (int i = 0; i < root.getChildCount(); i++) {
+        CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
+        if (firstLevelChild.isLeaf()) {
+          if (firstLevelChild.isChecked() && !hasEncounteredCheckedLeaf) {
+            hasEncounteredCheckedLeaf = true;
+            // Scroll to the first checked leaf.
+            tree.scrollPathToVisible(new TreePath(firstLevelChild.getPath()));
+          }
+        } else {
+          for (int j = 0; j < firstLevelChild.getChildCount(); j++) {
+            CheckedTreeNode secondLevelChild = (CheckedTreeNode)firstLevelChild.getChildAt(j);
+            if (secondLevelChild.isChecked()) {
+              tree.expandPath(new TreePath(firstLevelChild.getPath()));
+              if (!hasEncounteredCheckedLeaf) {
+                hasEncounteredCheckedLeaf = true;
+                // Scroll to the first checked leaf.
+                tree.scrollPathToVisible(new TreePath(secondLevelChild.getPath()));
+              }
+              break;
+            }
+          }
+        }
+      }
     }
   }
 
