@@ -462,7 +462,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     }
   }
 
-  private boolean isAnyLeafChecked(CheckboxTree currentTree) {
+  private static boolean isAnyLeafChecked(CheckboxTree currentTree) {
     TreeNode root = (TreeNode)currentTree.getModel().getRoot();
     for (int i = 0; i < root.getChildCount(); i++) {
       CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
@@ -568,6 +568,14 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row,
                                                   boolean hasFocus) {
+
+      if (tree instanceof CheckboxTree) {
+        if (!isAnyLeafChecked((CheckboxTree) tree)) {
+          // Avoid double rendering when a user tries to uncheck a radio button, which is not allowed anyway, but will cause
+          // weird text rendering quirks.
+          return this;
+        }
+      }
 
       invalidate();
       if (value instanceof CheckedTreeNode) {
