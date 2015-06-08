@@ -462,7 +462,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     }
   }
 
-  private static boolean isAnyLeafChecked(CheckboxTree currentTree) {
+  private boolean isAnyLeafChecked(CheckboxTree currentTree) {
     TreeNode root = (TreeNode)currentTree.getModel().getRoot();
     for (int i = 0; i < root.getChildCount(); i++) {
       CheckedTreeNode firstLevelChild = (CheckedTreeNode)root.getChildAt(i);
@@ -481,7 +481,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     return false;
   }
 
-  private static class CheckBoxRenderer extends CheckboxTree.CheckboxTreeCellRenderer {
+  private class CheckBoxRenderer extends CheckboxTree.CheckboxTreeCellRenderer {
     @Override
     public void customizeRenderer(final JTree tree, Object value, final boolean selected, final boolean expanded, final boolean leaf,
                                   final int row, final boolean hasFocus) {
@@ -527,7 +527,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     }
   }
 
-  private static class RadioButtonRenderer extends JPanel implements TreeCellRenderer {
+  private class RadioButtonRenderer extends JPanel implements TreeCellRenderer {
     private final ColoredTreeCellRenderer myTextRenderer;
     public final JRadioButton myRadioButton;
     private final boolean myUsePartialStatusForParentNodes;
@@ -570,7 +570,8 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
                                                   boolean hasFocus) {
 
       if (tree instanceof CheckboxTree) {
-        if (!isAnyLeafChecked((CheckboxTree) tree)) {
+        if (!isAnyLeafChecked((CheckboxTree) tree) && list.getSelectedIndex() != -1
+            && getSelectedDimension().getEnabledTypes().size() > 0) {
           // Avoid double rendering when a user tries to uncheck a radio button, which is not allowed anyway, but will cause
           // weird text rendering quirks.
           return this;
