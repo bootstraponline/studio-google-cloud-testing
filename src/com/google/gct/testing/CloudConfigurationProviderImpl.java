@@ -101,7 +101,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     };
 
 
-  private static String lastCloudProjectId;
+  private static volatile String lastCloudProjectId;
 
   private static final Set<GhostCloudDevice> ghostCloudDevices = Sets.newHashSet();
 
@@ -295,6 +295,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   public void launchCloudDevice(String configurationInstance) {
+    final String cloudProjectId = lastCloudProjectId;
     String[] dimensionValues = configurationInstance.split("-");
     Device device = new Device().setAndroidDevice(
       new AndroidDevice()
@@ -305,7 +306,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
     Device createdDevice = null;
     try {
-      createdDevice = getTest().projects().devices().create(lastCloudProjectId, device).execute();
+      createdDevice = getTest().projects().devices().create(cloudProjectId, device).execute();
     }
     catch (IOException e) {
       CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
@@ -329,7 +330,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     File dir = new File(sdkPath);
     try {
       while (System.currentTimeMillis() < stopTime) {
-        createdDevice = getTest().projects().devices().get(lastCloudProjectId, createdDevice.getId()).execute();
+        createdDevice = getTest().projects().devices().get(cloudProjectId, createdDevice.getId()).execute();
         System.out.println("Polling for device... (time: " + System.currentTimeMillis() + ", status: " + createdDevice.getState() + ")");
         if (createdDevice.getState().equals("DEVICE_ERROR")) {
           CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
