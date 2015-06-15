@@ -15,11 +15,13 @@
  */
 package com.google.gct.testing;
 
+import com.android.tools.idea.run.CloudConfiguration;
 import com.google.api.client.util.Maps;
 import com.google.common.base.Function;
 import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.CloudTestingTypeGroup;
+import com.google.gct.testing.dimension.DeviceDimension;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.CheckboxTree;
 import com.intellij.ui.CheckboxTreeBase.CheckPolicy;
@@ -282,6 +284,10 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     // Add each supported type to the tree.
     List<? extends CloudTestingTypeGroup> supportedGroups = dimension.getSupportedGroups();
     for (CloudTestingTypeGroup group : supportedGroups) {
+      if (configuration.getKind() == SINGLE_DEVICE && dimension instanceof DeviceDimension && group.getName().equals("PHYSICAL")) {
+        // Do not show physical devices since we cannot launch them in the user project (e.g., for debugging on a cloud device).
+        continue;
+      }
       List<CloudTestingType> types = group.getTypes();
       if (types.size() == 1 && !dimension.shouldBeAlwaysGrouped()) {
         addChildNode(rootNode, types.get(0), dimension);
