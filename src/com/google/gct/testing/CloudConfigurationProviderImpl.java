@@ -141,18 +141,24 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
   private List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, Kind kind) {
     if (kind == SINGLE_DEVICE) {
-      DeviceDimension.Device defaultDevice = DeviceDimension.getDefaultDevice();
-      ApiDimension.ApiLevel defaultApi = ApiDimension.getDefaultApi();
-      if (defaultDevice == null || defaultApi == null) {
+      CloudConfigurationImpl defaultConfiguration =
+        new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, "", SINGLE_DEVICE, AndroidIcons.Display, facet);
+      defaultConfiguration.apiDimension.enableDefault();
+      ImmutableList<CloudTestingType> enabledApis = defaultConfiguration.apiDimension.getEnabledTypes();
+      if (enabledApis.isEmpty()) {
         return ImmutableList.of();
       }
-      String defaultDeviceName = defaultDevice.getConfigurationDialogDisplayName() + " API " + defaultApi.getId();
-      CloudConfigurationImpl defaultConfiguration = new CloudConfigurationImpl(
-        CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, defaultDeviceName, SINGLE_DEVICE, AndroidIcons.Display, facet);
-      defaultConfiguration.deviceDimension.enable(defaultDevice);
-      defaultConfiguration.apiDimension.enable(defaultApi);
-      defaultConfiguration.languageDimension.enable(LanguageDimension.getDefaultLanguage());
-      defaultConfiguration.orientationDimension.enable(OrientationDimension.getDefaultOrientation());
+      defaultConfiguration.deviceDimension.enableDefault(enabledApis.get(0).getId());
+      defaultConfiguration.languageDimension.enableDefault();
+      defaultConfiguration.orientationDimension.enableDefault();
+
+      ImmutableList<CloudTestingType> enabledDevices = defaultConfiguration.deviceDimension.getEnabledTypes();
+      if (enabledDevices.isEmpty() || defaultConfiguration.languageDimension.getEnabledTypes().isEmpty()
+          || defaultConfiguration.orientationDimension.getEnabledTypes().isEmpty()) {
+        return ImmutableList.of();
+      }
+
+      defaultConfiguration.setName(enabledDevices.get(0).getConfigurationDialogDisplayName() + " API " + enabledApis.get(0).getId());
       defaultConfiguration.setNonEditable();
       return ImmutableList.of(defaultConfiguration);
     }

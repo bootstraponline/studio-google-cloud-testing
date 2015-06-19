@@ -81,6 +81,12 @@ public class OrientationDimension extends CloudConfigurationDimension {
     return defaultOrientation;
   }
 
+  public void enableDefault() {
+    if (getDefaultOrientation() != null) {
+      enable(defaultOrientation);
+    }
+  }
+
   @Override
   public String getDisplayName() {
     return DISPLAY_NAME;

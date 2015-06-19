@@ -59,7 +59,8 @@ public class DeviceDimension extends CloudConfigurationDimension {
         for (AndroidModel model : androidDeviceCatalog.getModels()) {
           Map<String, String> details = new HashMap<String, String>();
           details.put("Display", model.getScreenX() + "x" + model.getScreenY());
-          Device device = new Device(model.getId(), model.getName(), model.getManufacturer(), model.getForm(), details);
+          Device device =
+            new Device(model.getId(), model.getName(), model.getManufacturer(), model.getForm(), details, model.getSupportedVersionIds());
           fullDomainBuilder.add(device);
           List<String> tags = model.getTags();
           if (tags != null && tags.contains("default")) {
@@ -80,11 +81,28 @@ public class DeviceDimension extends CloudConfigurationDimension {
     return FULL_DOMAIN == null || FULL_DOMAIN.isEmpty();
   }
 
-  public static Device getDefaultDevice() {
+  private static Device getDefaultDevice() {
     if (defaultDevice == null) {
       getFullDomain();
     }
     return defaultDevice;
+  }
+
+  public void enableDefault(String minSupportedApiId) {
+    if (getDefaultDevice() == null) {
+      return;
+    }
+    if (defaultDevice.supportedVersionIds.contains(minSupportedApiId)) {
+      enable(defaultDevice);
+    } else {
+      for (CloudTestingType supportedTestingType : getAppSupportedDomain()) {
+        Device supportedDevice = (Device) supportedTestingType;
+        if (supportedDevice.isVirtual() && supportedDevice.supportedVersionIds.contains(minSupportedApiId)) {
+          enable(supportedDevice);
+          return;
+        }
+      }
+    }
   }
 
   @Override
@@ -113,13 +131,15 @@ public class DeviceDimension extends CloudConfigurationDimension {
     private final String name;
     private final String manufacturer;
     private final String form;
+    private final List<String> supportedVersionIds;
 
-    public Device(String id, String name, String manufacturer, String form, Map<String, String> details) {
+    public Device(String id, String name, String manufacturer, String form, Map<String, String> details, List<String> supportedVersionIds) {
       this.id = id;
       this.manufacturer = manufacturer;
       this.name = name;
       this.form = form;
       this.details = details;
+      this.supportedVersionIds = supportedVersionIds;
     }
 
     @Override

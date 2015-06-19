@@ -154,6 +154,18 @@ public class LanguageDimension extends CloudConfigurationDimension {
     return defaultLanguage;
   }
 
+  public void enableDefault() {
+    if (getDefaultLanguage() == null) {
+      return;
+    }
+    List<? extends CloudTestingType> appSupportedDomain = getAppSupportedDomain();
+    if (appSupportedDomain.contains(defaultLanguage)) {
+      enable(defaultLanguage);
+    } else if (!appSupportedDomain.isEmpty()) {
+      enable(appSupportedDomain.get(0));
+    }
+  }
+
   public static Language getLanguage(final String locale) {
     try {
       return Iterables.find(getFullDomain(), new Predicate<Language>() {

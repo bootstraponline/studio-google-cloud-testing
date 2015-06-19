@@ -136,11 +136,23 @@ public class ApiDimension extends CloudConfigurationDimension {
     return FULL_DOMAIN == null || FULL_DOMAIN.isEmpty();
   }
 
-  public static ApiLevel getDefaultApi() {
+  private static ApiLevel getDefaultApi() {
     if (defaultApi == null) {
       getFullDomain();
     }
     return defaultApi;
+  }
+
+  public void enableDefault() {
+    if (getDefaultApi() == null) {
+      return;
+    }
+    List<? extends CloudTestingType> appSupportedDomain = getAppSupportedDomain();
+    if (appSupportedDomain.contains(defaultApi)) {
+      enable(defaultApi);
+    } else if (!appSupportedDomain.isEmpty()) {
+      enable(appSupportedDomain.get(0));
+    }
   }
 
   @Override

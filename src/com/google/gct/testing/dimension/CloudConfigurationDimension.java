@@ -93,8 +93,9 @@ public abstract class CloudConfigurationDimension {
   public void enable(CloudTestingType... types) {
     checkIsEditable();
     for (CloudTestingType type : types) {
-      validateType(type);
-      enableType(type);
+      if (getSupportedDomain().contains(type)) {
+        enableType(type);
+      }
     }
   }
 
@@ -102,8 +103,7 @@ public abstract class CloudConfigurationDimension {
     checkIsEditable();
     Set<String> idsSet = Sets.newHashSet(ids);
     for (CloudTestingType type : types) {
-      if (idsSet.contains(type.getId())) {
-        validateType(type);
+      if (getSupportedDomain().contains(type) && idsSet.contains(type.getId())) {
         enableType(type);
       }
     }
@@ -112,14 +112,15 @@ public abstract class CloudConfigurationDimension {
   public void disable(CloudTestingType... types) {
     checkIsEditable();
     for (CloudTestingType type : types) {
-      validateType(type);
       enabledTypes.remove(type);
     }
   }
 
   public void setEnabled(CloudTestingType type, boolean isEnabled) {
+    if (!getSupportedDomain().contains(type)) {
+      return;
+    }
     checkIsEditable();
-    validateType(type);
     if (isEnabled) {
       enableType(type);
     } else {
@@ -153,12 +154,6 @@ public abstract class CloudConfigurationDimension {
 
   public ImmutableList<CloudTestingType> getEnabledTypes() {
     return ImmutableList.copyOf(enabledTypes);
-  }
-
-  private void validateType(CloudTestingType type) {
-    if (!getSupportedDomain().contains(type)) {
-      throw new IllegalArgumentException("Type " + type + " is not supported in domain: " + getSupportedDomain());
-    }
   }
 
   public boolean isEditable() {

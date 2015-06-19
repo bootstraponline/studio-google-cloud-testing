@@ -615,7 +615,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
       if (tree instanceof CheckboxTree) {
         if (!isAnyLeafChecked((CheckboxTree) tree) && list.getSelectedIndex() != -1
-            && getSelectedDimension().getEnabledTypes().size() > 0) {
+            && !getSelectedDimension().getEnabledTypes().isEmpty()) {
           // Avoid double rendering when a user tries to uncheck a radio button, which is not allowed anyway, but will cause
           // weird text rendering quirks.
           return this;
@@ -715,7 +715,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       renderer.setText(dimension.getDisplayName() +
                        " (" + dimension.getEnabledTypes().size() + "/" + dimension.getSupportedDomain().size() + ")");
 
-      if (dimension.getEnabledTypes().size() < 1) {
+      if (dimension.getEnabledTypes().isEmpty()) {
         renderer.setForeground(JBColor.RED);
         renderer.setFont(renderer.getFont().deriveFont(Font.BOLD));
       }
