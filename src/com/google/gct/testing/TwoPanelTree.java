@@ -15,13 +15,16 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.CloudConfiguration;
 import com.google.api.client.util.Maps;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.CloudTestingTypeGroup;
 import com.google.gct.testing.dimension.DeviceDimension;
+import com.google.gct.testing.dimension.DeviceDimension.Device;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.CheckboxTree;
 import com.intellij.ui.CheckboxTreeBase.CheckPolicy;
@@ -701,7 +704,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   }
 
 
-  private static class EnhancedCellRenderer implements ListCellRenderer {
+  private class EnhancedCellRenderer implements ListCellRenderer {
     protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 
     public Component getListCellRendererComponent(JList list, Object value, int index,
@@ -712,8 +715,15 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       CloudConfigurationDimension dimension = (CloudConfigurationDimension) value;
 
       renderer.setIcon(dimension.getIcon());
-      renderer.setText(dimension.getDisplayName() +
-                       " (" + dimension.getEnabledTypes().size() + "/" + dimension.getSupportedDomain().size() + ")");
+
+      int totalCount = 0;
+      for (CloudTestingType testingType : dimension.getSupportedDomain()) {
+        if (configuration.getKind() != SINGLE_DEVICE || !(testingType instanceof Device) || ((Device)testingType).isVirtual()) {
+          totalCount++;
+        }
+      }
+
+      renderer.setText(dimension.getDisplayName() + " (" + dimension.getEnabledTypes().size() + "/" + totalCount + ")");
 
       if (dimension.getEnabledTypes().isEmpty()) {
         renderer.setForeground(JBColor.RED);
