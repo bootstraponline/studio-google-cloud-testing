@@ -107,13 +107,13 @@ public class CloudAuthenticator {
     return toolresults;
   }
 
-  private static void prepareCredential() {
+  public static void prepareCredential() {
     if (httpTransport == null) {
       httpTransport = createHttpTransport();
     }
     if (credential == null) {
       if (!authorize()) {
-        throw new RuntimeException("Failed to authorize in Google Cloud!");
+        throw new RuntimeException("Failed to authorize to Google Cloud!");
       }
       credential = GoogleLogin.getInstance().getCredential();
     }

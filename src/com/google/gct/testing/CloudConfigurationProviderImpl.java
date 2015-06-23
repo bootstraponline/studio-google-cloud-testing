@@ -126,6 +126,11 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   @NotNull
   @Override
   public List<? extends CloudConfiguration> getCloudConfigurations(@NotNull AndroidFacet facet, @NotNull final Kind configurationKind) {
+    try {
+      CloudAuthenticator.prepareCredential();
+    } catch(Exception e) {
+      return Lists.newArrayList();
+    }
 
     List<CloudPersistentConfiguration> cloudPersistentConfigurations = Lists.newArrayList(Iterables.filter(
       CloudCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myCloudPersistentConfigurations,
@@ -179,6 +184,12 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
   @NotNull
   public List<? extends CloudConfiguration> getAllCloudConfigurations(@NotNull AndroidFacet facet) {
+    try {
+      CloudAuthenticator.prepareCredential();
+    } catch(Exception e) {
+      return Lists.newArrayList();
+    }
+
     List<CloudPersistentConfiguration> cloudPersistentConfigurations =
       CloudCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myCloudPersistentConfigurations;
     return Lists.newArrayList(Iterables.concat(deserializeConfigurations(cloudPersistentConfigurations, true, facet),
