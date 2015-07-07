@@ -242,14 +242,15 @@ public class CloudResultsLoader {
     }
     String testExecutionState = testExecution.getState();
     if (testExecutionState.equals("UNSUPPORTED_ENVIRONMENT")) {
-      handleTriggeringError(results, encodedConfigurationInstance,
-                            "Skipped triggering the test execution: Incompatible API level for requested model");
+      handleTriggeringError(results, encodedConfigurationInstance, "Incompatible device/OS combination");
     } else if (testExecutionState.equals("INCOMPATIBLE_ENVIRONMENT")) {
       // It is not expected to happen for Android Studio client.
-      handleTriggeringError(results, encodedConfigurationInstance, "The given APK is not compatible with this configuration");
+      handleTriggeringError(results, encodedConfigurationInstance, "Application does not support the specified OS version");
     } else if (testExecutionState.equals("INVALID")) {
       // It is not expected to happen for Android Studio client.
       handleTriggeringError(results, encodedConfigurationInstance, "The provided APK is invalid");
+    } else if (testExecutionState.equals("INCOMPATIBLE_ARCHITECTURE")) {
+      handleTriggeringError(results, encodedConfigurationInstance, "Application does not support the specified device architecture");
     } else if (!testExecutionState.equals("PENDING")) {
       if (testExecutionState.equals("ERROR")) {
         String newProgress = INFRASTRUCTURE_FAILURE_PREFIX + " " + testExecution.getTestDetails().getErrorMessage();
@@ -275,8 +276,8 @@ public class CloudResultsLoader {
     }
   }
 
-  private void handleTriggeringError(Map<String, ConfigurationResult> results, String encodedConfigurationInstance, String newProgress) {
-    reportNewProgress(encodedConfigurationInstance, newProgress);
+  private void handleTriggeringError(Map<String, ConfigurationResult> results, String encodedConfigurationInstance, String errorMessage) {
+    reportNewProgress(encodedConfigurationInstance, "Skipped triggering the test execution: " + errorMessage);
     ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
     result.setTriggeringError(true);
     finishedConfigurationInstances.add(encodedConfigurationInstance);
