@@ -538,14 +538,14 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
             return;
           }
 
-          IdeaAndroidProject ideaAndroidProject = runningState.getFacet().getIdeaAndroidProject();
-          if (ideaAndroidProject == null) {
+          IdeaAndroidProject androidModel = runningState.getFacet().getAndroidModel();
+          if (androidModel == null) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
                                                "Your project is not an idea android project!\n");
             return;
           }
 
-          AndroidArtifact mainArtifact = ideaAndroidProject.getSelectedVariant().getMainArtifact();
+          AndroidArtifact mainArtifact = androidModel.getSelectedVariant().getMainArtifact();
           List<AndroidArtifactOutput> mainOutputs = Lists.newArrayList(mainArtifact.getOutputs());
           if (mainOutputs.isEmpty()) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error finding app APK",
@@ -554,7 +554,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           }
           File appApk = mainOutputs.get(0).getMainOutputFile().getOutputFile();
 
-          BaseArtifact testArtifactInfo = ideaAndroidProject.findSelectedTestArtifactInSelectedVariant();
+          BaseArtifact testArtifactInfo = androidModel.findSelectedTestArtifactInSelectedVariant();
           if (!(testArtifactInfo instanceof AndroidArtifact)) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
                                                "Your test artifact is not an android artifact!\n");
