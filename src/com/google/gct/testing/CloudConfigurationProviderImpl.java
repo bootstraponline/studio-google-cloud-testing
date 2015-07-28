@@ -24,8 +24,8 @@ import com.android.tools.idea.run.CloudConfiguration;
 import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.android.tools.idea.run.CloudConfigurationProvider;
 import com.android.tools.idea.sdk.IdeSdks;
-//import com.glavsoft.viewer.Viewer;
 import com.android.tools.idea.stats.UsageTracker;
+import com.glavsoft.viewer.Viewer;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
@@ -340,6 +340,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     synchronized (ghostCloudDevices) {
       ghostCloudDevices.add(ghostCloudDevice);
     }
+    String configurationName =
+      ConfigurationInstance.parseFromEncodedString(ghostCloudDevice.getEncodedConfigurationInstance()).getResultsViewerDisplayString();
     final long POLLING_INTERVAL = 10 * 1000; // 10 seconds
     final long INITIAL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
     long stopTime = System.currentTimeMillis() + INITIAL_TIMEOUT;
@@ -379,8 +381,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, dir);
           unlock.waitFor();
           // Open the VNC window for the cloud device.
-          //String[] viewerArgs = new String[]{"-port=" + vncPort, "-host=" + ipAddress, "-password=" + vncPassword, "-fullScreen=false"};
-          //Viewer.main(viewerArgs);
+          String[] viewerArgs = new String[]{"-port=" + vncPort, "-host=" + ipAddress, "-password=" + vncPassword, "-fullScreen=false"};
+          Viewer.showViewer(viewerArgs, configurationName);
           return;
         }
         Thread.sleep(POLLING_INTERVAL);

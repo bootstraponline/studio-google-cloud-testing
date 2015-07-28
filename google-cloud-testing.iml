@@ -60,5 +60,6 @@
     </orderEntry>
     <orderEntry type="module" module-name="google-cloud-tools-core-as" />
     <orderEntry type="module" module-name="google-login-as" />
+    <orderEntry type="library" name="tightvnc" level="project" />
   </component>
 </module>
