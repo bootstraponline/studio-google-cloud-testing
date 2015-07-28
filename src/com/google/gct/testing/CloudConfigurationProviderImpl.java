@@ -399,7 +399,11 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           synchronized (ghostCloudDevices) {
             ghostCloudDevices.remove(ghostCloudDevice);
           }
-          blankVncViewer.closeWindow();
+          try { // Use try just in case something goes wrong.
+            blankVncViewer.closeWindow();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
           // Make sure the device is unlocked.
           Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, workingDir);
           unlock.waitFor();

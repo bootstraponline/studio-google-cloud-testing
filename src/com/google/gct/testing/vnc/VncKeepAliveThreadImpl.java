@@ -32,6 +32,7 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
   private final String deviceAddress;
   private final File workingDir;
   private volatile boolean hasCrashed = false;
+  private Viewer currentViewer;
 
 
   public static void startVnc(String[] args, String configurationName, String cloudProjectId, String cloudDeviceId, String deviceAddress,
@@ -55,31 +56,56 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
 
   @Override
   public void run() {
-    SwingUtilities.invokeLater(new Viewer(this, parser, configurationName));
+    try {
+      currentViewer = new Viewer(this, parser, configurationName);
+      SwingUtilities.invokeLater(currentViewer);
 
-    while (!Thread.currentThread().isInterrupted() && deviceIsReady()) {
-      try {
-        getTest().projects().devices().keepalive(cloudProjectId, cloudDeviceId).execute();
-      } catch (Exception e) {
-        e.printStackTrace();
+      while (!Thread.currentThread().isInterrupted() && deviceIsReady()) {
+        try {
+          getTest().projects().devices().keepalive(cloudProjectId, cloudDeviceId).execute();
+        }
+        catch (Exception e) {
+          e.printStackTrace();
+        }
+        // Restart the viewer if it accidentally crashed.
+        if (hasCrashed) {
+          hasCrashed = false;
+          System.out.println("Restarting TightVNC Viewer");
+          currentViewer = new Viewer(this, parser, configurationName);
+          SwingUtilities.invokeLater(currentViewer);
+        }
+        try {
+          Thread.sleep(1 * 1000); // 1 second
+        }
+        catch (InterruptedException e) {
+          break;
+        }
       }
-      // Restart the viewer if it accidentally crashed.
-      if (hasCrashed) {
-        hasCrashed = false;
-        System.out.println("Restarting TightVNC Viewer");
-        SwingUtilities.invokeLater(new Viewer(this, parser, configurationName));
-      }
-      try {
-        Thread.sleep(1 * 1000); // 1 second
-      } catch (InterruptedException e) {
-        break;
-      }
+    } finally {
+      tearDown();
     }
+  }
+
+  private void tearDown() {
+    // Perform tearing down in separate try blocks to make sure that every step gets a chance to be executed.
+    try {
+      // Disconnect adb from the deleted device (otherwise, it will keep showing the stale cloud device).
+      Runtime.getRuntime().exec("./adb disconnect " + deviceAddress, null, workingDir);
+    } catch (Exception exception) {
+      exception.printStackTrace();
+    }
+
     try {
       // Delete the cloud device after the viewer is closed.
       getTest().projects().devices().delete(cloudProjectId, cloudDeviceId).execute();
-      // Disconnect adb from the deleted device (otherwise, it will keep showing the stale cloud device).
-      Runtime.getRuntime().exec("./adb disconnect " + deviceAddress, null, workingDir);
+    } catch (Exception exception) {
+      exception.printStackTrace();
+    }
+
+    try {
+      //Stop the viewer in case we are tearing down because of the device not being ready. Do it as the last step since it can preclude
+      //other steps from being executed if the viewer was closed manually.
+      currentViewer.stopViewer();
     } catch (Exception exception) {
       exception.printStackTrace();
     }
