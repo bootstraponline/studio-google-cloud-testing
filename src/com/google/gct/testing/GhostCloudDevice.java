@@ -316,6 +316,21 @@ public class GhostCloudDevice implements IDevice {
   }
 
   @Override
+  public int getApiLevel() {
+    String apiString = device.getAndroidDevice().getAndroidVersionId();
+    if (apiString == null) {
+      throw new IllegalStateException("Unexpected error: Device does not have a build API level.");
+    }
+
+    try {
+      return Integer.parseInt(apiString);
+    }
+    catch (NumberFormatException e) {
+      throw new IllegalStateException("Unexpected error: Build API level '" + apiString + "' is not an integer: ");
+    }
+  }
+
+  @Override
   public String getName() {
     return "Cloud device: " + device.getId();
   }
