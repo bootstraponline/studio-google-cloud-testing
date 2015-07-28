@@ -25,7 +25,6 @@ import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.android.tools.idea.run.CloudConfigurationProvider;
 import com.android.tools.idea.sdk.IdeSdks;
 import com.android.tools.idea.stats.UsageTracker;
-import com.glavsoft.viewer.Viewer;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
@@ -50,6 +49,7 @@ import com.google.gct.testing.results.GoogleCloudTestingResultParser;
 import com.google.gct.testing.util.CloudTestingTracking;
 import com.google.gct.testing.vnc.BlankVncViewer;
 import com.google.gct.testing.vnc.BlankVncViewerCallback;
+import com.google.gct.testing.vnc.VncKeepAliveThreadImpl;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -362,7 +362,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     final long INITIAL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
     long stopTime = System.currentTimeMillis() + INITIAL_TIMEOUT;
     String sdkPath = IdeSdks.getAndroidSdkPath().getAbsolutePath() + "/platform-tools";
-    File dir = new File(sdkPath);
+    File workingDir = new File(sdkPath);
     try {
       while (System.currentTimeMillis() < stopTime) {
         synchronized (ghostCloudDevices) {
@@ -391,7 +391,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           String deviceAddress = ipAddress + ":" + adbPort;
           System.out.println("Device ready with IP address:port " + deviceAddress);
           Runtime rt = Runtime.getRuntime();
-          Process connect = rt.exec("./adb connect " + deviceAddress, null, dir);
+          Process connect = rt.exec("./adb connect " + deviceAddress, null, workingDir);
           connect.waitFor();
           serialNumberToConfigurationInstance.put(deviceAddress, configurationInstance);
           // Do not wait for "finally" to remove the ghost device
@@ -401,11 +401,11 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           }
           blankVncViewer.closeWindow();
           // Make sure the device is unlocked.
-          Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, dir);
+          Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, workingDir);
           unlock.waitFor();
           // Open the VNC window for the cloud device.
           String[] viewerArgs = new String[]{"-port=" + vncPort, "-host=" + ipAddress, "-password=" + vncPassword, "-fullScreen=false"};
-          Viewer.showViewer(viewerArgs, configurationName);
+          VncKeepAliveThreadImpl.startVnc(viewerArgs, configurationName, cloudProjectId, deviceId, deviceAddress, workingDir);
           return;
         }
         Thread.sleep(POLLING_INTERVAL);
