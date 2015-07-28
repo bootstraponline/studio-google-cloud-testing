@@ -23,11 +23,13 @@ import java.awt.event.WindowListener;
 
 public class BlankVncViewer extends JApplet implements Runnable {
   private final String myConfigurationName;
+  private final BlankVncViewerCallback myBlankVncViewerCallback;
   private JFrame blankFrame;
   private WindowListener exitListener;
 
-  public BlankVncViewer(String configurationName) {
+  public BlankVncViewer(String configurationName, BlankVncViewerCallback blankVncViewerCallback) {
     myConfigurationName = configurationName;
+    myBlankVncViewerCallback = blankVncViewerCallback;
     exitListener = new WindowAdapter() {
 
       @Override
@@ -38,6 +40,7 @@ public class BlankVncViewer extends JApplet implements Runnable {
                                                    null, null);
         if (confirm == 0) {
           System.out.println("Exiting blank VNC Viewer");
+          myBlankVncViewerCallback.viewerClosed();
           blankFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         }
       }
@@ -64,8 +67,8 @@ public class BlankVncViewer extends JApplet implements Runnable {
     blankFrame.dispatchEvent(new WindowEvent(blankFrame, WindowEvent.WINDOW_CLOSING));
   }
 
-  public static BlankVncViewer showBlankVncViewer(String configurationName) {
-    BlankVncViewer blankViewer = new BlankVncViewer(configurationName);
+  public static BlankVncViewer showBlankVncViewer(String configurationName, BlankVncViewerCallback blankVncViewerCallback) {
+    BlankVncViewer blankViewer = new BlankVncViewer(configurationName, blankVncViewerCallback);
     SwingUtilities.invokeLater(blankViewer);
     return blankViewer;
   }

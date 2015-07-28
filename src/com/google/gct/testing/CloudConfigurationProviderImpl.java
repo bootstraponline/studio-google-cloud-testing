@@ -49,6 +49,7 @@ import com.google.gct.testing.results.GoogleCloudTestResultsConnectionUtil;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
 import com.google.gct.testing.util.CloudTestingTracking;
 import com.google.gct.testing.vnc.BlankVncViewer;
+import com.google.gct.testing.vnc.BlankVncViewerCallback;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -337,13 +338,26 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                                                                                  "The returned cloud device is null\n\n");
     }
 
-    GhostCloudDevice ghostCloudDevice = new GhostCloudDevice(createdDevice);
+    final String deviceId = createdDevice.getId();
+    final GhostCloudDevice ghostCloudDevice = new GhostCloudDevice(createdDevice);
     synchronized (ghostCloudDevices) {
       ghostCloudDevices.add(ghostCloudDevice);
     }
     String configurationName =
       ConfigurationInstance.parseFromEncodedString(ghostCloudDevice.getEncodedConfigurationInstance()).getResultsViewerDisplayString();
-    BlankVncViewer blankVncViewer = BlankVncViewer.showBlankVncViewer(configurationName);
+    BlankVncViewer blankVncViewer = BlankVncViewer.showBlankVncViewer(configurationName, new BlankVncViewerCallback() {
+      @Override
+      public void viewerClosed() {
+        try {
+          getTest().projects().devices().delete(cloudProjectId, deviceId).execute();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        synchronized (ghostCloudDevices) {
+          ghostCloudDevices.remove(ghostCloudDevice);
+        }
+      }
+    });
     final long POLLING_INTERVAL = 10 * 1000; // 10 seconds
     final long INITIAL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
     long stopTime = System.currentTimeMillis() + INITIAL_TIMEOUT;
@@ -351,7 +365,13 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     File dir = new File(sdkPath);
     try {
       while (System.currentTimeMillis() < stopTime) {
-        createdDevice = getTest().projects().devices().get(cloudProjectId, createdDevice.getId()).execute();
+        synchronized (ghostCloudDevices) {
+          if (!ghostCloudDevices.contains(ghostCloudDevice)) {
+            // Blank VNC Viewer was closed, so stop waiting for the device.
+            return;
+          }
+        }
+        createdDevice = getTest().projects().devices().get(cloudProjectId, deviceId).execute();
         System.out.println("Polling for device... (time: " + System.currentTimeMillis() + ", status: " + createdDevice.getState() + ")");
         if (createdDevice.getState().equals("DEVICE_ERROR")) {
           CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
@@ -392,11 +412,11 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       }
       CloudTestingUtils.showErrorMessage(null, "Timed out connecting to a cloud device", "Timed out connecting to a cloud device!\n" +
                                                                                          "Timed out connecting to a cloud device:\n\n" +
-                                                                                         createdDevice.getId());
+                                                                                         deviceId);
     } catch (IOException e) {
-      showCloudDevicePollingError(e, createdDevice.getId());
+      showCloudDevicePollingError(e, deviceId);
     } catch (InterruptedException e) {
-      showCloudDevicePollingError(e, createdDevice.getId());
+      showCloudDevicePollingError(e, deviceId);
     } finally {
       synchronized (ghostCloudDevices) {
         ghostCloudDevices.remove(ghostCloudDevice);
