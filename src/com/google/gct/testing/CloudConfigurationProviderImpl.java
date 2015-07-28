@@ -48,6 +48,7 @@ import com.google.gct.testing.results.GoogleCloudTestListener;
 import com.google.gct.testing.results.GoogleCloudTestResultsConnectionUtil;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
 import com.google.gct.testing.util.CloudTestingTracking;
+import com.google.gct.testing.vnc.BlankVncViewer;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -342,6 +343,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     }
     String configurationName =
       ConfigurationInstance.parseFromEncodedString(ghostCloudDevice.getEncodedConfigurationInstance()).getResultsViewerDisplayString();
+    BlankVncViewer blankVncViewer = BlankVncViewer.showBlankVncViewer(configurationName);
     final long POLLING_INTERVAL = 10 * 1000; // 10 seconds
     final long INITIAL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
     long stopTime = System.currentTimeMillis() + INITIAL_TIMEOUT;
@@ -377,6 +379,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           synchronized (ghostCloudDevices) {
             ghostCloudDevices.remove(ghostCloudDevice);
           }
+          blankVncViewer.closeWindow();
           // Make sure the device is unlocked.
           Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, dir);
           unlock.waitFor();
