@@ -109,6 +109,30 @@ public class CloudTestingUtils {
     }
   }
 
+  /**
+   * Returns {@code false} iff the Java version is too old for launching cloud devices (i.e., < 1.8).
+   *
+   */
+  public static boolean checkJavaVersion() {
+    String javaVersion = System.getProperty("java.version");
+    String[] versionParts = javaVersion.split("\\.");
+    if (Double.parseDouble(versionParts[0] + "." + versionParts[1]) < 1.8) {
+      final String message = "<html>You are using Java <b>" + javaVersion + "</b>.<br>"
+                             + "Due to security reasons, to launch cloud devices, you need to upgrade to Java <b>1.8</b> or higher.<br>"
+                             + "You can download the latest Java release from <a href='https://java.com'>here</a>.</html>";
+      final Project project = null;
+      SwingUtilities.invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          Messages
+            .showDialog(project, message, "Your Java is too old for launching cloud devices!", new String[]{Messages.CANCEL_BUTTON}, 0, null);
+        }
+      });
+      return false;
+    }
+    return true;
+  }
+
   public static void showBalloonMessage(final Project project, final String message, final MessageType type, final int delaySeconds) {
     SwingUtilities.invokeLater(new Runnable() {
       @Override

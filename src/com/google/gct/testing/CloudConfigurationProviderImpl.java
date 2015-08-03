@@ -74,6 +74,7 @@ import java.util.*;
 
 import static com.android.tools.idea.run.CloudConfiguration.Kind.MATRIX;
 import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
+import static com.google.gct.testing.CloudTestingUtils.checkJavaVersion;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
@@ -314,6 +315,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   public void launchCloudDevice(String configurationInstance) {
+    if (!checkJavaVersion()) {
+      return;
+    }
     final String cloudProjectId = lastCloudProjectId;
     String[] dimensionValues = configurationInstance.split("-");
     Device device = new Device().setAndroidDevice(
