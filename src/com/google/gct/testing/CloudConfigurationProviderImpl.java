@@ -571,7 +571,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
             return;
           }
 
-          IdeaAndroidProject androidModel = runningState.getFacet().getAndroidModel();
+          // TODO: Resolve direct IdeaAndroidProject dep (b/22596984)
+          IdeaAndroidProject androidModel = IdeaAndroidProject.getGradleModel(runningState.getFacet());
           if (androidModel == null) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
                                                "Your project is not an idea android project!\n");
