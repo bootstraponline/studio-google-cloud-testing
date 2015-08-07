@@ -184,7 +184,7 @@ public class CloudResultsLoader {
       loadResultFiles(results);
       loadScreenshots(results);
     } catch (Exception e) {
-      throw new RuntimeException("Failed updating the results from the bucket!", e);
+      System.out.println("Failed updating the results from the bucket: " + e.getMessage());
     }
     return newDataReceived;
   }
@@ -371,9 +371,9 @@ public class CloudResultsLoader {
     try {
       Storage.Objects.List objects = getStorage().objects().list(bucketName);
       storageObjects = objects.execute().getItems();
-    }
-    catch (IOException e) {
-      throw new RuntimeException("Failed to retrieve bucket objects: ", e);
+    } catch (Exception e) {
+      System.out.println("Failed to retrieve bucket objects: " + e.getMessage());
+      return;
     }
 
     if (storageObjects == null) {
