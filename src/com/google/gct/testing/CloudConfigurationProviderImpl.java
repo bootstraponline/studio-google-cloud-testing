@@ -19,7 +19,7 @@ import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.BaseArtifact;
 import com.android.ddmlib.IDevice;
-import com.android.tools.idea.gradle.IdeaAndroidProject;
+import com.android.tools.idea.gradle.AndroidGradleModel;
 import com.android.tools.idea.run.CloudConfiguration;
 import com.android.tools.idea.run.CloudConfiguration.Kind;
 import com.android.tools.idea.run.CloudConfigurationProvider;
@@ -571,8 +571,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
             return;
           }
 
-          // TODO: Resolve direct IdeaAndroidProject dep (b/22596984)
-          IdeaAndroidProject androidModel = IdeaAndroidProject.getGradleModel(runningState.getFacet());
+          // TODO: Resolve direct AndroidGradleModel dep (b/22596984)
+          AndroidGradleModel androidModel = AndroidGradleModel.get(runningState.getFacet());
           if (androidModel == null) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
                                                "Your project is not an idea android project!\n");
