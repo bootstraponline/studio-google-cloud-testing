@@ -91,6 +91,8 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   // Listeners
   List<TwoPanelTreeSelectionListener> listeners = new LinkedList<TwoPanelTreeSelectionListener>();
   private JLabel myConfigurationCountLabel = new JLabel();
+  private JLabel mySelectAllButton;
+  private JLabel mySelectNoneButton;
 
   public TwoPanelTree(CloudConfigurationImpl configuration) {
     this.configuration = configuration;
@@ -184,7 +186,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   }
 
   private void populateTopPanel() {
-    Component add = topPanel.add(makeTextButton("Select all", new MouseAdapter() {
+    mySelectAllButton = makeTextButton("Select all", new MouseAdapter() {
       public void mouseClicked(final MouseEvent e) {
         if (getSelectedDimension().isEditable()) {
           getSelectedDimension().enableAll();
@@ -197,8 +199,10 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
           });
         }
       }
-    }));
-    topPanel.add(makeTextButton("Select none", new MouseAdapter() {
+    });
+    topPanel.add(mySelectAllButton);
+
+    mySelectNoneButton = makeTextButton("Select none", new MouseAdapter() {
       public void mouseClicked(final MouseEvent e) {
         if (getSelectedDimension().isEditable()) {
           getSelectedDimension().disableAll();
@@ -211,7 +215,8 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
           });
         }
       }
-    }));
+    });
+    topPanel.add(mySelectNoneButton);
   }
 
   private void updateCurrentCheckboxTree(Function<CheckedTreeNode, Void> updateFunction) {
@@ -330,12 +335,17 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
   @Override
   public void valueChanged(ListSelectionEvent e) {
     // Switch to the tree corresponding to the selected dimension.
-    CheckboxTree currentTree = treeMap.get(getSelectedDimension());
+    CloudConfigurationDimension selectedDimension = getSelectedDimension();
+    CheckboxTree currentTree = treeMap.get(selectedDimension);
     rightScrollPane.setViewportView(currentTree);
     rightScrollPane.updateUI();
     prepareForViewing(currentTree);
+    if (configuration.getKind() != SINGLE_DEVICE) {
+      mySelectAllButton.setVisible(selectedDimension.isEditable());
+      mySelectNoneButton.setVisible(selectedDimension.isEditable());
+    }
     for (TwoPanelTreeSelectionListener listener : listeners) {
-      listener.dimensionSelectionChanged(new TwoPanelTreeDimensionSelectionEvent(getSelectedDimension()));
+      listener.dimensionSelectionChanged(new TwoPanelTreeDimensionSelectionEvent(selectedDimension));
     }
   }
 
