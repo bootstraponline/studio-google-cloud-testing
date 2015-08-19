@@ -111,8 +111,9 @@ public class ApiDimension extends CloudConfigurationDimension {
           Date date = version.getReleaseDate();
           details.put("Release date",
                       date == null ? "???" : String.format("%4d-%02d-%02d", date.getYear(), date.getMonth(), date.getDay()));
-          Distribution distribution = version.getDistribution();
-          details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
+          //TODO: Uncomment when we actually provide the market share data.
+          //Distribution distribution = version.getDistribution();
+          //details.put("Market share", distribution == null ? "???" : distribution.getMarketShare() + "%");
           ApiLevel apiLevel =
             new ApiLevel(version.getId(), version.getCodeName(), version.getVersionString(), version.getApiLevel(), details);
           apiLevels.add(apiLevel);
