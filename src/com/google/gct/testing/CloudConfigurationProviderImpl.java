@@ -556,7 +556,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
         public void run() {
           AndroidTestRunConfiguration testRunConfiguration = (AndroidTestRunConfiguration) runningState.getConfiguration();
           String moduleName = runningState.getFacet().getModule().getName();
-          String bucketName = "build-" + moduleName.toLowerCase() + "-" + System.currentTimeMillis();
+          String bucketName = generateUniqueBucketName(moduleName);
           String appPackage = runningState.getFacet().getAndroidModuleInfo().getPackage();
           String testPackage = appPackage + ".test";
 
@@ -648,6 +648,19 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
         }
       }).start();
     }
+  }
+
+  private static String generateUniqueBucketName(String moduleName) {
+    final String characters = "abcdefghijklmnopqrstuvwxyz";
+    final int suffixLength = 4;
+    final Random randomGenerator = new Random();
+
+    StringBuilder suffix = new StringBuilder(suffixLength);
+    for (int i = 0; i < suffixLength; i++) {
+      suffix.append(characters.charAt(randomGenerator.nextInt(characters.length())));
+    }
+
+    return "as-build_" + moduleName.toLowerCase() + "_" + System.currentTimeMillis() + "_" + suffix;
   }
 
   //private String listAllApks(List<String> apkPaths) {
