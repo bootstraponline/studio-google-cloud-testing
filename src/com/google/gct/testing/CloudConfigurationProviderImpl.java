@@ -59,6 +59,7 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.jcraft.jsch.*;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.run.AndroidRunningState;
@@ -68,14 +69,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.*;
 
 import static com.android.tools.idea.run.CloudConfiguration.Kind.MATRIX;
 import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.google.gct.testing.CloudTestingUtils.checkJavaVersion;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
+import static com.jcraft.jsch.KeyPair.RSA;
 
 public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
@@ -318,6 +322,18 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     if (!checkJavaVersion()) {
       return;
     }
+
+    String publicKey;
+    JSch jsch = new JSch();
+    try {
+      publicKey = generateSshKeys(jsch);
+    } catch (Exception e) {
+      CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+                                                                                 "Exception while generating ssh keys\n\n" +
+                                                                                 e.getMessage());
+      return;
+    }
+
     final String cloudProjectId = lastCloudProjectId;
     String[] dimensionValues = configurationInstance.split("-");
     Device device = new Device().setAndroidDevice(
@@ -329,9 +345,8 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
     Device createdDevice = null;
     try {
-      createdDevice = getTest().projects().devices().create(cloudProjectId, device).execute();
-    }
-    catch (IOException e) {
+      createdDevice = getTest().projects().devices().create(cloudProjectId, device).setSshPublicKey(publicKey).execute();
+    } catch (Exception e) {
       CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
                                                                                  "Exception while launching a cloud device\n\n" +
                                                                                  e.getMessage());
@@ -339,7 +354,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     }
     if (createdDevice == null) {
       CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
-                                                                                 "The returned cloud device is null\n\n");
+                                                                                 "Could not access cloud device\n\n");
     }
 
     final String deviceId = createdDevice.getId();
@@ -383,16 +398,43 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           return;
         }
         if (createdDevice.getState().equals("READY")) {
-          //if (createdDevice.getDeviceDetails().getConnectionInfo() != null) {
           String ipAddress = createdDevice.getDeviceDetails().getConnectionInfo().getIpAddress();
           Integer adbPort = createdDevice.getDeviceDetails().getConnectionInfo().getAdbPort();
           Integer vncPort = createdDevice.getDeviceDetails().getConnectionInfo().getVncPort();
+          Integer sshPort = createdDevice.getDeviceDetails().getConnectionInfo().getSshPort();
           String vncPassword = createdDevice.getDeviceDetails().getConnectionInfo().getVncPassword();
-          //TODO: Remove this temporary password.
-          if ("abc".length() > 1) {
-            vncPassword = "zeecloud";
+
+          Session session;
+          try {
+            session = connectSession(jsch, ipAddress, sshPort);
+          } catch (Exception e) {
+            CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+                                                                                       "Exception while connecting through SSH\n\n" +
+                                                                                       e.getMessage());
+            return;
           }
-          String deviceAddress = ipAddress + ":" + adbPort;
+
+          int adbLocalPort;
+          try {
+            adbLocalPort = session.setPortForwardingL(0, "localhost", adbPort);
+          } catch (Exception e) {
+            CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+                                                                                       "Exception while tunneling through SSH\n\n" +
+                                                                                       e.getMessage());
+            return;
+          }
+
+          int vncLocalPort;
+          try {
+            vncLocalPort = session.setPortForwardingL(0, "localhost", vncPort);
+          } catch (Exception e) {
+            CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+                                                                                       "Exception while tunneling through SSH\n\n" +
+                                                                                       e.getMessage());
+            return;
+          }
+
+          String deviceAddress = "localhost:" + adbLocalPort;
           System.out.println("Device ready with IP address:port " + deviceAddress);
           Runtime rt = Runtime.getRuntime();
           Process connect = rt.exec("./adb connect " + deviceAddress, null, workingDir);
@@ -412,7 +454,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, workingDir);
           unlock.waitFor();
           // Open the VNC window for the cloud device.
-          String[] viewerArgs = new String[]{"-port=" + vncPort, "-host=" + ipAddress, "-password=" + vncPassword, "-fullScreen=false"};
+          String[] viewerArgs = new String[]{"-port=" + vncLocalPort, "-host=localhost", "-password=" + vncPassword, "-fullScreen=false"};
           VncKeepAliveThreadImpl.startVnc(viewerArgs, configurationName, cloudProjectId, deviceId, deviceAddress, workingDir);
           return;
         }
@@ -780,5 +822,51 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       return AndroidIcons.Display;
     }
     return AndroidIcons.Portrait;
+  }
+
+  private String generateSshKeys(JSch jsch) throws JSchException {
+    KeyPair keyPair = KeyPair.genKeyPair(jsch, RSA, 2048);
+
+    // Setting 'comment' is by convention only. Pass an empty string if this code breaks on some OS.
+    String comment = System.getProperty("user.home");
+    if (comment == null) {
+      comment = "";
+    } else {
+      try {
+        comment = comment + InetAddress.getLocalHost().getHostName();
+      }
+      catch (Exception e) {
+        // ignore
+      }
+    }
+
+    ByteArrayOutputStream privateKeyArray = new ByteArrayOutputStream();
+    keyPair.writePrivateKey(privateKeyArray);
+    ByteArrayOutputStream publicKeyArray = new ByteArrayOutputStream();
+    keyPair.writePublicKey(publicKeyArray, comment);
+
+    jsch.addIdentity("root", privateKeyArray.toByteArray(), publicKeyArray.toByteArray(), null);
+
+    keyPair.dispose();
+
+    return "root:" + new String(publicKeyArray.toByteArray());
+  }
+
+  /**
+   * Returns the session after connecting.
+   */
+  private Session connectSession(JSch jsch, String rhost, int sshPort) throws Exception {
+    Session session = jsch.getSession("root", rhost, sshPort);
+    Properties config = new Properties();
+    config.put("StrictHostKeyChecking", "no");
+    session.setConfig(config);
+    session.setTimeout(30*1000); // 30 seconds.
+
+    try {
+      session.connect();
+    } catch (JSchException e) {
+      throw new RuntimeException(String.format("%s@%s:%d: Error connecting to session.", "root", rhost, sshPort), e);
+    }
+    return session;
   }
 }
