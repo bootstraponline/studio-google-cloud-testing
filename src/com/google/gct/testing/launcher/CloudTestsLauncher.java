@@ -112,10 +112,6 @@ public class CloudTestsLauncher {
     String cloudProjectId, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath, String testSpecification,
     String instrumentationTestRunner, CloudConfigurationImpl cloudTestConfiguration, String appPackage, String testPackage) {
 
-    if (instrumentationTestRunner.isEmpty()) {
-      instrumentationTestRunner = TEST_RUNNER_CLASS;
-    }
-
     TestMatrix testMatrix = new TestMatrix();
 
     testMatrix.setClientInfo(new ClientInfo().setName("Android Studio"));
