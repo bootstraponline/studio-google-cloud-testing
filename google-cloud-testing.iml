@@ -61,5 +61,6 @@
     <orderEntry type="module" module-name="google-cloud-tools-core-as" />
     <orderEntry type="module" module-name="google-login-as" />
     <orderEntry type="library" name="tightvnc" level="project" />
+    <orderEntry type="library" name="JSch" level="project" />
   </component>
 </module>
