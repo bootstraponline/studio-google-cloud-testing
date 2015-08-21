@@ -59,7 +59,10 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.jcraft.jsch.*;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.KeyPair;
+import com.jcraft.jsch.Session;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.run.AndroidRunningState;
@@ -74,12 +77,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
-import java.util.Random;
 
 import static com.android.tools.idea.run.CloudConfiguration.Kind.MATRIX;
 import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.google.gct.testing.CloudTestingUtils.checkJavaVersion;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
+import static com.google.gct.testing.launcher.CloudTestsLauncher.createBucket;
 import static com.jcraft.jsch.KeyPair.RSA;
 
 public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
@@ -281,12 +285,11 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   private static boolean validateCloudProject(@NotNull Project project, @NotNull String cloudProjectId) {
-    // Check that we can properly connect to the backend.
+    // Check that the user is authorized into the cloud.
     Buckets buckets = null;
     String message = null;
     try {
-      Storage.Buckets.List listBuckets = CloudAuthenticator.getStorage().buckets().list(cloudProjectId);
-      buckets = listBuckets.execute();
+      buckets = getStorage().buckets().list(cloudProjectId).execute();
     } catch (Exception e) {
       message = e.getMessage();
       // ignore
@@ -299,6 +302,26 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
         return false;
       }
     }
+
+    // Check that the specified cloud project has billing enabled.
+    String checkBucketName = generateUniqueBucketName("check-billing");
+    try {
+      createBucket(cloudProjectId, checkBucketName);
+    } catch (Exception e) {
+      CloudTestingUtils
+        .showErrorMessage(project, "Cloud test configuration is invalid",
+                          "Please enable billing in your cloud project.\n"
+                          + "Exception while performing a pre-trigger sanity check\n\n" + e.getMessage());
+      return false;
+    }
+
+    // Cleanup
+    try {
+      getStorage().buckets().delete(checkBucketName).execute();
+    } catch (Exception e) {
+      // ignore
+    }
+
     return true;
   }
 
@@ -608,7 +631,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           }
           runningState.getProcessHandler().notifyTextAvailable(
             prepareProgressString("Creating Cloud Storage bucket " + bucketName + "...", ""), ProcessOutputTypes.STDOUT);
-          CloudTestsLauncher.createBucket(cloudProjectId, bucketName);
+          createBucket(cloudProjectId, bucketName);
 
           if (matrixExecutionCancellator.isCancelled()) {
             return;
