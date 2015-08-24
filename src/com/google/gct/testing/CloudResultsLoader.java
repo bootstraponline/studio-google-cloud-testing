@@ -260,10 +260,12 @@ public class CloudResultsLoader {
         }
       } else if (testExecutionState.equals("RUNNING")) {
         List<String> progressMessages = testExecution.getTestDetails().getProgressMessages();
-        List<String> previousProgress = getPreviousProgress(encodedConfigurationInstance);
-        if (previousProgress.size() < progressMessages.size()) {
-          for (int i = previousProgress.size(); i < progressMessages.size(); i++) {
-            reportNewProgress(encodedConfigurationInstance, progressMessages.get(i));
+        if (progressMessages != null) { // Should never be null, but sometimes happens, so protect against it.
+          List<String> previousProgress = getPreviousProgress(encodedConfigurationInstance);
+          if (previousProgress.size() < progressMessages.size()) {
+            for (int i = previousProgress.size(); i < progressMessages.size(); i++) {
+              reportNewProgress(encodedConfigurationInstance, progressMessages.get(i));
+            }
           }
         }
       }
