@@ -156,12 +156,12 @@ public class DeviceDimension extends CloudConfigurationDimension {
 
     @Override
     public String getConfigurationDialogDisplayName() {
-      return manufacturer + " " + name;
+      return name + ", " + manufacturer;
     }
 
     @Override
     public String getResultsViewerDisplayName() {
-      return getConfigurationDialogDisplayName() + (isVirtual() ? " (virtual)" : "");
+      return getConfigurationDialogDisplayName() + (isVirtual() ? ", Virtual" : "");
     }
 
     public boolean isVirtual() {

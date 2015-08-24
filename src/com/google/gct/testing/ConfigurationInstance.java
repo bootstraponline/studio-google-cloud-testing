@@ -49,7 +49,7 @@ public class ConfigurationInstance {
       return input.getId();
     }
   };
-  public static final String DISPLAY_NAME_DELIMITER = ", ";
+  public static final String DISPLAY_NAME_DELIMITER = " | ";
   public static final String ENCODED_NAME_DELIMITER = "-";
 
   private final Map<String, CloudTestingType> typesByDimensionName = new LinkedHashMap<String, CloudTestingType>();

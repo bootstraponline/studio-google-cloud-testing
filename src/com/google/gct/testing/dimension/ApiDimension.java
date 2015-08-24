@@ -188,7 +188,7 @@ public class ApiDimension extends CloudConfigurationDimension {
 
     @Override
     public String getConfigurationDialogDisplayName() {
-      return String.format("Android %s - %s (API %d)", osVersion, codeName, apiVersion);
+      return String.format("Android %s, API Level %d (%s)", osVersion, apiVersion, codeName);
     }
 
     @Override
