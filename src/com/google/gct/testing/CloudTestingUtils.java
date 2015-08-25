@@ -53,6 +53,7 @@ public class CloudTestingUtils {
 
   //GCT-specific message names.
   public static final String SET_TEST_RUN_ID = "setTestRunId";
+  public static final String SET_ACTIVE_CLOUD_MATRIX = "setActiveCloudMatrix";
   public static final String TEST_CONFIGURATION_STOPPED = "testConfigurationStopped";
   public static final String TEST_CONFIGURATION_STARTED = "testConfigurationStarted";
   public static final String TEST_CONFIGURATION_PROGRESS = "testConfigurationProgress";

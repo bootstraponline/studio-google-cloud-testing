@@ -243,6 +243,14 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
   }
 
   @Override
+  public void onSetActiveCloudMatrix(@NotNull com.google.gct.testing.results.events.SetActiveCloudMatrixEvent setActiveCloudMatrixEvent) {
+    myTestsRootNode.setScheduledActive();
+    for (GoogleCloudTestProxy configuration : myTestsRootNode.getChildren()) {
+      configuration.setScheduledActive();
+    }
+  }
+
+  @Override
   public void onConfigurationStopped(@NotNull final com.google.gct.testing.results.events.TestConfigurationStoppedEvent configurationStoppedEvent)  {
     addToInvokeLater(new Runnable() {
       @Override

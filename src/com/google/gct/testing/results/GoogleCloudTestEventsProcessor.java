@@ -63,6 +63,8 @@ public abstract class GoogleCloudTestEventsProcessor implements Disposable {
 
   public abstract void onSetTestRunId(@NotNull SetTestRunIdEvent setTestRunIdEvent);
 
+  public abstract void onSetActiveCloudMatrix(@NotNull SetActiveCloudMatrixEvent setActiveCloudMatrixEvent);
+
   public abstract void onConfigurationStopped(@NotNull com.google.gct.testing.results.events.TestConfigurationStoppedEvent configurationStoppedEvent);
 
   public abstract void onConfigurationStarted(@NotNull TestConfigurationStartedEvent configurationStartedEvent);

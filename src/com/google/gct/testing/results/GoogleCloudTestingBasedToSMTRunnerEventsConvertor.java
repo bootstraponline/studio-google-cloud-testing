@@ -260,6 +260,11 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
   }
 
   @Override
+  public void onSetActiveCloudMatrix(@NotNull SetActiveCloudMatrixEvent setActiveCloudMatrixEvent) {
+    //stub
+  }
+
+  @Override
   public void onConfigurationStarted(@NotNull TestConfigurationStartedEvent configurationStartedEvent) {
     //stub
   }

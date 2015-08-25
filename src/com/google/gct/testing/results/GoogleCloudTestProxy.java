@@ -117,6 +117,13 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     return getMagnitudeInfo().getValue();
   }
 
+  public boolean isActiveScheduled() {
+    if (myState instanceof GoogleCloudTestingScheduledState && ((GoogleCloudTestingScheduledState) myState).isActive()) {
+      return true;
+    }
+    return false;
+  }
+
   public TestStateInfo.Magnitude getMagnitudeInfo() {
     return myState.getMagnitude();
   }
@@ -346,6 +353,14 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
 
   public void setScheduled() {
     myState = !myIsSuite ? TestInProgressState.TEST : new GoogleCloudTestingScheduledState(this);
+  }
+
+  public void setScheduledActive() {
+    if (!(myState instanceof GoogleCloudTestingScheduledState)) {
+      myState = new GoogleCloudTestingScheduledState(this);
+    }
+
+    ((GoogleCloudTestingScheduledState)myState).makeActive();
   }
 
   /**
