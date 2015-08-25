@@ -23,9 +23,18 @@ import java.util.List;
 public class GoogleCloudTestingScheduledState extends AbstractState {
   private final GoogleCloudTestProxy myTestProxy;
   private boolean myDefectFound = false;
+  private boolean isActive = false;
 
   public GoogleCloudTestingScheduledState(@NotNull final GoogleCloudTestProxy testProxy) {
     myTestProxy = testProxy;
+  }
+
+  public void makeActive() {
+    isActive = true;
+  }
+
+  public boolean isActive() {
+    return isActive;
   }
 
   @Override

@@ -262,6 +262,14 @@ public class OutputToGoogleCloudTestEventsConverter implements GoogleCloudTestin
     }
   }
 
+  private void fireOnSetActiveCloudMatrix(@NotNull SetActiveCloudMatrixEvent setActiveCloudMatrixEvent) {
+    // local variable is used to prevent concurrent modification
+    final GoogleCloudTestEventsProcessor processor = myProcessor;
+    if (processor != null) {
+      processor.onSetActiveCloudMatrix(setActiveCloudMatrixEvent);
+    }
+  }
+
   private void fireOnConfigurationStopped(@NotNull com.google.gct.testing.results.events.TestConfigurationStoppedEvent configurationStoppedEvent) {
     // local variable is used to prevent concurrent modification
     final GoogleCloudTestEventsProcessor processor = myProcessor;
@@ -539,6 +547,8 @@ public class OutputToGoogleCloudTestEventsConverter implements GoogleCloudTestin
       if (messageName.equals(CloudTestingUtils.SET_TEST_RUN_ID)) {
         SetTestRunIdEvent setTestRunIdEvent = new SetTestRunIdEvent(message.getAttributes().get("testRunId"));
         fireOnSetTestRunId(setTestRunIdEvent);
+      } else if (messageName.equals(CloudTestingUtils.SET_ACTIVE_CLOUD_MATRIX)) {
+        fireOnSetActiveCloudMatrix(new SetActiveCloudMatrixEvent());
       } else {
         String configurationName = message.getAttributes().get("name");
         if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_STOPPED)) {

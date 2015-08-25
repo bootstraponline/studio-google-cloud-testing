@@ -116,5 +116,7 @@ public interface IGoogleCloudTestRunListener {
 
   public void setTestRunId(String testRunId);
 
+  public void setActiveCloudMatrix();
+
   public void stopTestConfiguration(String configurationName, ConfigurationStopReason stopReason);
 }

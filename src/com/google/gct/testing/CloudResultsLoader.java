@@ -228,6 +228,7 @@ public class CloudResultsLoader {
       if (!testMatrixState.equals("INVALID")) {
         processHandler.notifyTextAvailable("You can also view test results, along with other runs against this app, on the web:\n" +
                                            getWebResultsLink(testMatrix) + " \n\n\n", ProcessOutputTypes.STDOUT);
+        testRunListener.setActiveCloudMatrix();
       }
     }
     for (TestExecution testExecution : testMatrix.getTestExecutions()) {

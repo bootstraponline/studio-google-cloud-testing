@@ -262,7 +262,7 @@ public class GoogleCloudTestsPresentationUtil {
       case PASSED_INDEX:
         return hasErrors ? SMPoolOfTestIcons.PASSED_E_ICON : PoolOfTestIcons.PASSED_ICON;
       case SCHEDULED_INDEX:
-        return AllIcons.Process.Step_passive;
+        return testProxy.isActiveScheduled() ? CloudMatrixProgressAnimator.getCurrentFrame() : AllIcons.Process.Step_passive;
       case TIMEOUT_INDEX:
         return AllIcons.Debugger.KillProcess;
       case INFRASTRUCTURE_FAILURE_INDEX:

@@ -96,6 +96,12 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   }
 
   @Override
+  public void setActiveCloudMatrix() {
+    ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.SET_ACTIVE_CLOUD_MATRIX);
+    getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
+  }
+
+  @Override
   public void stopTestConfiguration(String configurationName, ConfigurationStopReason stopReason) {
     ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_STOPPED);
     builder.addAttribute("name", configurationName);
