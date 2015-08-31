@@ -310,7 +310,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     } catch (Exception e) {
       CloudTestingUtils
         .showErrorMessage(project, "Cloud test configuration is invalid",
-                          "Please enable billing in your cloud project.\n"
+                          "Please enable billing in your Google Cloud project.\n"
                           + "Exception while performing a pre-trigger sanity check\n\n" + e.getMessage());
       return false;
     }
