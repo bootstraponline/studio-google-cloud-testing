@@ -630,7 +630,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
             return;
           }
           runningState.getProcessHandler().notifyTextAvailable(
-            prepareProgressString("Creating Cloud Storage bucket " + bucketName + "...", ""), ProcessOutputTypes.STDOUT);
+            prepareProgressString("Creating Cloud Storage Bucket " + bucketName + " ...", ""), ProcessOutputTypes.STDOUT);
           createBucket(cloudProjectId, bucketName);
 
           if (matrixExecutionCancellator.isCancelled()) {
@@ -669,21 +669,21 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           }
           File testApk = testOutputs.get(0).getMainOutputFile().getOutputFile();
 
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading app APK...", ""),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading app APK ...", ""),
                                                                ProcessOutputTypes.STDOUT);
           String appApkName = CloudTestsLauncher.uploadFile(bucketName, appApk).getName();
 
           if (matrixExecutionCancellator.isCancelled()) {
             return;
           }
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading test APK...", ""),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Uploading test APK ...", ""),
                                                                ProcessOutputTypes.STDOUT);
           String testApkName = CloudTestsLauncher.uploadFile(bucketName, testApk).getName();
 
           if (matrixExecutionCancellator.isCancelled()) {
             return;
           }
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Invoking cloud test API...", ""),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Submitting tests to Cloud Test Lab ...", ""),
                                                                ProcessOutputTypes.STDOUT);
           String testSpecification = CloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
@@ -693,7 +693,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                             cloudTestingConfiguration, appPackage, testPackage);
 
           if (testMatrix != null) {
-            runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Validating APKs...", "\n\n"),
+            runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Validating APKs ...", "\n\n"),
                                                                  ProcessOutputTypes.STDOUT);
             matrixExecutionCancellator.setCloudProjectId(cloudProjectId);
             matrixExecutionCancellator.setTestMatrixId(testMatrix.getTestMatrixId());
