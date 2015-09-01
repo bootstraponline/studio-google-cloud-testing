@@ -65,7 +65,7 @@ import com.jcraft.jsch.KeyPair;
 import com.jcraft.jsch.Session;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
-import org.jetbrains.android.run.AndroidRunningState;
+import org.jetbrains.android.run.CloudMatrixTestRunningState;
 import org.jetbrains.android.run.testing.AndroidTestConsoleProperties;
 import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
@@ -538,7 +538,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   @Override
-  public ExecutionResult executeCloudMatrixTests(int selectedConfigurationId, String cloudProjectId, AndroidRunningState runningState,
+  public ExecutionResult executeCloudMatrixTests(int selectedConfigurationId, String cloudProjectId, CloudMatrixTestRunningState runningState,
                                                  Executor executor) throws ExecutionException {
     UsageTracker.getInstance()
       .trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.RUN_TEST_MATRIX, CloudTestingTracking.SESSION_LABEL, null);
@@ -559,7 +559,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
     lastCloudProjectId = cloudProjectId;
 
-    AndroidTestRunConfiguration testRunConfiguration = (AndroidTestRunConfiguration) runningState.getConfiguration();
+    AndroidTestRunConfiguration testRunConfiguration = runningState.getConfiguration();
     AndroidTestConsoleProperties properties = new AndroidTestConsoleProperties(testRunConfiguration, executor);
     CloudMatrixExecutionCancellator matrixExecutionCancellator = new CloudMatrixExecutionCancellator();
     ConsoleView console = GoogleCloudTestResultsConnectionUtil.createAndAttachConsole(
@@ -612,7 +612,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   private void performTestsInCloud(final CloudConfigurationImpl cloudTestingConfiguration, final String cloudProjectId,
-                                   final AndroidRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser,
+                                   final CloudMatrixTestRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser,
                                    final CloudMatrixExecutionCancellator matrixExecutionCancellator) {
     if (cloudTestingConfiguration != null && cloudTestingConfiguration.getDeviceConfigurationCount() > 0) {
       final List<String> expectedConfigurationInstances =
@@ -620,7 +620,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       new Thread(new Runnable() {
         @Override
         public void run() {
-          AndroidTestRunConfiguration testRunConfiguration = (AndroidTestRunConfiguration) runningState.getConfiguration();
+          AndroidTestRunConfiguration testRunConfiguration = runningState.getConfiguration();
           String moduleName = runningState.getFacet().getModule().getName();
           String bucketName = generateUniqueBucketName(moduleName);
           String appPackage = runningState.getFacet().getAndroidModuleInfo().getPackage();

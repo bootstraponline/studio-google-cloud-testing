@@ -19,7 +19,7 @@ import com.google.gct.testing.CloudTestingUtils;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.sm.ServiceMessageBuilder;
-import org.jetbrains.android.run.AndroidRunningState;
+import org.jetbrains.android.run.CloudMatrixTestRunningState;
 import org.jetbrains.android.run.testing.AndroidTestLocationProvider;
 
 import java.util.Map;
@@ -27,7 +27,7 @@ import java.util.Map;
 import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
-  private final AndroidRunningState myRunningState;
+  private final CloudMatrixTestRunningState myRunningState;
   private long myTestStartingTime;
   private long myTestSuiteStartingTime;
   private String myConfiguration = null;
@@ -41,7 +41,7 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
     return myProcessHandler;
   }
 
-  public GoogleCloudTestListener(AndroidRunningState runningState) {
+  public GoogleCloudTestListener(CloudMatrixTestRunningState runningState) {
     myRunningState = runningState;
   }
 
@@ -81,7 +81,7 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
     builder.addAttribute("className", test.getClassName());
     builder.addAttribute("name", test.getTestName());
     builder
-      .addAttribute("locationHint", AndroidTestLocationProvider.PROTOCOL_ID + "://" + myRunningState.getModule().getName() +
+      .addAttribute("locationHint", AndroidTestLocationProvider.PROTOCOL_ID + "://" + myRunningState.getFacet().getModule().getName() +
                                     ':' + test.getClassName() + '.' + test.getTestName() + "()");
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
 
