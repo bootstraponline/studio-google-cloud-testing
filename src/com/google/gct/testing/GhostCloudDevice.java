@@ -237,8 +237,8 @@ public class GhostCloudDevice implements IDevice {
   }
 
   @Override
-  public String installPackage(String packageFilePath, boolean reinstall, String... extraArgs) throws InstallException {
-    return null;
+  public void installPackage(String packageFilePath, boolean reinstall, String... extraArgs) throws InstallException {
+
   }
 
   @Override
@@ -252,8 +252,8 @@ public class GhostCloudDevice implements IDevice {
   }
 
   @Override
-  public String installRemotePackage(String remoteFilePath, boolean reinstall, String... extraArgs) throws InstallException {
-    return null;
+  public void installRemotePackage(String remoteFilePath, boolean reinstall, String... extraArgs) throws InstallException {
+
   }
 
   @Override
