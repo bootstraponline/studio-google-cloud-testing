@@ -272,6 +272,11 @@ public class GhostCloudDevice implements IDevice {
   }
 
   @Override
+  public void root() throws TimeoutException, AdbCommandRejectedException, IOException {
+
+  }
+
+  @Override
   public Integer getBatteryLevel() throws TimeoutException, AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
     return null;
   }
