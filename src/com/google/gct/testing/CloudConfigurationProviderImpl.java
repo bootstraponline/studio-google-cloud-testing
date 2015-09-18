@@ -180,14 +180,34 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       return ImmutableList.of(defaultConfiguration);
     }
 
-    CloudConfigurationImpl allConfiguration =
-      new CloudConfigurationImpl(CloudConfigurationImpl.ALL_CONFIGURATION_ID, "All Compatible", MATRIX, AndroidIcons.Display, facet);
-    allConfiguration.deviceDimension.enableAll();
-    allConfiguration.apiDimension.enableAll();
-    allConfiguration.languageDimension.enableAll();
-    allConfiguration.orientationDimension.enableAll();
-    allConfiguration.setNonEditable();
-    return ImmutableList.of(allConfiguration);
+    CloudConfigurationImpl defaultConfiguration =
+      new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_MATRIX_CONFIGURATION_ID, "Sample configuration", MATRIX, AndroidIcons.Display, facet);
+    defaultConfiguration.deviceDimension.enable(DeviceDimension.getFullDomain(), Arrays.asList("Nexus6", "hammerhead", "mako"));
+    defaultConfiguration.apiDimension.enable(ApiDimension.getFullDomain(), Arrays.asList("19", "21", "22", "23"));
+    ImmutableList<CloudTestingType> enabledApis = defaultConfiguration.apiDimension.getEnabledTypes();
+    // Make sure we enable at most 3 latest APIs.
+    if (enabledApis.size() > 3) {
+      for (CloudTestingType enabledApi : enabledApis) {
+        if (enabledApi.getId().equals("19")) { // Disable the oldest API.
+          defaultConfiguration.apiDimension.disable(enabledApi);
+          break;
+        }
+      }
+    }
+    defaultConfiguration.languageDimension.enableDefault();
+    defaultConfiguration.orientationDimension.enableAll();
+    defaultConfiguration.setNonEditable();
+    return ImmutableList.of(defaultConfiguration);
+
+    // TODO: For now, do not offer the default "all" configurations as there are too many of them.
+    //CloudConfigurationImpl allConfiguration =
+    //  new CloudConfigurationImpl(CloudConfigurationImpl.ALL_CONFIGURATION_ID, "All Compatible", MATRIX, AndroidIcons.Display, facet);
+    //allConfiguration.deviceDimension.enableAll();
+    //allConfiguration.apiDimension.enableAll();
+    //allConfiguration.languageDimension.enableAll();
+    //allConfiguration.orientationDimension.enableAll();
+    //allConfiguration.setNonEditable();
+    //return ImmutableList.of(allConfiguration);
     //TODO: For now, there are no default configurations to store/read from the persistent storage (i.e., an xml file).
     //List<CloudPersistentConfiguration> myCloudPersistentConfigurations =
     //  CloudDefaultPersistentConfigurations.getInstance(facet.getModule()).getState().myCloudPersistentConfigurations;

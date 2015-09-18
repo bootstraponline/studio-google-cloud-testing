@@ -577,9 +577,6 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
         CloudConfigurationDimension dimension = (CloudConfigurationDimension)((CheckedTreeNode) tree.getModel().getRoot()).getUserObject();
         boolean isChecked = dimension.getEnabledTypes().contains(cloudTestingType);
         node.setChecked(isChecked);
-        for (int childIndex = 0; childIndex < node.getChildCount(); childIndex++) {
-          ((CheckedTreeNode) node.getChildAt(childIndex)).setChecked(isChecked);
-        }
       }
     }
   }
