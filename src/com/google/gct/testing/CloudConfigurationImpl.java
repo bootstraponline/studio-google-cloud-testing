@@ -34,7 +34,7 @@ import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
 
 public class CloudConfigurationImpl extends CloudConfiguration {
 
-  public static final int ALL_CONFIGURATION_ID = Integer.MAX_VALUE;
+  public static final int DEFAULT_MATRIX_CONFIGURATION_ID = Integer.MAX_VALUE;
   public static final int DEFAULT_DEVICE_CONFIGURATION_ID = Integer.MAX_VALUE - 1;
 
   private static int nextAvailableID = 1;
@@ -68,7 +68,7 @@ public class CloudConfigurationImpl extends CloudConfiguration {
   }
 
   private boolean isPredefinedId(int id) {
-    return id == ALL_CONFIGURATION_ID || id == DEFAULT_DEVICE_CONFIGURATION_ID;
+    return id == DEFAULT_MATRIX_CONFIGURATION_ID || id == DEFAULT_DEVICE_CONFIGURATION_ID;
   }
 
   public CloudConfigurationImpl(String name, Kind kind, Icon icon, AndroidFacet facet) {
