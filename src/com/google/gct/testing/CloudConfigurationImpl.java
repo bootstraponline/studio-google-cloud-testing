@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.CloudConfiguration;
+import com.android.tools.idea.run.cloud.CloudConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -30,7 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
+import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.SINGLE_DEVICE;
 
 public class CloudConfigurationImpl extends CloudConfiguration {
 

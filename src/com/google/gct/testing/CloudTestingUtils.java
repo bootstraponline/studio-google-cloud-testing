@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.CloudConfiguration;
+import com.android.tools.idea.run.cloud.CloudConfiguration;
 import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testing.util.CloudTestingTracking;
 import com.intellij.icons.AllIcons;
@@ -33,7 +33,7 @@ import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.ui.UIUtil;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
-import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
+import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

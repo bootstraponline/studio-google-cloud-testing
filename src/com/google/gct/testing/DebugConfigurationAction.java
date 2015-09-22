@@ -37,8 +37,8 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
-import org.jetbrains.android.run.TargetSelectionMode;
-import org.jetbrains.android.run.testing.AndroidTestRunConfiguration;
+import com.android.tools.idea.run.TargetSelectionMode;
+import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

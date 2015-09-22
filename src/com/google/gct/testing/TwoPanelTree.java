@@ -17,9 +17,6 @@ package com.google.gct.testing;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.CloudTestingTypeGroup;
@@ -54,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
+import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES;
 import static com.intellij.ui.SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
 import static javax.swing.tree.TreeSelectionModel.SINGLE_TREE_SELECTION;

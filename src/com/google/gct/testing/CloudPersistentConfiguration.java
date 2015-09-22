@@ -15,12 +15,12 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.CloudConfiguration.Kind;
+import com.android.tools.idea.run.cloud.CloudConfiguration.Kind;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.android.tools.idea.run.CloudConfiguration.Kind.MATRIX;
+import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.MATRIX;
 
 public class CloudPersistentConfiguration {
   public int id = 1;

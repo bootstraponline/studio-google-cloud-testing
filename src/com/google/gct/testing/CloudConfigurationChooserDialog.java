@@ -16,7 +16,7 @@
 package com.google.gct.testing;
 
 import com.android.annotations.Nullable;
-import com.android.tools.idea.run.CloudConfiguration.Kind;
+import com.android.tools.idea.run.cloud.CloudConfiguration.Kind;
 import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -53,7 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static com.android.tools.idea.run.CloudConfiguration.Kind.SINGLE_DEVICE;
+import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.google.gct.testing.CloudTestingUtils.createConfigurationChooserGbc;
 
 public class CloudConfigurationChooserDialog extends DialogWrapper implements ConfigurationChangeListener {
