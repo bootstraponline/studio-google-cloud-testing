@@ -272,8 +272,13 @@ public class GhostCloudDevice implements IDevice {
   }
 
   @Override
-  public void root() throws TimeoutException, AdbCommandRejectedException, IOException {
+  public boolean root() throws TimeoutException, AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
+    return false;
+  }
 
+  @Override
+  public boolean isRoot() throws TimeoutException, AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
+    return false;
   }
 
   @Override
