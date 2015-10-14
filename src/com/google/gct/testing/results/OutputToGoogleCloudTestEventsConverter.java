@@ -553,7 +553,9 @@ public class OutputToGoogleCloudTestEventsConverter implements GoogleCloudTestin
         String configurationName = message.getAttributes().get("name");
         if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_STOPPED)) {
           ConfigurationStopReason stopReason = ConfigurationStopReason.valueOf(message.getAttributes().get("stopReason"));
-          TestConfigurationStoppedEvent configurationStoppedEvent = new TestConfigurationStoppedEvent(configurationName, stopReason);
+          long testDuration = Long.valueOf(message.getAttributes().get("testDuration"));
+          TestConfigurationStoppedEvent configurationStoppedEvent =
+            new TestConfigurationStoppedEvent(configurationName, stopReason, testDuration);
           fireOnConfigurationStopped(configurationStoppedEvent);
         } else if (messageName.equals(CloudTestingUtils.TEST_CONFIGURATION_PROGRESS)) {
           TestConfigurationProgressEvent configurationProgressEvent =

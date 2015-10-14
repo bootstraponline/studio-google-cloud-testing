@@ -23,10 +23,12 @@ import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 public class TestConfigurationStoppedEvent extends TreeNodeEvent {
 
   private final ConfigurationStopReason stopReason;
+  private final long testDuration;
 
-  public TestConfigurationStoppedEvent(@NotNull String configurationName, @NotNull ConfigurationStopReason stopReason) {
+  public TestConfigurationStoppedEvent(@NotNull String configurationName, @NotNull ConfigurationStopReason stopReason, long testDuration) {
     super(configurationName, -1);
     this.stopReason = stopReason;
+    this.testDuration = testDuration;
   }
 
   @Override
@@ -35,5 +37,9 @@ public class TestConfigurationStoppedEvent extends TreeNodeEvent {
 
   public ConfigurationStopReason getStopReason() {
     return stopReason;
+  }
+
+  public long getTestDuration() {
+    return testDuration;
   }
 }

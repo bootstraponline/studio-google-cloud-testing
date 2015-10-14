@@ -19,10 +19,8 @@ import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.util.Maps;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.StorageObject;
-import com.google.api.services.testing.model.AndroidDevice;
-import com.google.api.services.testing.model.TestExecution;
-import com.google.api.services.testing.model.TestMatrix;
-import com.google.api.services.testing.model.ToolResultsExecution;
+import com.google.api.services.testing.model.*;
+import com.google.api.services.toolresults.model.Step;
 import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Optional;
@@ -41,6 +39,7 @@ import java.util.*;
 import static com.google.gct.testing.BucketFileMetadata.Type.*;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
+import static com.google.gct.testing.launcher.CloudAuthenticator.getToolresults;
 
 public class CloudResultsLoader {
   public static final String INFRASTRUCTURE_FAILURE_PREFIX = "Infrastructure Failure:";
@@ -271,7 +270,19 @@ public class CloudResultsLoader {
         }
       }
       ConfigurationResult result = getOrCreateConfigurationResult(encodedConfigurationInstance, results);
-      result.setComplete(testExecutionState.equals("FINISHED"));
+      if (testExecutionState.equals("FINISHED")) {
+        result.setComplete(true);
+        ToolResultsStep toolResultsStep = testExecution.getToolResultsStep();
+        try {
+          Step step = getToolresults().projects().histories().executions().steps()
+            .get(toolResultsStep.getProjectId(), toolResultsStep.getHistoryId(), toolResultsStep.getExecutionId(),
+                 toolResultsStep.getStepId()).execute();
+
+          result.setTestDuration(step.getTestExecutionStep().getTestTiming().getTestProcessDuration().getSeconds() * 1000);
+        } catch (Exception e) {
+          // ignore
+        }
+      }
       result.setInfrastructureFailure(isInfrastructureFailure(getPreviousProgress(encodedConfigurationInstance)));
       if (result.isNoProgressExpected()) {
         finishedConfigurationInstances.add(encodedConfigurationInstance);

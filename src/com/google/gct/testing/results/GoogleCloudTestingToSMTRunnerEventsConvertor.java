@@ -238,12 +238,12 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
   }
 
   @Override
-  public void onSetTestRunId(@NotNull com.google.gct.testing.results.events.SetTestRunIdEvent setTestRunIdEvent) {
+  public void onSetTestRunId(@NotNull SetTestRunIdEvent setTestRunIdEvent) {
     myTestsRootNode.setTestRunId(setTestRunIdEvent.getTestRunId());
   }
 
   @Override
-  public void onSetActiveCloudMatrix(@NotNull com.google.gct.testing.results.events.SetActiveCloudMatrixEvent setActiveCloudMatrixEvent) {
+  public void onSetActiveCloudMatrix(@NotNull SetActiveCloudMatrixEvent setActiveCloudMatrixEvent) {
     myTestsRootNode.setScheduledActive();
     for (GoogleCloudTestProxy configuration : myTestsRootNode.getChildren()) {
       configuration.setScheduledActive();
@@ -251,7 +251,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
   }
 
   @Override
-  public void onConfigurationStopped(@NotNull final com.google.gct.testing.results.events.TestConfigurationStoppedEvent configurationStoppedEvent)  {
+  public void onConfigurationStopped(@NotNull final TestConfigurationStoppedEvent configurationStoppedEvent)  {
     addToInvokeLater(new Runnable() {
       @Override
       public void run() {
@@ -265,6 +265,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
                 stopTest(suiteTest, configurationStoppedEvent.getStopReason());
               }
               stopTest(configuration, configurationStoppedEvent.getStopReason());
+              configuration.setDuration(configurationStoppedEvent.getTestDuration());
               return;
             }
           }
@@ -300,7 +301,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
   }
 
   @Override
-  public void onConfigurationProgress(@NotNull final com.google.gct.testing.results.events.TestConfigurationProgressEvent configurationProgressEvent) {
+  public void onConfigurationProgress(@NotNull final TestConfigurationProgressEvent configurationProgressEvent) {
     addToInvokeLater(new Runnable() {
       @Override
       public void run() {
@@ -311,14 +312,13 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
         if (configurationProxy == null) {
           throw new IllegalStateException("Could not report progress for non-existing configuration: " + configurationName);
         }
-
         configurationProxy.addStdOutput(progressText, ProcessOutputTypes.STDOUT, true);
       }
     });
   }
 
   @Override
-  public void onConfigurationScheduled(@NotNull final com.google.gct.testing.results.events.TestConfigurationScheduledEvent configurationScheduledEvent) {
+  public void onConfigurationScheduled(@NotNull final TestConfigurationScheduledEvent configurationScheduledEvent) {
     addToInvokeLater(new Runnable() {
       @Override
       public void run() {
@@ -404,7 +404,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
   }
 
   @Override
-  public void onConfigurationFinished(@NotNull final com.google.gct.testing.results.events.TestConfigurationFinishedEvent configurationFinishedEvent) {
+  public void onConfigurationFinished(@NotNull final TestConfigurationFinishedEvent configurationFinishedEvent) {
     addToInvokeLater(new Runnable() {
       @Override
       public void run() {

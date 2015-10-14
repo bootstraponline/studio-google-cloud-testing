@@ -111,7 +111,8 @@ public class CloudResultsAdapter {
                                              : result.isInfrastructureFailure()
                                                ? ConfigurationStopReason.INFRASTRUCTURE_FAILURE
                                                : ConfigurationStopReason.TRIGGERING_ERROR;
-        resultParser.getTestRunListener().stopTestConfiguration(result.getConfigurationInstance().getResultsViewerDisplayString(), stopReason);
+        resultParser.getTestRunListener().stopTestConfiguration(
+          result.getConfigurationInstance().getResultsViewerDisplayString(), stopReason, result.getTestDuration());
       }
     }
 
@@ -122,7 +123,7 @@ public class CloudResultsAdapter {
   private void timeoutResultProcessing(boolean allResultsArrived) {
     if (!allResultsArrived) {
       for (String configurationInstance : expectedConfigurationInstances) {
-        resultParser.getTestRunListener().stopTestConfiguration(configurationInstance, ConfigurationStopReason.TIMED_OUT);
+        resultParser.getTestRunListener().stopTestConfiguration(configurationInstance, ConfigurationStopReason.TIMED_OUT, -1);
       }
 
       // Mark all yet unfinished configurations as timed out.

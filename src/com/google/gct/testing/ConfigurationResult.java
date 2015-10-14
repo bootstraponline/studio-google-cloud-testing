@@ -46,6 +46,7 @@ public class ConfigurationResult {
 
   private final Map<ScreenshotKey, String> screenshotKeyToFileName = new HashMap<ScreenshotKey, String>();
 
+  private long testDuration = -1; // (millis) A number < 0 implies UNKNOWN duration.
 
   //TODO: Consider unifying the state into a single enum value.
   private boolean isComplete;
@@ -74,6 +75,14 @@ public class ConfigurationResult {
 
   public ConfigurationInstance getConfigurationInstance() {
     return configurationInstance;
+  }
+
+  public long getTestDuration() {
+    return testDuration;
+  }
+
+  public void setTestDuration(long testDuration) {
+    this.testDuration = testDuration;
   }
 
   public void setComplete(boolean complete) {

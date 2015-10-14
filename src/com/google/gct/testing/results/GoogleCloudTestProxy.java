@@ -399,16 +399,15 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
   public void setDuration(final long duration) {
     invalidateCachedDurationForContainerSuites();
 
-    if (!isSuite()) {
-      myDurationIsCached = true;
-      myDuration = (duration >= 0) ? duration : null;
-      return;
-    }
+    // Set duration for all nodes, not just non-suite nodes.
+    myDurationIsCached = true;
+    myDuration = (duration >= 0) ? duration : null;
 
     // Not allow to directly set duration for suites.
     // It should be the sum of children. This requirement is only
     // for safety of current model and may be changed
-    LOG.warn("Unsupported operation");
+    // Commented out, since for now, we report duration for the top level only rather than computing it from children.
+    //LOG.warn("Unsupported operation");
   }
 
   public void setFinished() {

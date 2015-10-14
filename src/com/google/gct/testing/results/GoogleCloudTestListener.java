@@ -15,12 +15,12 @@
  */
 package com.google.gct.testing.results;
 
+import com.android.tools.idea.run.cloud.CloudMatrixTestRunningState;
+import com.android.tools.idea.run.testing.AndroidTestLocationProvider;
 import com.google.gct.testing.CloudTestingUtils;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.sm.ServiceMessageBuilder;
-import com.android.tools.idea.run.cloud.CloudMatrixTestRunningState;
-import com.android.tools.idea.run.testing.AndroidTestLocationProvider;
 
 import java.util.Map;
 
@@ -28,10 +28,6 @@ import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
 
 public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   private final CloudMatrixTestRunningState myRunningState;
-  private long myTestStartingTime;
-  private long myTestSuiteStartingTime;
-  private String myConfiguration = null;
-  private String myTestClassName = null;
   private ProcessHandler myProcessHandler;
 
   public ProcessHandler getProcessHandler() {
@@ -84,8 +80,6 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
       .addAttribute("locationHint", AndroidTestLocationProvider.PROTOCOL_ID + "://" + myRunningState.getFacet().getModule().getName() +
                                     ':' + test.getClassName() + '.' + test.getTestName() + "()");
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
-
-    myTestStartingTime = System.currentTimeMillis();
   }
 
   @Override
@@ -102,16 +96,16 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
   }
 
   @Override
-  public void stopTestConfiguration(String configurationName, ConfigurationStopReason stopReason) {
+  public void stopTestConfiguration(String configurationName, ConfigurationStopReason stopReason, long testDuration) {
     ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_STOPPED);
     builder.addAttribute("name", configurationName);
     builder.addAttribute("stopReason" , stopReason.name());
+    builder.addAttribute("testDuration" , String.valueOf(testDuration));
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
   }
 
   @Override
   public void testConfigurationProgress(String configurationName, String progressMessage) {
-    myConfiguration = configurationName;
     ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_PROGRESS);
     builder.addAttribute("name", configurationName);
     builder.addAttribute("text", prepareProgressString(progressMessage));
@@ -126,7 +120,6 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
 
   @Override
   public void testConfigurationScheduled(String configurationName) {
-    myConfiguration = configurationName;
     ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_SCHEDULED);
     builder.addAttribute("name", configurationName);
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
@@ -134,7 +127,6 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
 
   @Override
   public void testConfigurationStarted(String configurationName) {
-    myConfiguration = configurationName;
     ServiceMessageBuilder builder = new ServiceMessageBuilder(CloudTestingUtils.TEST_CONFIGURATION_STARTED);
     builder.addAttribute("name", configurationName);
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
@@ -183,7 +175,8 @@ public class GoogleCloudTestListener implements IGoogleCloudTestRunListener {
     builder.addAttribute("configuration", test.getConfiguration());
     builder.addAttribute("className", test.getClassName());
     builder.addAttribute("name", test.getTestName());
-    builder.addAttribute("duration", Long.toString(System.currentTimeMillis() - myTestStartingTime));
+    // Make sure we do not display any duration for individual tests until we have real numbers.
+    builder.addAttribute("duration", "-1");
     getProcessHandler().notifyTextAvailable(builder.toString() + '\n', ProcessOutputTypes.STDOUT);
   }
 

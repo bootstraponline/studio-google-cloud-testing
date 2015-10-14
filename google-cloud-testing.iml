@@ -34,15 +34,6 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/google-api-services-toolresults-v1beta3-rev20150106-1.19.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/google-api-services-storage-v1-rev1-1.18.0-rc.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -62,5 +53,14 @@
     <orderEntry type="module" module-name="google-login-as" />
     <orderEntry type="library" name="tightvnc" level="project" />
     <orderEntry type="library" name="JSch" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/google-api-services-toolresults-v1beta3-rev20151013-1.20.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>

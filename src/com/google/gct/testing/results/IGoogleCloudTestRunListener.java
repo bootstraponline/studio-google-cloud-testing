@@ -118,5 +118,5 @@ public interface IGoogleCloudTestRunListener {
 
   public void setActiveCloudMatrix();
 
-  public void stopTestConfiguration(String configurationName, ConfigurationStopReason stopReason);
+  public void stopTestConfiguration(String configurationName, ConfigurationStopReason stopReason, long testDuration);
 }
