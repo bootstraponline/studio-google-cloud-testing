@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.gct.testing;
+package com.google.gct.testing.android;
 
-import com.google.gct.testing.android.CloudConfiguration;
+import javax.swing.*;
 
-import java.util.LinkedList;
-import java.util.List;
+public abstract class CloudConfiguration {
 
-public class CloudPersistentConfiguration {
-  public int id = 1;
-  public String name = "";
-  public CloudConfiguration.Kind kind = CloudConfiguration.Kind.MATRIX;
-  public List<String> devices = new LinkedList<String>();
-  public List<String> apiLevels = new LinkedList<String>();
-  public List<String> languages = new LinkedList<String>();
-  public List<String> orientations = new LinkedList<String>();
+  public enum Kind {SINGLE_DEVICE, MATRIX};
+
+  public abstract int getId();
+
+  public abstract String getDisplayName();
+
+  public abstract Icon getIcon();
+
+  /** Returns the number of device configurations included in this cloud configuration. */
+  public abstract int getDeviceConfigurationCount();
+
+  public abstract boolean isEditable();
 }

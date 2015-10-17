@@ -15,9 +15,9 @@
  */
 package com.google.gct.testing.results;
 
-import com.android.tools.idea.run.cloud.CloudMatrixTestRunningState;
 import com.android.tools.idea.run.testing.AndroidTestLocationProvider;
 import com.google.gct.testing.CloudTestingUtils;
+import com.google.gct.testing.android.CloudMatrixTestRunningState;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.sm.ServiceMessageBuilder;

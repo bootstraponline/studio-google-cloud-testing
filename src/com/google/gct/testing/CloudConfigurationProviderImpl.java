@@ -20,9 +20,8 @@ import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.BaseArtifact;
 import com.android.ddmlib.IDevice;
 import com.android.tools.idea.gradle.AndroidGradleModel;
-import com.android.tools.idea.run.cloud.CloudConfiguration;
-import com.android.tools.idea.run.cloud.CloudConfiguration.Kind;
-import com.android.tools.idea.run.cloud.CloudConfigurationProvider;
+import com.android.tools.idea.run.testing.AndroidTestConsoleProperties;
+import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.android.tools.idea.sdk.IdeSdks;
 import com.android.tools.idea.stats.UsageTracker;
 import com.google.api.client.util.Maps;
@@ -38,6 +37,9 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.gct.testing.android.CloudConfiguration;
+import com.google.gct.testing.android.CloudConfigurationProvider;
+import com.google.gct.testing.android.CloudMatrixTestRunningState;
 import com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable;
 import com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings;
 import com.google.gct.testing.dimension.*;
@@ -65,9 +67,6 @@ import com.jcraft.jsch.KeyPair;
 import com.jcraft.jsch.Session;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
-import com.android.tools.idea.run.cloud.CloudMatrixTestRunningState;
-import com.android.tools.idea.run.testing.AndroidTestConsoleProperties;
-import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,8 +77,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 
-import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.MATRIX;
-import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.google.gct.testing.CloudTestingUtils.checkJavaVersion;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
@@ -137,7 +134,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
   @NotNull
   @Override
-  public List<? extends CloudConfiguration> getCloudConfigurations(@NotNull AndroidFacet facet, @NotNull final Kind configurationKind) {
+  public List<? extends CloudConfiguration> getCloudConfigurations(@NotNull AndroidFacet facet, @NotNull final CloudConfiguration.Kind configurationKind) {
     try {
       CloudAuthenticator.prepareCredential();
     } catch(Exception e) {
@@ -156,10 +153,10 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                                                getDefaultConfigurations(facet, configurationKind)));
   }
 
-  private List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, Kind kind) {
-    if (kind == SINGLE_DEVICE) {
+  private List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, CloudConfiguration.Kind kind) {
+    if (kind == CloudConfiguration.Kind.SINGLE_DEVICE) {
       CloudConfigurationImpl defaultConfiguration =
-        new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, "", SINGLE_DEVICE, AndroidIcons.Display, facet);
+        new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, "", CloudConfiguration.Kind.SINGLE_DEVICE, AndroidIcons.Display, facet);
       defaultConfiguration.apiDimension.enableDefault();
       ImmutableList<CloudTestingType> enabledApis = defaultConfiguration.apiDimension.getEnabledTypes();
       if (enabledApis.isEmpty()) {
@@ -181,7 +178,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     }
 
     CloudConfigurationImpl defaultConfiguration =
-      new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_MATRIX_CONFIGURATION_ID, "Sample configuration", MATRIX, AndroidIcons.Display, facet);
+      new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_MATRIX_CONFIGURATION_ID, "Sample configuration", CloudConfiguration.Kind.MATRIX, AndroidIcons.Display, facet);
     defaultConfiguration.deviceDimension.enable(DeviceDimension.getFullDomain(), Arrays.asList("Nexus6", "hammerhead", "mako"));
     defaultConfiguration.apiDimension.enable(ApiDimension.getFullDomain(), Arrays.asList("19", "21", "22", "23"));
     ImmutableList<CloudTestingType> enabledApis = defaultConfiguration.apiDimension.getEnabledTypes();
@@ -225,17 +222,17 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     List<CloudPersistentConfiguration> cloudPersistentConfigurations =
       CloudCustomPersistentConfigurations.getInstance(facet.getModule()).getState().myCloudPersistentConfigurations;
     return Lists.newArrayList(Iterables.concat(deserializeConfigurations(cloudPersistentConfigurations, true, facet),
-                                               getDefaultConfigurations(facet, MATRIX),
-                                               getDefaultConfigurations(facet, SINGLE_DEVICE)));
+                                               getDefaultConfigurations(facet, CloudConfiguration.Kind.MATRIX),
+                                               getDefaultConfigurations(facet, CloudConfiguration.Kind.SINGLE_DEVICE)));
   }
 
   @Nullable
   @Override
   public CloudConfiguration openMatrixConfigurationDialog(@NotNull AndroidFacet currentFacet,
                                                           @Nullable CloudConfiguration selectedConfiguration,
-                                                          @NotNull Kind configurationKind) {
+                                                          @NotNull CloudConfiguration.Kind configurationKind) {
 
-    final Kind selectedConfigurationKind =
+    final CloudConfiguration.Kind selectedConfigurationKind =
       selectedConfiguration == null ? configurationKind : ((CloudConfigurationImpl)selectedConfiguration).getKind();
 
     Module currentModule = currentFacet.getModule();
@@ -352,7 +349,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
     CloudConfigurationImpl cloudConfiguration = CloudTestingUtils.getConfigurationById(selectedConfigurationId, facet);
 
-    if (cloudConfiguration.getKind() != Kind.SINGLE_DEVICE) {
+    if (cloudConfiguration.getKind() != CloudConfiguration.Kind.SINGLE_DEVICE) {
       // Should handle only single device configurations.
       return;
     }
@@ -572,7 +569,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
     CloudConfigurationImpl cloudConfiguration = CloudTestingUtils.getConfigurationById(selectedConfigurationId, runningState.getFacet());
 
-    if (cloudConfiguration.getKind() != Kind.MATRIX) {
+    if (cloudConfiguration.getKind() != CloudConfiguration.Kind.MATRIX) {
       // Should handle only matrix configurations.
       return null;
     }
