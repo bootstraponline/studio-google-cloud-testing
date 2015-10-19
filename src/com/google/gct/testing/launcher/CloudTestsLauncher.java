@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.gct.testing.CloudConfigurationImpl;
 import com.google.gct.testing.CloudTestingUtils;
 import com.google.gct.testing.dimension.CloudTestingType;
+import com.intellij.openapi.ui.Messages;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -32,7 +33,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -108,7 +111,7 @@ public class CloudTestsLauncher {
   /**
    * Returns the triggered test matrix or {@code null} if the attempt was unsuccessful.
    */
-  public static TestMatrix triggerTestApi(
+  public static @Nullable TestMatrix triggerTestApi(
     String cloudProjectId, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath, String testSpecification,
     String instrumentationTestRunner, CloudConfigurationImpl cloudTestConfiguration, String appPackage, String testPackage) {
 
@@ -143,9 +146,33 @@ public class CloudTestsLauncher {
     try {
       triggeredTestMatrix = getTest().projects().testMatrices().create(cloudProjectId, testMatrix).execute();
     } catch (Exception e) {
+      String exceptionMessage = e.getMessage();
+      String backendMessageHeader = "\"message\" : \"";
+      int indexOfBackendMessage = exceptionMessage.indexOf(backendMessageHeader);
+      if (indexOfBackendMessage != -1) {
+        int startOfBackendMessageText = indexOfBackendMessage + backendMessageHeader.length();
+        final String message = exceptionMessage.substring(startOfBackendMessageText, exceptionMessage.indexOf("\",", startOfBackendMessageText));
+        if (message.contains("is not registered for Cloud Test Lab")) {
+          String urlPrefix = "Please visit: ";
+          int urlPrefixIndex = message.indexOf(urlPrefix);
+          if (urlPrefixIndex != -1) {
+            int urlIndex = urlPrefixIndex + urlPrefix.length();
+            String url = message.substring(urlIndex);
+            final String userMessage = "<html>" + message.substring(0, urlPrefixIndex) + "<br>" +
+                                       message.substring(urlPrefixIndex, urlIndex) + "<a href='" + url + "'>" + url + "</a></html>";
+            SwingUtilities.invokeLater(new Runnable() {
+              @Override
+              public void run() {
+                Messages.showDialog(userMessage, "Project not registered", new String[]{Messages.OK_BUTTON}, 0, null);
+              }
+            });
+            return null;
+          }
+        }
+      }
       CloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test", "Failed to trigger a cloud matrix execution!\n" +
                                                                                  "Exception while triggering a matrix execution\n\n" +
-                                                                                 e.getMessage());
+                                                                                 exceptionMessage);
     }
     return triggeredTestMatrix;
   }
