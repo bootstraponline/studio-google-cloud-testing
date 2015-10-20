@@ -15,12 +15,12 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.run.cloud.CloudConfiguration;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.gct.testing.android.CloudConfiguration;
 import com.google.gct.testing.dimension.*;
 import org.jetbrains.android.facet.AndroidFacet;
 
@@ -29,8 +29,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.SINGLE_DEVICE;
 
 public class CloudConfigurationImpl extends CloudConfiguration {
 
@@ -54,7 +52,7 @@ public class CloudConfigurationImpl extends CloudConfiguration {
   LanguageDimension languageDimension;
   OrientationDimension orientationDimension;
 
-  public CloudConfigurationImpl(int id, String name, Kind kind, Icon icon, AndroidFacet facet) {
+  public CloudConfigurationImpl(int id, String name, CloudConfiguration.Kind kind, Icon icon, AndroidFacet facet) {
     if (!isPredefinedId(id) && id >= nextAvailableID) {
       nextAvailableID = id + 1;
     }
@@ -142,7 +140,7 @@ public class CloudConfigurationImpl extends CloudConfiguration {
   @Override
   public String getDisplayName() {
     int deviceConfigurationCount = getDeviceConfigurationCount();
-    if (kind != SINGLE_DEVICE) {
+    if (kind != Kind.SINGLE_DEVICE) {
       return name + " (" + deviceConfigurationCount + ")";
     }
     if (deviceConfigurationCount > 0) { // Should be exactly 1

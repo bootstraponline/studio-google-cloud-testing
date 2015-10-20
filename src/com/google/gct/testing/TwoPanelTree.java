@@ -17,6 +17,7 @@ package com.google.gct.testing;
 
 import com.google.api.client.util.Maps;
 import com.google.common.base.Function;
+import com.google.gct.testing.android.CloudConfiguration;
 import com.google.gct.testing.dimension.CloudConfigurationDimension;
 import com.google.gct.testing.dimension.CloudTestingType;
 import com.google.gct.testing.dimension.CloudTestingTypeGroup;
@@ -51,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES;
 import static com.intellij.ui.SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
 import static javax.swing.tree.TreeSelectionModel.SINGLE_TREE_SELECTION;
@@ -116,7 +116,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   public void init() {
     myPanel.add(topPanel, BorderLayout.NORTH);
-    if (configuration.getKind() != SINGLE_DEVICE) {
+    if (configuration.getKind() != CloudConfiguration.Kind.SINGLE_DEVICE) {
       populateTopPanel();
       bottomPanel.setBackground(UIUtil.getListBackground());
       myPanel.add(bottomPanel, BorderLayout.SOUTH);
@@ -258,7 +258,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     CheckedTreeNode rootNode = new CheckedTreeNode(dimension); // Not really necessary since parent not visible
     CheckPolicy radioButtonsCheckPolicy = new CheckPolicy(false, false, false, false);
     // Create a new tree with root node for this dimension.
-    final CheckboxTree tree = configuration.getKind() == SINGLE_DEVICE
+    final CheckboxTree tree = configuration.getKind() == CloudConfiguration.Kind.SINGLE_DEVICE
                               ? new CheckboxTree(new CheckboxTree.CheckboxTreeCellRenderer(){}, rootNode, radioButtonsCheckPolicy)
                               : new CheckboxTree();
     DefaultTreeModel treeModel = new DefaultTreeModel(rootNode);
@@ -289,7 +289,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     // Add each supported type to the tree.
     List<? extends CloudTestingTypeGroup> supportedGroups = dimension.getSupportedGroups();
     for (CloudTestingTypeGroup group : supportedGroups) {
-      if (configuration.getKind() == SINGLE_DEVICE && dimension instanceof DeviceDimension && group.getName().equals("PHYSICAL")) {
+      if (configuration.getKind() == CloudConfiguration.Kind.SINGLE_DEVICE && dimension instanceof DeviceDimension && group.getName().equals("PHYSICAL")) {
         // Do not show physical devices since we cannot launch them in the user project (e.g., for debugging on a cloud device).
         continue;
       }
@@ -299,7 +299,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       } else {
         CheckedTreeNode groupNode = new CheckedTreeNode(group);
         rootNode.add(groupNode);
-        groupNode.setEnabled(dimension.isEditable() && configuration.getKind() != SINGLE_DEVICE);
+        groupNode.setEnabled(dimension.isEditable() && configuration.getKind() != CloudConfiguration.Kind.SINGLE_DEVICE);
         for (CloudTestingType type : types) {
           addChildNode(groupNode, type, dimension);
         }
@@ -309,7 +309,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     // Record the tree.
     treeMap.put(dimension, tree);
 
-    tree.setCellRenderer(configuration.getKind() == SINGLE_DEVICE ? new RadioButtonRenderer() : new CheckBoxRenderer());
+    tree.setCellRenderer(configuration.getKind() == CloudConfiguration.Kind.SINGLE_DEVICE ? new RadioButtonRenderer() : new CheckBoxRenderer());
 
     treeModel.reload();
 
@@ -337,7 +337,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     rightScrollPane.setViewportView(currentTree);
     rightScrollPane.updateUI();
     prepareForViewing(currentTree);
-    if (configuration.getKind() != SINGLE_DEVICE) {
+    if (configuration.getKind() != CloudConfiguration.Kind.SINGLE_DEVICE) {
       mySelectAllButton.setVisible(selectedDimension.isEditable());
       mySelectNoneButton.setVisible(selectedDimension.isEditable());
     }
@@ -441,7 +441,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       return;
     }
 
-    if (configuration.getKind() == SINGLE_DEVICE) {
+    if (configuration.getKind() == CloudConfiguration.Kind.SINGLE_DEVICE) {
       updateRadioButtonTreeState(currentTree);
     } else {
       updateCheckBoxTreeState(currentTree);
@@ -722,7 +722,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
       int totalCount = 0;
       for (CloudTestingType testingType : dimension.getSupportedDomain()) {
-        if (configuration.getKind() != SINGLE_DEVICE || !(testingType instanceof Device) || ((Device)testingType).isVirtual()) {
+        if (configuration.getKind() != CloudConfiguration.Kind.SINGLE_DEVICE || !(testingType instanceof Device) || ((Device)testingType).isVirtual()) {
           totalCount++;
         }
       }

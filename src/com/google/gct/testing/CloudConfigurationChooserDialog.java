@@ -16,11 +16,11 @@
 package com.google.gct.testing;
 
 import com.android.annotations.Nullable;
-import com.android.tools.idea.run.cloud.CloudConfiguration.Kind;
 import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.gct.testing.android.CloudConfiguration;
 import com.google.gct.testing.dimension.ConfigurationChangeEvent;
 import com.google.gct.testing.dimension.ConfigurationChangeListener;
 import com.google.gct.testing.util.CloudTestingTracking;
@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static com.android.tools.idea.run.cloud.CloudConfiguration.Kind.SINGLE_DEVICE;
 import static com.google.gct.testing.CloudTestingUtils.createConfigurationChooserGbc;
 
 public class CloudConfigurationChooserDialog extends DialogWrapper implements ConfigurationChangeListener {
@@ -69,7 +68,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   private final DefaultMutableTreeNode customRoot = new DefaultMutableTreeNode("Custom");
   private final DefaultMutableTreeNode defaultsRoot = new DefaultMutableTreeNode("Defaults");
 
-  private final Kind configurationKind;
+  private final CloudConfiguration.Kind configurationKind;
 
   private JPanel myPanel;
   private final Splitter mySplitter = new Splitter(false);
@@ -96,7 +95,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
                                          List<CloudConfigurationImpl> editableConfigurations,
                                          List<CloudConfigurationImpl> defaultConfigurations,
                                          @Nullable final CloudConfigurationImpl initiallySelectedConfiguration,
-                                         @NotNull Kind configurationKind) {
+                                         @NotNull CloudConfiguration.Kind configurationKind) {
 
     super(module.getProject(), true);
 
@@ -110,7 +109,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
     facet = AndroidFacet.getInstance(module);
 
-    if (configurationKind == SINGLE_DEVICE) {
+    if (configurationKind == CloudConfiguration.Kind.SINGLE_DEVICE) {
       setTitle("Single Device Configurations");
       UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.CONFIGURE_CLOUD_DEVICE,
                                             CloudTestingTracking.SESSION_LABEL, null);
