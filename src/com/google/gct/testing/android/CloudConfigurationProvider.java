@@ -41,8 +41,8 @@ public abstract class CloudConfigurationProvider {
   // If this JVM option is present and set to true, enable the plugin regardless of the Settings dialog enable property's value.
   private static final String EXTERNAL_ENABLE_FLAG = "enable.google.cloud.testing.plugin";
 
-  public static final ExtensionPointName<CloudConfigurationProvider> EP_NAME =
-    ExtensionPointName.create("com.android.tools.idea.run.cloudConfigurationProvider");
+  //public static final ExtensionPointName<CloudConfigurationProvider> EP_NAME =
+  //  ExtensionPointName.create("com.android.tools.idea.run.cloudConfigurationProvider");
 
   /**
    * Returns a list of device configurations supported by this provider for a given android project. The list typically contains a set of
@@ -119,10 +119,10 @@ public abstract class CloudConfigurationProvider {
 
   @Nullable
   private static CloudConfigurationProvider getExtension() {
-    CloudConfigurationProvider[] extensions = EP_NAME.getExtensions();
-    if (extensions.length > 0) {
-      return extensions[0];
-    }
+    //CloudConfigurationProvider[] extensions = EP_NAME.getExtensions();
+    //if (extensions.length > 0) {
+    //  return extensions[0];
+    //}
     return null;
   }
 }
