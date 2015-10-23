@@ -73,7 +73,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.*;
 
@@ -477,8 +476,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
           String deviceAddress = "localhost:" + adbLocalPort;
           System.out.println("Device ready with IP address:port " + deviceAddress);
-          Runtime rt = Runtime.getRuntime();
-          Process connect = rt.exec("./adb connect " + deviceAddress, null, workingDir);
+          File adbFile = new File(workingDir, System.getProperty("os.name").toLowerCase().indexOf("win") != -1 ? "adb.exe" : "adb");
+          Runtime runtime = Runtime.getRuntime();
+          Process connect = runtime.exec(new String[]{adbFile.getAbsolutePath(), "connect", deviceAddress}, null, workingDir);
           connect.waitFor();
           serialNumberToConfigurationInstance.put(deviceAddress, configurationInstance);
           // Do not wait for "finally" to remove the ghost device
@@ -486,13 +486,16 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
           synchronized (ghostCloudDevices) {
             ghostCloudDevices.remove(ghostCloudDevice);
           }
+          // Do not wait for "finally" to close the blank window to avoid showing both blank and real VNC windows at the same time.
           try { // Use try just in case something goes wrong.
             blankVncViewer.closeWindow();
+            blankVncViewer = null;
           } catch (Exception e) {
             e.printStackTrace();
           }
           // Make sure the device is unlocked.
-          Process unlock = rt.exec("./adb -s " + deviceAddress + " wait-for-device shell input keyevent 82" , null, workingDir);
+          Process unlock = runtime.exec(
+            new String[]{adbFile.getAbsolutePath(), "-s", deviceAddress, "wait-for-device", "shell", "input", "keyevent", "82"}, null, workingDir);
           unlock.waitFor();
           // Open the VNC window for the cloud device.
           String[] viewerArgs = new String[]{"-port=" + vncLocalPort, "-host=localhost", "-password=" + vncPassword, "-fullScreen=false"};
@@ -504,13 +507,18 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
       CloudTestingUtils.showErrorMessage(null, "Timed out connecting to a cloud device", "Timed out connecting to a cloud device!\n" +
                                                                                          "Timed out connecting to a cloud device:\n\n" +
                                                                                          deviceId);
-    } catch (IOException e) {
-      showCloudDevicePollingError(e, deviceId);
-    } catch (InterruptedException e) {
+    } catch (Exception e) {
       showCloudDevicePollingError(e, deviceId);
     } finally {
       synchronized (ghostCloudDevices) {
         ghostCloudDevices.remove(ghostCloudDevice);
+      }
+      if (blankVncViewer != null) {
+        try { // Use try just in case something goes wrong.
+          blankVncViewer.closeWindow();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
       }
     }
   }

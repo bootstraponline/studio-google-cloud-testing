@@ -90,7 +90,8 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
     // Perform tearing down in separate try blocks to make sure that every step gets a chance to be executed.
     try {
       // Disconnect adb from the deleted device (otherwise, it will keep showing the stale cloud device).
-      Runtime.getRuntime().exec("./adb disconnect " + deviceAddress, null, workingDir);
+      File adbFile = new File(workingDir, System.getProperty("os.name").toLowerCase().indexOf("win") != -1 ? "adb.exe" : "adb");
+      Runtime.getRuntime().exec(new String[]{adbFile.getAbsolutePath(), "disconnect", deviceAddress}, null, workingDir);
     } catch (Exception exception) {
       exception.printStackTrace();
     }
