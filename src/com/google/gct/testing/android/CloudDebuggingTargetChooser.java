@@ -17,13 +17,20 @@ package com.google.gct.testing.android;
 
 
 import com.android.ddmlib.IDevice;
+import com.android.tools.idea.model.AndroidModuleInfo;
 import com.android.tools.idea.run.*;
 import com.google.common.collect.ImmutableList;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.util.ThreeState;
+import org.jetbrains.android.facet.AndroidFacet;
+import org.jetbrains.android.sdk.AndroidPlatform;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.EnumSet;
 import java.util.List;
 
-public class CloudDebuggingTargetChooser implements TargetChooser {
+public class CloudDebuggingTargetChooser {
   @NotNull
   private final String myCloudDeviceSerialNumber;
 
@@ -31,23 +38,30 @@ public class CloudDebuggingTargetChooser implements TargetChooser {
     myCloudDeviceSerialNumber = cloudDeviceSerialNumber;
   }
 
-
-  @Override
-  public boolean matchesDevice(@NotNull IDevice device) {
-    return device.getSerialNumber().equals(myCloudDeviceSerialNumber);
-  }
-
   @NotNull
-  @Override
   public DeviceTarget getTarget(@NotNull ConsolePrinter printer, @NotNull DeviceCount deviceCount, boolean debug) {
     // TODO: Prompt the user to launch a cloud device if none found.
     // TODO: Assert that we don't get multiple devices out here?
-    return DeviceTarget.forDevices(DeviceSelectionUtils.getAllCompatibleDevices(new TargetDeviceFilter(this)));
+    return DeviceTarget.forDevices(DeviceSelectionUtils.getAllCompatibleDevices(new CloudDebuggingFilter(myCloudDeviceSerialNumber)));
   }
 
   @NotNull
-  @Override
   public List<ValidationError> validate() {
     return ImmutableList.of();
   }
+
+  public static class CloudDebuggingFilter extends TargetDeviceFilter {
+    @NotNull
+    private final String myCloudDeviceSerialNumber;
+
+    public CloudDebuggingFilter(@NotNull String cloudDeviceSerialNumber) {
+      myCloudDeviceSerialNumber = cloudDeviceSerialNumber;
+    }
+
+    @Override
+    public boolean matchesDevice(@NotNull IDevice device) {
+      return device.getSerialNumber().equals(myCloudDeviceSerialNumber);
+    }
+  }
+
 }

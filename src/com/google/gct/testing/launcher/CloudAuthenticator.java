@@ -144,4 +144,8 @@ public class CloudAuthenticator {
     return true;
   }
 
+  public static boolean isUserLoggedIn() {
+    return GoogleLogin.getInstance().getCredential() != null;
+  }
+
 }

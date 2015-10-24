@@ -62,5 +62,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="swingx" level="project" />
+    <orderEntry type="module" module-name="execution-openapi" />
   </component>
 </module>

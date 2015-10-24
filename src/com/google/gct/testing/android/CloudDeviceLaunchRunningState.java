@@ -16,7 +16,6 @@
 package com.google.gct.testing.android;
 
 import com.android.tools.idea.run.AndroidProcessText;
-import com.google.gct.testing.android.CloudConfigurationProvider;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -38,11 +37,13 @@ import org.jetbrains.annotations.Nullable;
 public class CloudDeviceLaunchRunningState implements RunProfileState {
 
   @NotNull private final AndroidFacet myFacet;
-  @NotNull private final CloudDeviceLaunchTarget myTarget;
+  private final int myMatrixConfigurationId;
+  @NotNull private final String myCloudProjectId;
 
-  public CloudDeviceLaunchRunningState(@NotNull AndroidFacet facet, @NotNull CloudDeviceLaunchTarget target) {
+  public CloudDeviceLaunchRunningState(@NotNull AndroidFacet facet, int matrixConfigurationId, @NotNull String cloudProjectId) {
     myFacet = facet;
-    myTarget = target;
+    myMatrixConfigurationId = matrixConfigurationId;
+    myCloudProjectId = cloudProjectId;
   }
 
   @Nullable
@@ -53,7 +54,7 @@ public class CloudDeviceLaunchRunningState implements RunProfileState {
     ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
       @Override
       public void run() {
-        provider.launchCloudDevice(myTarget.getCloudDeviceConfigurationId(), myTarget.getCloudDeviceProjectId(), myFacet);
+        provider.launchCloudDevice(myMatrixConfigurationId, myCloudProjectId, myFacet);
       }
     });
     // This duplicates what previously happened in AndroidRunningState, but may not be necessary.

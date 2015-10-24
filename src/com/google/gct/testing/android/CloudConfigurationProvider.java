@@ -17,6 +17,7 @@ package com.google.gct.testing.android;
 
 
 import com.android.ddmlib.IDevice;
+import com.google.gct.testing.CloudConfigurationProviderImpl;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
 import com.intellij.execution.Executor;
@@ -123,6 +124,6 @@ public abstract class CloudConfigurationProvider {
     //if (extensions.length > 0) {
     //  return extensions[0];
     //}
-    return null;
+    return new CloudConfigurationProviderImpl();
   }
 }

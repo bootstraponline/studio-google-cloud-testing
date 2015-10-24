@@ -15,9 +15,8 @@
  */
 package com.google.gct.testing.android;
 
-import com.android.ddmlib.IDevice;
 import com.android.tools.idea.run.*;
-import com.google.common.collect.Lists;
+import com.android.tools.idea.run.editor.DeployTarget;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +26,7 @@ import java.util.List;
 /**
  * A target chooser for picking cloud matrix test deploy targets.
  */
-public class CloudMatrixTargetChooser implements TargetChooser {
+public class CloudMatrixTargetChooser {
 
   @NotNull private final AndroidFacet myFacet;
   private final int myMatrixConfigurationId;
@@ -45,25 +44,14 @@ public class CloudMatrixTargetChooser implements TargetChooser {
   }
 
   @Nullable
-  @Override
   public DeployTarget getTarget(@NotNull ConsolePrinter printer, @NotNull DeviceCount deviceCount, boolean debug) {
-    if (debug) {
-      // It does not make sense to debug a matrix of devices on the cloud. In debug mode, fall back to manual chooser.
-      // TODO: Consider making the debug executor unavailable in this case rather than popping the extended chooser dialog.
-      return myFallback.getTarget(printer, deviceCount, debug);
-    }
-    return new CloudMatrixTarget(myMatrixConfigurationId, myCloudProjectId);
+    //if (debug) {
+    //  // It does not make sense to debug a matrix of devices on the cloud. In debug mode, fall back to manual chooser.
+    //  // TODO: Consider making the debug executor unavailable in this case rather than popping the extended chooser dialog.
+    //  return myFallback.getTarget(printer, deviceCount, debug);
+    //}
+    //return new CloudMatrixTarget(myMatrixConfigurationId, myCloudProjectId);
+    return null;
   }
 
-  @Override
-  public boolean matchesDevice(@NotNull IDevice device) {
-    return false;
-  }
-
-  @NotNull
-  @Override
-  public List<ValidationError> validate() {
-    return CloudTargetChooserUtil.validate(
-      myFacet, CloudConfiguration.Kind.MATRIX, myCloudProjectId, myMatrixConfigurationId);
-  }
 }

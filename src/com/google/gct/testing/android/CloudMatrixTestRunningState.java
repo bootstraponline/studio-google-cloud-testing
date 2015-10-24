@@ -37,24 +37,19 @@ public class CloudMatrixTestRunningState implements RunProfileState {
 
   @NotNull private final ExecutionEnvironment myEnvironment;
   @NotNull private final AndroidFacet myFacet;
-  @NotNull private final CloudMatrixTarget myTarget;
+  private final int myMatrixConfigurationId;
+  @NotNull private final String myCloudProjectId;
   @NotNull private final AndroidTestRunConfiguration myConfiguration;
   @NotNull private final ProcessHandler myProcessHandler = new DefaultDebugProcessHandler();
 
-  public CloudMatrixTestRunningState(
-    @NotNull ExecutionEnvironment environment,
-    @NotNull AndroidFacet facet,
-    @NotNull AndroidRunConfigurationBase configuration,
-    @NotNull CloudMatrixTarget target
-  ) {
+  public CloudMatrixTestRunningState(@NotNull ExecutionEnvironment environment, @NotNull AndroidFacet facet,
+                                     @NotNull AndroidTestRunConfiguration configuration, int matrixConfigurationId,
+                                     @NotNull String cloudProjectId) {
     myEnvironment = environment;
     myFacet = facet;
-    // TODO: Enforce this with the compiler rather than an assert here or elsewhere.
-    if (!(configuration instanceof AndroidTestRunConfiguration)) {
-      throw new IllegalArgumentException("Cloud matrix tests require a test configuration.");
-    }
-    myConfiguration = (AndroidTestRunConfiguration) configuration;
-    myTarget = target;
+    myConfiguration = configuration;
+    myMatrixConfigurationId = matrixConfigurationId;
+    myCloudProjectId = cloudProjectId;
   }
 
   @Nullable
@@ -63,7 +58,7 @@ public class CloudMatrixTestRunningState implements RunProfileState {
     AndroidProcessText.attach(myProcessHandler);
     final CloudConfigurationProvider provider = CloudConfigurationProvider.getCloudConfigurationProvider();
     assert provider != null;
-    return provider.executeCloudMatrixTests(myTarget.getMatrixConfigurationId(), myTarget.getCloudProjectId(), this, executor);
+    return provider.executeCloudMatrixTests(myMatrixConfigurationId, myCloudProjectId, this, executor);
   }
 
   @NotNull

@@ -44,7 +44,10 @@
     <run.cloudConfigurationProvider id="myCloudConfigurationProvider" order="first" implementation="com.google.gct.testing.CloudConfigurationProviderImpl"/>
 </extensions>
 
-
+  <extensions defaultExtensionNs="com.android.run">
+    <deployTarget implementation="com.google.gct.testing.android.CloudTestMatrixTarget" />
+    <deployTarget implementation="com.google.gct.testing.android.CloudDebuggingTarget" />
+  </extensions>
 
   <extensionPoints>
     <extensionPoint name="cloudTestingListener" interface="com.google.gct.testing.CloudTestingListener"/>

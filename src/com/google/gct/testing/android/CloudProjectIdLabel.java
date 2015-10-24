@@ -15,7 +15,6 @@
  */
 package com.google.gct.testing.android;
 
-import com.android.tools.idea.run.AndroidRunConfigurationBase;
 import com.google.common.collect.Maps;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.util.Pair;
@@ -23,6 +22,7 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBLabel;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.util.Map;
@@ -31,7 +31,7 @@ public class CloudProjectIdLabel extends JBLabel {
   private static final String CLOUD_PROJECT_PROMPT = "Please select a project...";
 
   private final CloudConfiguration.Kind myConfigurationKind;
-  private AndroidRunConfigurationBase myCurrentConfiguration;
+  private int myCurrentConfigurationId = -1;
   private Module myCurrentModule;
 
   // Used to keep track of user choices when run config and/or module are not available.
@@ -40,7 +40,7 @@ public class CloudProjectIdLabel extends JBLabel {
   /** A cache of project ids selected by <kind, module> per android run configuration, so that if
    * the configuration and/or module selections change back and forth, we retain the appropriate selected project id.
    */
-  private static Map<AndroidRunConfigurationBase, Map<Pair<CloudConfiguration.Kind, Module>, String>> myProjectByConfigurationAndModuleCache =
+  private static Map<Integer, Map<Pair<CloudConfiguration.Kind, Module>, String>> myProjectByConfigurationIdAndModuleCache =
     Maps.newHashMapWithExpectedSize(5);
 
   public CloudProjectIdLabel(@NotNull CloudConfiguration.Kind configurationKind) {
@@ -72,13 +72,17 @@ public class CloudProjectIdLabel extends JBLabel {
     rememberChosenProjectId();
   }
 
-  public void setFacet(@NotNull AndroidFacet facet) {
+  public void setFacet(@Nullable AndroidFacet facet) {
+    if (facet == null) {
+      return;
+    }
+
     myCurrentModule = facet.getModule();
     restoreChosenProjectId();
   }
 
-  public void setConfiguration(@NotNull AndroidRunConfigurationBase configuration) {
-    myCurrentConfiguration = configuration;
+  public void setRunConfigurationId(int configurationId) {
+    myCurrentConfigurationId = configurationId;
   }
 
   private void rememberChosenProjectId() {
@@ -86,20 +90,21 @@ public class CloudProjectIdLabel extends JBLabel {
       myLastChosenProjectIdPerKind.put(myConfigurationKind, getText());
     }
 
-    if (myCurrentConfiguration == null || myCurrentModule == null) {
+    if (myCurrentConfigurationId == -1 || myCurrentModule == null) {
       return;
     }
 
-    Map<Pair<CloudConfiguration.Kind, Module>, String> projectByModuleCache = myProjectByConfigurationAndModuleCache.get(myCurrentConfiguration);
+    Map<Pair<CloudConfiguration.Kind, Module>, String> projectByModuleCache =
+      myProjectByConfigurationIdAndModuleCache.get(myCurrentConfigurationId);
     if (projectByModuleCache == null) {
       projectByModuleCache = Maps.newHashMapWithExpectedSize(5);
-      myProjectByConfigurationAndModuleCache.put(myCurrentConfiguration, projectByModuleCache);
+      myProjectByConfigurationIdAndModuleCache.put(myCurrentConfigurationId, projectByModuleCache);
     }
     projectByModuleCache.put(Pair.create(myConfigurationKind, myCurrentModule), getText());
   }
 
   public void restoreChosenProjectId() {
-    if (myCurrentConfiguration == null || myCurrentModule == null) {
+    if (myCurrentConfigurationId == -1 || myCurrentModule == null) {
       String lastChosenProjectId = myLastChosenProjectIdPerKind.get(myConfigurationKind);
       if (lastChosenProjectId != null) {
         updateCloudProjectId(lastChosenProjectId);
@@ -107,7 +112,8 @@ public class CloudProjectIdLabel extends JBLabel {
       return;
     }
 
-    Map<Pair<CloudConfiguration.Kind, Module>, String> projectByModuleCache = myProjectByConfigurationAndModuleCache.get(myCurrentConfiguration);
+    Map<Pair<CloudConfiguration.Kind, Module>, String> projectByModuleCache =
+      myProjectByConfigurationIdAndModuleCache.get(myCurrentConfigurationId);
     if (projectByModuleCache != null) {
       String projectId = projectByModuleCache.get(Pair.create(myConfigurationKind, myCurrentModule));
       if (projectId != null) {

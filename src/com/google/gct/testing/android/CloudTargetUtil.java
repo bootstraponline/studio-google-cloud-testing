@@ -22,18 +22,24 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import static com.google.gct.testing.launcher.CloudAuthenticator.isUserLoggedIn;
+
 /**
  * Utility methods for cloud target choosers.
  */
-public final class CloudTargetChooserUtil {
-  private CloudTargetChooserUtil() {} // Not instantiable.
+public final class CloudTargetUtil {
+  private CloudTargetUtil() {} // Not instantiable.
 
   @NotNull
-  public static List<ValidationError> validate(@NotNull AndroidFacet facet,
-                                               @NotNull CloudConfiguration.Kind kind,
-                                               @NotNull String cloudProjectId,
-                                               int cloudConfigurationId) {
+  public static List<ValidationError> validate(@NotNull AndroidFacet facet, @NotNull CloudConfiguration.Kind kind,
+                                               @NotNull String cloudProjectId, int cloudConfigurationId) {
     List<ValidationError> errors = Lists.newArrayList();
+    if (!isUserLoggedIn()) {
+      errors.add(ValidationError.fatal("Not connected to Google Cloud Platform."));
+      // Can't continue.
+      return errors;
+    }
+
     if (cloudProjectId.isEmpty()) {
       errors.add(ValidationError.fatal("Cloud project not specified."));
     }
@@ -52,7 +58,7 @@ public final class CloudTargetChooserUtil {
     }
 
     if (selectedConfig == null) {
-      errors.add(ValidationError.fatal("Cloud configuration not specified"));
+      errors.add(ValidationError.fatal("Cloud configuration not specified."));
       // Can't continue.
       return errors;
     }

@@ -17,7 +17,9 @@ package com.google.gct.testing;
 
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
+import com.android.tools.idea.run.editor.DeployTarget;
 import com.android.tools.idea.stats.UsageTracker;
+import com.google.gct.testing.android.CloudDebuggingTarget;
 import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
 import com.google.gct.testing.results.GoogleCloudTestingResultsForm;
@@ -137,8 +139,6 @@ public class DebugConfigurationAction extends AnAction {
 
     @Override
     public void run() {
-      assert false : "Debugging on cloud not supported";
-
       if (!(runProfile instanceof AndroidTestRunConfiguration)) {
         return;
       }
@@ -169,47 +169,66 @@ public class DebugConfigurationAction extends AnAction {
           }
         }
 
-        //final AndroidTestRunConfiguration runConfiguration = prepareTestRunConfiguration(device.getSerialNumber());
-        //SwingUtilities.invokeLater(new Runnable() {
-        //  @Override
-        //  public void run() {
-        //    try {
-        //      runner.execute(new ExecutionEnvironmentBuilder(environment)
-        //                       .executor(DefaultDebugExecutor.getDebugExecutorInstance())
-        //                       .runProfile(runConfiguration)
-        //                       .build());
-        //    } catch (ExecutionException e) {
-        //      CloudTestingUtils.showBalloonMessage(project, "Failed to start debugging on a cloud device: " +
-        //                                                    runConfiguration.CLOUD_DEVICE_SERIAL_NUMBER, MessageType.WARNING, 10);
-        //    }
-        //  }
-        //});
+        final String deviceSerialNumber = device.getSerialNumber();
+        final AndroidTestRunConfiguration runConfiguration = prepareTestRunConfiguration(deviceSerialNumber);
+        if (runConfiguration == null) {
+          SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+              CloudTestingUtils.showBalloonMessage(project, "Could not prepare a run configuration for cloud debugging",
+                                                   MessageType.WARNING, 10);
+            }
+          });
+          return;
+        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            try {
+              runner.execute(new ExecutionEnvironmentBuilder(environment)
+                               .executor(DefaultDebugExecutor.getDebugExecutorInstance())
+                               .runProfile(runConfiguration)
+                               .build());
+            } catch (ExecutionException e) {
+              CloudTestingUtils.showBalloonMessage(project, "Failed to start debugging on a cloud device: " +
+                                                            deviceSerialNumber, MessageType.WARNING, 10);
+            }
+          }
+        });
       }
     }
 
-    //private AndroidTestRunConfiguration prepareTestRunConfiguration(String deviceSerialNumber) {
-    //  // Clone the run configuration such that we do not need to reuse and restore the original one.
-    //  final AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) ((AndroidTestRunConfiguration)runProfile).clone();
-    //  runConfiguration.setTargetSelectionMode(TargetSelectionMode.CLOUD_DEVICE_DEBUGGING);
-    //  runConfiguration.CLOUD_DEVICE_SERIAL_NUMBER = deviceSerialNumber;
-    //  if (className != null) {
-    //    runConfiguration.CLASS_NAME = className;
-    //    if (methodName != null) {
-    //      runConfiguration.METHOD_NAME = methodName;
-    //      runConfiguration.TESTING_TYPE = AndroidTestRunConfiguration.TEST_METHOD;
-    //    } else {
-    //      runConfiguration.TESTING_TYPE = AndroidTestRunConfiguration.TEST_CLASS;
-    //    }
-    //  }
-    //  return runConfiguration;
-    //}
+    private @Nullable AndroidTestRunConfiguration prepareTestRunConfiguration(String deviceSerialNumber) {
+      // Clone the run configuration such that we do not need to reuse and restore the original one.
+      final AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) ((AndroidTestRunConfiguration)runProfile).clone();
+      for (DeployTarget deployTarget : runConfiguration.getDeployTargets()) {
+        if (deployTarget.getId().equals(CloudDebuggingTarget.ID)) {
+          ((CloudDebuggingTarget)deployTarget).setCloudDeviceSerialNumber(deviceSerialNumber);
+          runConfiguration.setTargetSelectionMode(deployTarget);
+          if (className != null) {
+            runConfiguration.CLASS_NAME = className;
+            if (methodName != null) {
+              runConfiguration.METHOD_NAME = methodName;
+              runConfiguration.TESTING_TYPE = AndroidTestRunConfiguration.TEST_METHOD;
+            } else {
+              runConfiguration.TESTING_TYPE = AndroidTestRunConfiguration.TEST_CLASS;
+            }
+          }
+          return runConfiguration;
+        }
+      }
+      return null;
+    }
 
     private IDevice getMatchingDevice() {
-      for (IDevice device : AndroidDebugBridge.getBridge().getDevices()) {
-        String deviceConfigurationInstance =
-          CloudConfigurationProviderImpl.getConfigurationInstanceForSerialNumber(device.getSerialNumber());
-        if (configurationInstance.getEncodedString().equals(deviceConfigurationInstance)) {
-          return device;
+      AndroidDebugBridge androidDebugBridge = AndroidDebugBridge.getBridge();
+      if (androidDebugBridge != null) {
+        for (IDevice device : androidDebugBridge.getDevices()) {
+          String deviceConfigurationInstance = CloudConfigurationProviderImpl.getConfigurationInstanceForSerialNumber(device.getSerialNumber());
+          if (configurationInstance.getEncodedString().equals(deviceConfigurationInstance)) {
+            return device;
+          }
         }
       }
       for (IDevice device : CloudConfigurationProviderImpl.getInstance().getLaunchingCloudDevices()) {

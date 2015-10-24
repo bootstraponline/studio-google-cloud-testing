@@ -15,9 +15,8 @@
  */
 package com.google.gct.testing.android;
 
-import com.android.ddmlib.IDevice;
 import com.android.tools.idea.run.*;
-import com.google.gct.testing.android.CloudDeviceLaunchTarget;
+import com.android.tools.idea.run.editor.DeployTarget;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,7 +26,7 @@ import java.util.List;
 /**
  * A target chooser for selecting and launching a cloud device.
  */
-public class CloudDeviceTargetChooser implements TargetChooser {
+public class CloudDeviceTargetChooser {
 
   @NotNull private final AndroidFacet myFacet;
   private final int myCloudDeviceConfigurationId;
@@ -42,21 +41,10 @@ public class CloudDeviceTargetChooser implements TargetChooser {
   }
 
   @Nullable
-  @Override
   public DeployTarget getTarget(@NotNull ConsolePrinter printer, @NotNull DeviceCount deviceCount, boolean debug) {
     // TODO: Actually launch the chosen device in here and return a DeviceTarget.
-    return new CloudDeviceLaunchTarget(myCloudDeviceConfigurationId, myCloudDeviceProjectId);
+    //return new CloudDeviceLaunchTarget(myCloudDeviceConfigurationId, myCloudDeviceProjectId);
+    return null;
   }
 
-  @Override
-  public boolean matchesDevice(@NotNull IDevice device) {
-    return false;
-  }
-
-  @NotNull
-  @Override
-  public List<ValidationError> validate() {
-    return CloudTargetChooserUtil.validate(
-      myFacet, CloudConfiguration.Kind.SINGLE_DEVICE, myCloudDeviceProjectId, myCloudDeviceConfigurationId);
-  }
 }
