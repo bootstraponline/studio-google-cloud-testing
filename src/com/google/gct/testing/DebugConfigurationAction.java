@@ -40,6 +40,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
+import org.jetbrains.android.sdk.AndroidSdkUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,6 +50,7 @@ public class DebugConfigurationAction extends AnAction {
 
   private final static String TEXT = "Debug Configuration in Cloud";
   private final static String DESCRIPTION = "Debug Configuration on a Cloud Device";
+  private AndroidDebugBridge myAndroidDebugBridge;
 
   public DebugConfigurationAction() {
     super(TEXT, DESCRIPTION, CloudTestingUtils.CLOUD_DEBUG_ICON);
@@ -109,6 +111,12 @@ public class DebugConfigurationAction extends AnAction {
     ConfigurationInstance configurationInstance = ConfigurationInstance.parseFromResultsViewerDisplayString(configurationName);
     if (!configurationInstance.isVirtual()) {
       CloudTestingUtils.showBalloonMessage(project, "Debugging on physical devices is not supported yet", MessageType.WARNING, 10);
+      return;
+    }
+
+    myAndroidDebugBridge = AndroidSdkUtils.getDebugBridge(project);
+    if (myAndroidDebugBridge == null) {
+      CloudTestingUtils.showBalloonMessage(project, "Could not obtain a debug bridge", MessageType.WARNING, 10);
       return;
     }
 
@@ -221,9 +229,8 @@ public class DebugConfigurationAction extends AnAction {
     }
 
     private IDevice getMatchingDevice() {
-      AndroidDebugBridge androidDebugBridge = AndroidDebugBridge.getBridge();
-      if (androidDebugBridge != null) {
-        for (IDevice device : androidDebugBridge.getDevices()) {
+      if (myAndroidDebugBridge != null) { // Should not be null at this point, but check just in case.
+        for (IDevice device : myAndroidDebugBridge.getDevices()) {
           String deviceConfigurationInstance = CloudConfigurationProviderImpl.getConfigurationInstanceForSerialNumber(device.getSerialNumber());
           if (configurationInstance.getEncodedString().equals(deviceConfigurationInstance)) {
             return device;
