@@ -18,6 +18,7 @@ package com.google.gct.testing;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.tools.idea.run.editor.DeployTarget;
+import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testing.android.CloudDebuggingTarget;
 import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
@@ -39,8 +40,6 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
-import com.android.tools.idea.run.TargetSelectionMode;
-import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -202,7 +201,7 @@ public class DebugConfigurationAction extends AnAction {
     private @Nullable AndroidTestRunConfiguration prepareTestRunConfiguration(String deviceSerialNumber) {
       // Clone the run configuration such that we do not need to reuse and restore the original one.
       final AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) ((AndroidTestRunConfiguration)runProfile).clone();
-      for (DeployTarget deployTarget : runConfiguration.getDeployTargets()) {
+      for (DeployTarget deployTarget : DeployTarget.getDeployTargets()) {
         if (deployTarget.getId().equals(CloudDebuggingTarget.ID)) {
           ((CloudDebuggingTarget)deployTarget).setCloudDeviceSerialNumber(deviceSerialNumber);
           runConfiguration.setTargetSelectionMode(deployTarget);
