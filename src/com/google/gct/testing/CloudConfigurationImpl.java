@@ -90,7 +90,7 @@ public class CloudConfigurationImpl extends CloudConfiguration {
     id = nextAvailableID++;
     name = "Unnamed";
     this.kind = kind;
-    icon = CloudConfigurationProviderImpl.DEFAULT_ICON;
+    icon = CloudConfigurationHelper.DEFAULT_ICON;
     this.facet = facet;
     isEditable = true;
     createDimensions();

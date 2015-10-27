@@ -16,6 +16,7 @@
 package com.google.gct.testing.android;
 
 import com.android.tools.idea.run.AndroidProcessText;
+import com.google.gct.testing.CloudConfigurationHelper;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -49,12 +50,10 @@ public class CloudDeviceLaunchRunningState implements RunProfileState {
   @Nullable
   @Override
   public ExecutionResult execute(Executor executor, @NotNull ProgramRunner runner) throws ExecutionException {
-    final CloudConfigurationProvider provider = CloudConfigurationProvider.getCloudConfigurationProvider();
-    assert provider != null;
     ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
       @Override
       public void run() {
-        provider.launchCloudDevice(myMatrixConfigurationId, myCloudProjectId, myFacet);
+        CloudConfigurationHelper.launchCloudDevice(myMatrixConfigurationId, myCloudProjectId, myFacet);
       }
     });
     // This duplicates what previously happened in AndroidRunningState, but may not be necessary.

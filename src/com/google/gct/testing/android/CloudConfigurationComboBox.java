@@ -16,6 +16,8 @@
 package com.google.gct.testing.android;
 
 import com.google.common.collect.Maps;
+import com.google.gct.testing.CloudConfigurationHelper;
+import com.google.gct.testing.CloudOptionEnablementChecker;
 import com.google.gct.testing.android.CloudConfiguration.Kind;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.util.Pair;
@@ -50,7 +52,6 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
   private AndroidFacet myCurrentFacet;
   private List<? extends CloudConfiguration> myTestingConfigurations;
   private ActionListener myActionListener;
-  private final CloudConfigurationProvider myConfigurationProvider;
 
   // Used to keep track of user choices when run config and/or module are not available.
   private static Map<Kind, CloudConfiguration> myLastChosenCloudConfigurationPerKind = Maps.newHashMapWithExpectedSize(5);
@@ -63,7 +64,6 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
   public CloudConfigurationComboBox(@NotNull Kind configurationKind) {
     myConfigurationKind = configurationKind;
-    myConfigurationProvider = CloudConfigurationProvider.getCloudConfigurationProvider();
     setMinimumSize(new Dimension(JBUI.scale(100), getMinimumSize().height));
 
     getComboBox().setRenderer(new TestConfigurationRenderer());
@@ -92,7 +92,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
   }
 
   public void setFacet(@Nullable AndroidFacet facet) {
-    if (!CloudConfigurationProvider.isEnabled()) {
+    if (!CloudOptionEnablementChecker.isCloudOptionEnabled()) {
       return; // Running tests in cloud is not enabled!
     }
 
@@ -102,7 +102,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
     myCurrentFacet = facet;
     myCurrentModule = myCurrentFacet.getModule();
-    myTestingConfigurations = myConfigurationProvider.getCloudConfigurations(myCurrentFacet, myConfigurationKind);
+    myTestingConfigurations = CloudConfigurationHelper.getCloudConfigurations(myCurrentFacet, myConfigurationKind);
 
     // Since setFacet can be called multiple times, make sure to remove any previously registered listeners.
     removeActionListener(myActionListener);
@@ -110,12 +110,12 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
     myActionListener = new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        CloudConfiguration selectedConfig = myConfigurationProvider
-          .openMatrixConfigurationDialog(myCurrentFacet, (CloudConfiguration)getComboBox().getSelectedItem(), myConfigurationKind);
+        CloudConfiguration selectedConfig = CloudConfigurationHelper.openMatrixConfigurationDialog(
+          myCurrentFacet, (CloudConfiguration)getComboBox().getSelectedItem(), myConfigurationKind);
         // Update the comboboxes' contents even if selectedConfig is null since it might mean that a user deleted
         // all configurations in the Matrix Configuration dialog.
         List<? extends CloudConfiguration> cloudConfigurations =
-          myConfigurationProvider.getCloudConfigurations(myCurrentFacet, myConfigurationKind);
+          CloudConfigurationHelper.getCloudConfigurations(myCurrentFacet, myConfigurationKind);
         CloudConfigurationCoordinator.getInstance(myConfigurationKind)
           .updateComboBoxesWithNewCloudConfigurations(cloudConfigurations, myCurrentModule);
         if (cloudConfigurations.isEmpty() || selectedConfig != null) {

@@ -500,7 +500,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
   }
 
   private void addNewConfiguration(CloudConfigurationImpl newConfiguration) {
-    newConfiguration.setIcon(CloudConfigurationProviderImpl.DEFAULT_ICON);
+    newConfiguration.setIcon(CloudConfigurationHelper.DEFAULT_ICON);
     int addIndex = selectedConfiguration == null
                    ? editableConfigurations.size()
                    : editableConfigurations.indexOf(selectedConfiguration) + 1;

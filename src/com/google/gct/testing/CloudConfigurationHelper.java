@@ -38,7 +38,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gct.testing.android.CloudConfiguration;
-import com.google.gct.testing.android.CloudConfigurationProvider;
 import com.google.gct.testing.android.CloudMatrixTestRunningState;
 import com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable;
 import com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings;
@@ -82,7 +81,7 @@ import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 import static com.google.gct.testing.launcher.CloudTestsLauncher.createBucket;
 import static com.jcraft.jsch.KeyPair.RSA;
 
-public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
+public final class CloudConfigurationHelper {
 
   private static final String TEST_RUN_ID_PREFIX = "GoogleCloudTest:";
   private static final Map<String, CloudConfigurationImpl> testRunIdToCloudConfiguration = new HashMap<String, CloudConfigurationImpl>();
@@ -113,19 +112,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
   private static final Set<GhostCloudDevice> ghostCloudDevices = Sets.newHashSet();
 
-  private static CloudConfigurationProviderImpl instance = null;
-
-  private CloudConfigurationProviderImpl() {
-
-  }
-
-  // TODO: Refactor this class into a static utility class and get rid of this method.
-  public static CloudConfigurationProviderImpl getInstance() {
-    if (instance == null) {
-      instance = new CloudConfigurationProviderImpl();
-    }
-    return instance;
-  }
+  private CloudConfigurationHelper() { } // Not instantiable.
 
   public static Map<String, List<? extends CloudTestingType>> getAllDimensionTypes() {
     Map<String, List<? extends CloudTestingType>> dimensionTypes = new HashMap<String, List<? extends CloudTestingType>>();
@@ -137,8 +124,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   @NotNull
-  @Override
-  public List<? extends CloudConfiguration> getCloudConfigurations(@NotNull AndroidFacet facet, @NotNull final CloudConfiguration.Kind configurationKind) {
+  public static List<? extends CloudConfiguration> getCloudConfigurations(@NotNull AndroidFacet facet, @NotNull final CloudConfiguration.Kind configurationKind) {
     try {
       CloudAuthenticator.prepareCredential();
     } catch(Exception e) {
@@ -157,7 +143,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
                                                getDefaultConfigurations(facet, configurationKind)));
   }
 
-  private List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, CloudConfiguration.Kind kind) {
+  private static List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, CloudConfiguration.Kind kind) {
     if (kind == CloudConfiguration.Kind.SINGLE_DEVICE) {
       CloudConfigurationImpl defaultConfiguration =
         new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, "", CloudConfiguration.Kind.SINGLE_DEVICE, AndroidIcons.Display, facet);
@@ -216,7 +202,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   @NotNull
-  public List<? extends CloudConfiguration> getAllCloudConfigurations(@NotNull AndroidFacet facet) {
+  public static List<? extends CloudConfiguration> getAllCloudConfigurations(@NotNull AndroidFacet facet) {
     try {
       CloudAuthenticator.prepareCredential();
     } catch(Exception e) {
@@ -231,10 +217,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   @Nullable
-  @Override
-  public CloudConfiguration openMatrixConfigurationDialog(@NotNull AndroidFacet currentFacet,
-                                                          @Nullable CloudConfiguration selectedConfiguration,
-                                                          @NotNull CloudConfiguration.Kind configurationKind) {
+  public static CloudConfiguration openMatrixConfigurationDialog(@NotNull AndroidFacet currentFacet,
+                                                                 @Nullable CloudConfiguration selectedConfiguration,
+                                                                 @NotNull CloudConfiguration.Kind configurationKind) {
 
     final CloudConfiguration.Kind selectedConfigurationKind =
       selectedConfiguration == null ? configurationKind : ((CloudConfigurationImpl)selectedConfiguration).getKind();
@@ -293,8 +278,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   @Nullable
-  @Override
-  public String openCloudProjectConfigurationDialog(@NotNull Project project, @Nullable String projectId) {
+  public static String openCloudProjectConfigurationDialog(@NotNull Project project, @Nullable String projectId) {
     CloudProjectChooserDialog dialog = new CloudProjectChooserDialog(project, projectId);
 
     dialog.show();
@@ -346,8 +330,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     return true;
   }
 
-  @Override
-  public void launchCloudDevice(int selectedConfigurationId, @NotNull String cloudProjectId, @NotNull AndroidFacet facet) {
+  public static void launchCloudDevice(int selectedConfigurationId, @NotNull String cloudProjectId, @NotNull AndroidFacet facet) {
     UsageTracker.getInstance()
       .trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.LAUNCH_CLOUD_DEVICE, CloudTestingTracking.SESSION_LABEL, null);
 
@@ -363,7 +346,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     launchCloudDevice(configurationInstance);
   }
 
-  public void launchCloudDevice(String configurationInstance) {
+  public static void launchCloudDevice(String configurationInstance) {
     if (!checkJavaVersion()) {
       return;
     }
@@ -533,8 +516,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   @NotNull
-  @Override
-  public Collection<IDevice> getLaunchingCloudDevices() {
+  public static Collection<IDevice> getLaunchingCloudDevices() {
     synchronized (ghostCloudDevices) {
       HashSet<IDevice> launchingCloudDevices = Sets.newHashSet();
       launchingCloudDevices.addAll(ghostCloudDevices);
@@ -543,14 +525,12 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   }
 
   @Nullable
-  @Override
-  public Icon getCloudDeviceIcon() {
+  public static Icon getCloudDeviceIcon() {
     return CloudTestingUtils.CLOUD_DEVICE_ICON;
   }
 
   @Nullable
-  @Override
-  public String getCloudDeviceConfiguration(IDevice device) {
+  public static String getCloudDeviceConfiguration(IDevice device) {
     String encodedConfigurationInstance = device instanceof GhostCloudDevice
                                           ? ((GhostCloudDevice)device).getEncodedConfigurationInstance()
                                           : serialNumberToConfigurationInstance.get(device.getSerialNumber());
@@ -560,16 +540,17 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     return null;
   }
 
-  private void showCloudDevicePollingError(Exception e, String deviceId) {
+  private static void showCloudDevicePollingError(Exception e, String deviceId) {
     CloudTestingUtils.showErrorMessage(null, "Error polling for a cloud device", "Failed to connect to a cloud device!\n" +
                                                                                  "Exception while polling for a cloud device\n\n" +
                                                                                  deviceId +
                                                                                  e.getMessage());
   }
 
-  @Override
-  public ExecutionResult executeCloudMatrixTests(int selectedConfigurationId, String cloudProjectId, CloudMatrixTestRunningState runningState,
-                                                 Executor executor) throws ExecutionException {
+  public static ExecutionResult executeCloudMatrixTests(
+    int selectedConfigurationId, String cloudProjectId, CloudMatrixTestRunningState runningState, Executor executor)
+    throws ExecutionException {
+
     UsageTracker.getInstance()
       .trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.RUN_TEST_MATRIX, CloudTestingTracking.SESSION_LABEL, null);
 
@@ -621,8 +602,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     return new DefaultExecutionResult(console, runningState.getProcessHandler());
   }
 
-  @Override
-  protected boolean canBeEnabled() {
+  static boolean isCloudTestingEnabledRemotely() {
     final String publicBucketName = "cloud-testing-plugin-enablement";
     final String triggerFileName = "ENABLED";
     try {
@@ -641,9 +621,9 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     return false;
   }
 
-  private void performTestsInCloud(final CloudConfigurationImpl cloudTestingConfiguration, final String cloudProjectId,
-                                   final CloudMatrixTestRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser,
-                                   final CloudMatrixExecutionCancellator matrixExecutionCancellator) {
+  private static void performTestsInCloud(final CloudConfigurationImpl cloudTestingConfiguration, final String cloudProjectId,
+                                          final CloudMatrixTestRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser,
+                                          final CloudMatrixExecutionCancellator matrixExecutionCancellator) {
     if (cloudTestingConfiguration != null && cloudTestingConfiguration.getDeviceConfigurationCount() > 0) {
       final List<String> expectedConfigurationInstances =
         cloudTestingConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
@@ -826,17 +806,17 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   //  return apkPaths;
   //}
 
-  private void addPathIfExists(List<String> apkPaths, String apkPath) {
+  private static void addPathIfExists(List<String> apkPaths, String apkPath) {
     if (new File(apkPath).exists()) {
       apkPaths.add(apkPath);
     }
   }
 
-  private String getBucketGcsPath(String bucketName) {
+  private static String getBucketGcsPath(String bucketName) {
     return "gs://" + bucketName;
   }
 
-  private String getApkGcsPath(String bucketName, String apkName) {
+  private static String getApkGcsPath(String bucketName, String apkName) {
     return "gs://" + bucketName + "/" + apkName;
   }
 
@@ -891,7 +871,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     return AndroidIcons.Portrait;
   }
 
-  private String generateSshKeys(JSch jsch) throws JSchException {
+  private static String generateSshKeys(JSch jsch) throws JSchException {
     KeyPair keyPair = KeyPair.genKeyPair(jsch, RSA, 2048);
 
     // Setting 'comment' is by convention only. Pass an empty string if this code breaks on some OS.
@@ -922,7 +902,7 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
   /**
    * Returns the session after connecting.
    */
-  private Session connectSession(JSch jsch, String rhost, int sshPort) throws Exception {
+  private static Session connectSession(JSch jsch, String rhost, int sshPort) throws Exception {
     Session session = jsch.getSession("root", rhost, sshPort);
     Properties config = new Properties();
     config.put("StrictHostKeyChecking", "no");

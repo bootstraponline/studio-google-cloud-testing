@@ -18,6 +18,7 @@ package com.google.gct.testing.android;
 import com.android.tools.idea.run.*;
 import com.android.tools.idea.run.editor.*;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.google.gct.testing.CloudOptionEnablementChecker;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.RunProfile;
@@ -80,7 +81,7 @@ public class CloudTestMatrixTarget extends DeployTarget {
 
   @Override
   public boolean isApplicable(boolean isTestConfig) {
-    return isTestConfig;
+    return isTestConfig && CloudOptionEnablementChecker.isCloudOptionEnabled();
   }
 
   @Override

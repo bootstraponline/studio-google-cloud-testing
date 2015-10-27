@@ -49,8 +49,6 @@ public class CloudTestingUtils {
 
   private static final String SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS = "show.google.cloud.testing.timestamps";
 
-  private static final CloudConfigurationProviderImpl TESTING_CONFIGURATION_FACTORY = CloudConfigurationProviderImpl.getInstance();
-
   //GCT-specific message names.
   public static final String SET_TEST_RUN_ID = "setTestRunId";
   public static final String SET_ACTIVE_CLOUD_MATRIX = "setActiveCloudMatrix";
@@ -87,7 +85,7 @@ public class CloudTestingUtils {
   }
 
   public static CloudConfigurationImpl getConfigurationById(int id, AndroidFacet facet) {
-    for (CloudConfiguration configuration : TESTING_CONFIGURATION_FACTORY.getAllCloudConfigurations(facet)) {
+    for (CloudConfiguration configuration : CloudConfigurationHelper.getAllCloudConfigurations(facet)) {
       if (configuration.getId() == id) {
         return (CloudConfigurationImpl) configuration;
       }
