@@ -17,22 +17,24 @@ package com.google.gct.testing.android;
 
 import com.android.ddmlib.IDevice;
 import com.android.tools.idea.ddms.DeviceNameRendererEx;
-import com.google.gct.testing.CloudConfigurationProviderImpl;
 import com.intellij.ui.ColoredTextContainer;
 import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
+
+import static com.google.gct.testing.CloudConfigurationHelper.getCloudDeviceConfiguration;
+import static com.google.gct.testing.CloudConfigurationHelper.getCloudDeviceIcon;
 
 public class CloudDeviceNameRenderer implements DeviceNameRendererEx {
 
   @Override
   public boolean isApplicable(@NotNull IDevice device) {
-    return CloudConfigurationProviderImpl.getInstance().getCloudDeviceConfiguration(device) != null;
+    return getCloudDeviceConfiguration(device) != null;
   }
 
   @Override
   public void render(@NotNull IDevice device, @NotNull ColoredTextContainer component) {
-    component.setIcon(CloudConfigurationProviderImpl.getInstance().getCloudDeviceIcon());
-    String cloudDeviceConfiguration = CloudConfigurationProviderImpl.getInstance().getCloudDeviceConfiguration(device);
+    component.setIcon(getCloudDeviceIcon());
+    String cloudDeviceConfiguration = getCloudDeviceConfiguration(device);
 
     if (device.getState() == IDevice.DeviceState.OFFLINE) {
       component.append("Launching " + cloudDeviceConfiguration, SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);

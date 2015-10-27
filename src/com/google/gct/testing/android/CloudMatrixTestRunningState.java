@@ -18,6 +18,7 @@ package com.google.gct.testing.android;
 import com.android.tools.idea.run.AndroidProcessText;
 import com.android.tools.idea.run.AndroidRunConfigurationBase;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.google.gct.testing.CloudConfigurationHelper;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
 import com.intellij.execution.Executor;
@@ -56,9 +57,7 @@ public class CloudMatrixTestRunningState implements RunProfileState {
   @Override
   public ExecutionResult execute(Executor executor, @NotNull ProgramRunner runner) throws ExecutionException {
     AndroidProcessText.attach(myProcessHandler);
-    final CloudConfigurationProvider provider = CloudConfigurationProvider.getCloudConfigurationProvider();
-    assert provider != null;
-    return provider.executeCloudMatrixTests(myMatrixConfigurationId, myCloudProjectId, this, executor);
+    return CloudConfigurationHelper.executeCloudMatrixTests(myMatrixConfigurationId, myCloudProjectId, this, executor);
   }
 
   @NotNull

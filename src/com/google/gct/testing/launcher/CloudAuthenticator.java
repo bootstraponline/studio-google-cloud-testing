@@ -28,6 +28,8 @@ import com.google.gct.testing.CloudTestingUtils;
 
 public class CloudAuthenticator {
 
+  private static final String APPLICATION_NAME = "GCTL";
+
   /** Global instance of the HTTP transport. */
   private static HttpTransport httpTransport;
 
@@ -47,28 +49,33 @@ public class CloudAuthenticator {
       httpTransport = createHttpTransport();
     }
     // A storage accessible to anyone without authentication and authorization (null credential).
-    return new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), null).build();
+    return new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), null).setApplicationName(APPLICATION_NAME).build();
   }
 
   public static Storage getStorage() {
     prepareCredential();
     if (storage == null) {
-      storage = new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
+      storage =
+        new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME).build();
     }
     return storage;
   }
 
   public static void recreateTestAndToolResults(String testBackendUrl, String toolResultsBackendUrl) {
     prepareCredential();
-    test = new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(testBackendUrl).build();
+    test =
+      new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME)
+        .setRootUrl(testBackendUrl).build();
     toolresults =
-      new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setRootUrl(toolResultsBackendUrl).build();
+      new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME)
+        .setRootUrl(toolResultsBackendUrl).build();
   }
 
   public static Testing getTest() {
     prepareCredential();
     if (test == null) {
-      test = new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
+      test =
+        new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME).build();
     }
     return test;
   }
@@ -102,7 +109,9 @@ public class CloudAuthenticator {
   public static Toolresults getToolresults() {
     prepareCredential();
     if (toolresults == null) {
-      toolresults = new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).build();
+      toolresults =
+        new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME)
+          .build();
     }
     return toolresults;
   }

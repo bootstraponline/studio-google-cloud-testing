@@ -17,6 +17,7 @@ package com.google.gct.testing.android;
 
 import com.android.tools.idea.run.ValidationError;
 import com.google.common.collect.Lists;
+import com.google.gct.testing.CloudConfigurationHelper;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.annotations.NotNull;
 
@@ -43,15 +44,9 @@ public final class CloudTargetUtil {
     if (cloudProjectId.isEmpty()) {
       errors.add(ValidationError.fatal("Cloud project not specified."));
     }
-    CloudConfigurationProvider provider = CloudConfigurationProvider.getCloudConfigurationProvider();
-    if (provider == null) {
-      errors.add(ValidationError.fatal("No cloud configuration provider found."));
-      // Can't continue.
-      return errors;
-    }
 
     CloudConfiguration selectedConfig = null;
-    for (CloudConfiguration config : provider.getCloudConfigurations(facet, kind)) {
+    for (CloudConfiguration config : CloudConfigurationHelper.getCloudConfigurations(facet, kind)) {
       if (config.getId() == cloudConfigurationId) {
         selectedConfig = config;
       }

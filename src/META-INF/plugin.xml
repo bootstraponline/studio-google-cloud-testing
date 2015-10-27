@@ -10,6 +10,10 @@
   <idea-version since-build="107.107"/>
 
   <application-components>
+    <component>
+      <implementation-class>com.google.gct.testing.CloudOptionEnablementChecker</implementation-class>
+      <interface-class>com.google.gct.testing.CloudOptionEnablementChecker</interface-class>
+    </component>
   </application-components>
 
   <project-components>
@@ -28,7 +32,6 @@
   </actions>
 
   <extensions defaultExtensionNs="com.intellij">
-    <applicationConfigurable id="cloud.testing" groupId="build" groupWeight="200" instance="com.google.gct.testing.android.CloudTestingConfigurable"/>
     <projectConfigurable instance="com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable"/>
     <projectService serviceInterface="com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings"
                     serviceImplementation="com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings"/>
@@ -39,10 +42,6 @@
     <moduleService serviceInterface="com.google.gct.testing.CloudDefaultPersistentConfigurations"
                     serviceImplementation="com.google.gct.testing.CloudDefaultPersistentConfigurations"/>
   </extensions>
-
-  <extensions defaultExtensionNs="com.android.tools.idea">
-    <run.cloudConfigurationProvider id="myCloudConfigurationProvider" order="first" implementation="com.google.gct.testing.CloudConfigurationProviderImpl"/>
-</extensions>
 
   <extensions defaultExtensionNs="com.android.run">
     <deployTarget implementation="com.google.gct.testing.android.CloudTestMatrixTarget" />

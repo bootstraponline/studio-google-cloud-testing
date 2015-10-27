@@ -162,7 +162,7 @@ public class DebugConfigurationAction extends AnAction {
       } else {
         if (device == null) {
           // Did not find a device, so start a new one.
-          CloudConfigurationProviderImpl.getInstance().launchCloudDevice(configurationInstance.getEncodedString());
+          CloudConfigurationHelper.launchCloudDevice(configurationInstance.getEncodedString());
           device = getMatchingDevice();
           // Should not happen unless the user closes the corresponding VNC window thus killing the device before it is booted.
           if (device == null) {
@@ -231,13 +231,13 @@ public class DebugConfigurationAction extends AnAction {
     private IDevice getMatchingDevice() {
       if (myAndroidDebugBridge != null) { // Should not be null at this point, but check just in case.
         for (IDevice device : myAndroidDebugBridge.getDevices()) {
-          String deviceConfigurationInstance = CloudConfigurationProviderImpl.getConfigurationInstanceForSerialNumber(device.getSerialNumber());
+          String deviceConfigurationInstance = CloudConfigurationHelper.getConfigurationInstanceForSerialNumber(device.getSerialNumber());
           if (configurationInstance.getEncodedString().equals(deviceConfigurationInstance)) {
             return device;
           }
         }
       }
-      for (IDevice device : CloudConfigurationProviderImpl.getInstance().getLaunchingCloudDevices()) {
+      for (IDevice device : CloudConfigurationHelper.getLaunchingCloudDevices()) {
         if (device.getSerialNumber().equals(configurationInstance.getEncodedString().toLowerCase())) {
           return device;
         }
