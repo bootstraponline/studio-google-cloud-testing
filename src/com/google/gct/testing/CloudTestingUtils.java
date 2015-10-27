@@ -49,7 +49,7 @@ public class CloudTestingUtils {
 
   private static final String SHOW_GOOGLE_CLOUD_TESTING_TIMESTAMPS = "show.google.cloud.testing.timestamps";
 
-  private static final CloudConfigurationProviderImpl TESTING_CONFIGURATION_FACTORY = new CloudConfigurationProviderImpl();
+  private static final CloudConfigurationProviderImpl TESTING_CONFIGURATION_FACTORY = CloudConfigurationProviderImpl.getInstance();
 
   //GCT-specific message names.
   public static final String SET_TEST_RUN_ID = "setTestRunId";

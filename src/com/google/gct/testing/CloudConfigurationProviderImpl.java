@@ -115,6 +115,18 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
 
   private static CloudConfigurationProviderImpl instance = null;
 
+  private CloudConfigurationProviderImpl() {
+
+  }
+
+  // TODO: Refactor this class into a static utility class and get rid of this method.
+  public static CloudConfigurationProviderImpl getInstance() {
+    if (instance == null) {
+      instance = new CloudConfigurationProviderImpl();
+    }
+    return instance;
+  }
+
   public static Map<String, List<? extends CloudTestingType>> getAllDimensionTypes() {
     Map<String, List<? extends CloudTestingType>> dimensionTypes = new HashMap<String, List<? extends CloudTestingType>>();
     dimensionTypes.put(DeviceDimension.DISPLAY_NAME, DeviceDimension.getFullDomain());
@@ -122,13 +134,6 @@ public class CloudConfigurationProviderImpl extends CloudConfigurationProvider {
     dimensionTypes.put(LanguageDimension.DISPLAY_NAME, LanguageDimension.getFullDomain());
     dimensionTypes.put(OrientationDimension.DISPLAY_NAME, OrientationDimension.getFullDomain());
     return dimensionTypes;
-  }
-
-  public static CloudConfigurationProviderImpl getInstance() {
-    if (instance == null) {
-      instance = new CloudConfigurationProviderImpl();
-    }
-    return instance;
   }
 
   @NotNull

@@ -124,6 +124,6 @@ public abstract class CloudConfigurationProvider {
     //if (extensions.length > 0) {
     //  return extensions[0];
     //}
-    return new CloudConfigurationProviderImpl();
+    return CloudConfigurationProviderImpl.getInstance();
   }
 }
