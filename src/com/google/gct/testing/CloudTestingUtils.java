@@ -23,6 +23,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.openapi.ui.Messages;
@@ -40,9 +41,12 @@ import org.jetbrains.annotations.Nullable;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 
 public class CloudTestingUtils {
+
+  public static final String PRICING_LINK = "https://cloud.google.com/pricing";
 
   //private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/a/google.com/forum/#!newtopic/cloud-test-lab-users-external'";
   private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/forum/#!newtopic/google-cloud-test-lab-external'";
@@ -74,6 +78,7 @@ public class CloudTestingUtils {
       CLOUD_DEVICE_ICON = AndroidIcons.Views.DeviceScreen;
     }
   }
+
 
 
   public static enum ConfigurationStopReason {
@@ -225,4 +230,37 @@ public class CloudTestingUtils {
     }
     return makeDarker(UIUtil.getSlightlyDarkerColor(color), shades - 1);
   }
+
+  public static String preparePricingAnchor(String linkText) {
+    return "<a href='" + PRICING_LINK + "'>" + linkText + "</a>";
+  }
+
+  public static void linkifyEditorPane(@NotNull JEditorPane editorPane, @NotNull Color backgroundColor) {
+    editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+    editorPane.setEditable(false);
+    editorPane.setBackground(backgroundColor);
+    editorPane.addHyperlinkListener(getHyperlinkListener());
+  }
+
+  private static HyperlinkListener getHyperlinkListener() {
+    return new HyperlinkListener() {
+      @Override
+      public void hyperlinkUpdate(final HyperlinkEvent linkEvent) {
+        if (linkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+          ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                Desktop.getDesktop().browse(linkEvent.getURL().toURI());
+              }
+              catch (Exception e) {
+                // ignore
+              }
+            }
+          });
+        }
+      }
+    };
+  }
+
 }
