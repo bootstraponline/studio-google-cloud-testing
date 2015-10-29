@@ -40,6 +40,7 @@ import org.jetbrains.annotations.TestOnly;
 import java.util.*;
 
 import static com.google.gct.testing.CloudTestingUtils.ConfigurationStopReason;
+import static com.google.gct.testing.CloudTestingUtils.PRICING_LINK;
 
 /**
  * This class fires events to RTestUnitEventsListener in EventDispatch thread
@@ -121,6 +122,10 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
         }
 
         onUncapturedOutput(prepareFinishString(), ProcessOutputTypes.STDOUT);
+
+        // Show the link to pricing info at the end of the test results.
+        onUncapturedOutput("\nPricing information: " + PRICING_LINK + " \n", ProcessOutputTypes.STDOUT);
+
         //fire events
         fireOnTestingFinished();
       }

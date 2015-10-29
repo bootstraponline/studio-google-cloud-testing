@@ -50,8 +50,9 @@ import java.awt.event.MouseEvent;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
+import static com.google.gct.testing.CloudTestingUtils.linkifyEditorPane;
+import static com.google.gct.testing.CloudTestingUtils.preparePricingAnchor;
 import static com.intellij.ui.SimpleTextAttributes.REGULAR_ATTRIBUTES;
 import static com.intellij.ui.SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
 import static javax.swing.tree.TreeSelectionModel.SINGLE_TREE_SELECTION;
@@ -87,14 +88,13 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   // Listeners
   List<TwoPanelTreeSelectionListener> listeners = new LinkedList<TwoPanelTreeSelectionListener>();
-  private JLabel myConfigurationCountLabel = new JLabel();
   private JLabel mySelectAllButton;
   private JLabel mySelectNoneButton;
 
   public TwoPanelTree(CloudConfigurationImpl configuration) {
     this.configuration = configuration;
     myPanel = new JPanel(new BorderLayout());
-    myPanel.setPreferredSize(new Dimension(520, 240));
+    myPanel.setPreferredSize(new Dimension(540, 250));
     mySplitterPanel = new JPanel(new BorderLayout());
     mySplitterPanel.setBorder(BorderFactory.createLineBorder(UIUtil.getBorderColor()));
     mySplitter = new Splitter(false);
@@ -119,6 +119,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     if (configuration.getKind() != CloudConfiguration.Kind.SINGLE_DEVICE) {
       populateTopPanel();
       bottomPanel.setBackground(UIUtil.getListBackground());
+      bottomPanel.setPreferredSize(new Dimension(540, 35));
       myPanel.add(bottomPanel, BorderLayout.SOUTH);
       populateBottomPanel();
     }
@@ -150,36 +151,27 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   private void populateBottomPanel() {
     bottomPanel.setBorder(BorderFactory.createLineBorder(UIUtil.getBorderColor(), 1));
-    updateConfigurationCountLabel();
-    bottomPanel.add(myConfigurationCountLabel);
+    updateConfigurationCountPane();
   }
 
-  double linearGrowth = 0.05;
-  double logGrowth = 0.02;
-  Random rand = new Random(42);
-
-  // TODO: This blows off for a reasonably big number of combinations (e.g., >15K).
-  private double computeCoverage(int combinations) {
-    if (combinations == 0) {
-      return 0;
-    }
-    double growthFactor = 1d / combinations * 0.1;
-    double prevValue = computeCoverage(combinations - 1);
-    return prevValue + (1d - prevValue) * growthFactor;
-  }
-
-  private void updateConfigurationCountLabel() {
+  private void updateConfigurationCountPane() {
     int numberOfConfigurations = configuration.getDeviceConfigurationCount();
-    //double coverage = computeCoverage(configuration.countCombinationsCollapsingOrientation()) * 100d;
-    //TODO: Put back the covered % after it is not fake (or it is needed for demo purposes).
-    //myConfigurationCountLabel.setText("<html>Tests will run on <b>" + numberOfConfigurations + " configurations</b> and cover <b>" +
-    //                                  (int) Math.ceil(coverage) + "%</b> of current users.</html>");
-    myConfigurationCountLabel.setText("<html>Tests will run on <b>" + numberOfConfigurations + " configurations</b>.</html>");
+    String pricingText = numberOfConfigurations > 0 ? " and " + preparePricingAnchor("Cloud Test Lab pricing") + " will apply." : ".";
+    JEditorPane countPane =
+      new JEditorPane(UIUtil.HTML_MIME, "<html>Tests will run on <b>" + numberOfConfigurations + " configurations</b>"
+                                        + pricingText + "</html>");
+    linkifyEditorPane(countPane, bottomPanel.getBackground());
     if (numberOfConfigurations < 1) {
-      myConfigurationCountLabel.setForeground(JBColor.RED);
+      countPane.setForeground(JBColor.RED);
     } else {
-      myConfigurationCountLabel.setForeground(UIUtil.getActiveTextColor());
+      countPane.setForeground(UIUtil.getActiveTextColor());
     }
+    // Re-adding a JEditorPane is preferred to updating the text of an existing one to avoid jittering
+    // (briefly expanding and then shrinking) of the container panel.
+    bottomPanel.removeAll();
+    bottomPanel.add(countPane);
+    bottomPanel.revalidate();
+    bottomPanel.repaint();
   }
 
   private void populateTopPanel() {
@@ -223,7 +215,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     updateNode(rootNode, updateFunction);
     updateUI(currentCheckboxTree);
     selectedDimension.dimensionChanged();
-    updateConfigurationCountLabel();
+    updateConfigurationCountPane();
     list.updateUI();
   }
 
@@ -447,7 +439,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
       updateCheckBoxTreeState(currentTree);
     }
 
-    updateConfigurationCountLabel();
+    updateConfigurationCountPane();
     list.updateUI();
   }
 

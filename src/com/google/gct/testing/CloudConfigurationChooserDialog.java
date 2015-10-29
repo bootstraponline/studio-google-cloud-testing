@@ -101,7 +101,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
     this.configurationKind = configurationKind;
 
-    myConfigurationInfoPanel.setPreferredSize(new Dimension(470, UIUtil.isUnderDarcula() ? 166 : 169));
+    myConfigurationInfoPanel.setPreferredSize(new Dimension(470, UIUtil.isUnderDarcula() ? 153 : 156));
     // Note that we are editing the list we were given.
     // This could be dangerous.
     this.editableConfigurations = editableConfigurations;
@@ -233,7 +233,7 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
     myConfigurationTreePanel.setPreferredSize(preferredSize);
     myConfigurationTreePanel.add(createLeftPanel(), BorderLayout.CENTER);
 
-    mySplitter.setProportion(0.35f);
+    mySplitter.setProportion(0.33f);
 
     mySplitter.setFirstComponent(myConfigurationTreePanel);
     mySplitter.setSecondComponent(myConfigurationPanel);

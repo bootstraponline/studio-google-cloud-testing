@@ -25,7 +25,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.actionSystem.impl.ActionButton;
 import com.intellij.openapi.actionSystem.impl.PresentationFactory;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -37,14 +36,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
+import static com.google.gct.testing.CloudTestingUtils.linkifyEditorPane;
+import static com.google.gct.testing.CloudTestingUtils.preparePricingAnchor;
 import static com.google.gct.testing.android.CloudConfiguration.Kind.MATRIX;
 import static com.google.gct.testing.launcher.CloudAuthenticator.authorize;
 import static com.google.gct.testing.launcher.CloudAuthenticator.isUserLoggedIn;
@@ -76,7 +75,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
     connectToCloudPanel = new JPanel();
     connectToCloudPanel.setLayout(new GridLayoutManager(3, 1));
     cloudDeviceMatrixPanel = new JPanel();
-    cloudDeviceMatrixPanel.setLayout(new GridLayoutManager(2, 3));
+    cloudDeviceMatrixPanel.setLayout(new GridLayoutManager(2, 4));
     topPanel.add(connectToCloudPanel, preparePanelGridConstraints(0));
     topPanel.add(cloudDeviceMatrixPanel, preparePanelGridConstraints(1));
 
@@ -104,6 +103,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
     cloudProjectPanel.add(new ActionButton(
       cloudMatrixProjectAction, new PresentationFactory().getPresentation(cloudMatrixProjectAction), "MyPlace", JBUI.size(25, 25)));
     cloudDeviceMatrixPanel.add(cloudProjectPanel, prepareElementGridConstraints(1, 1));
+    cloudDeviceMatrixPanel.add(createPricingLinkPane(topPanel.getBackground()), prepareElementGridConstraints(1, 3));
 
     updateVisibility();
 
@@ -189,8 +189,8 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
                       "<html><p style='margin-top: " + topMargin + "px; margin-bottom: " + bottomMargin + "px;'>"
                       + "Run tests against a wide variety of physical and virtual devices simultaneously in "
                       + "<a href='https://developers.google.com/cloud-test-lab'>Google Cloud Test Lab</a>.<br>"
-                      + "<a href='https://cloud.google.com/pricing'>Pricing information &rsaquo;</a></p></html>");
-    configureEditorPane(runTestsInCloudPane, backgroundColor);
+                      + preparePricingAnchor("Pricing information &rsaquo;") + "</p></html>");
+    linkifyEditorPane(runTestsInCloudPane, backgroundColor);
     return runTestsInCloudPane;
   }
 
@@ -201,36 +201,15 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
                       + "Don&rsquo;t have a Google Cloud Platform account? "
                       + "<a href='https://console.developers.google.com/freetrial'>Sign up</a> for one and "
                       + "receive free credits.</p></html>");
-    configureEditorPane(signupForCloudPane, backgroundColor);
+    linkifyEditorPane(signupForCloudPane, backgroundColor);
     return signupForCloudPane;
   }
 
-  private void configureEditorPane(@NotNull JEditorPane editorPane, @NotNull Color backgroundColor) {
-    editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
-    editorPane.setEditable(false);
-    editorPane.setBackground(backgroundColor);
-    editorPane.addHyperlinkListener(getHyperlinkListener());
-  }
-
-  private HyperlinkListener getHyperlinkListener() {
-    return new HyperlinkListener() {
-      @Override
-      public void hyperlinkUpdate(final HyperlinkEvent linkEvent) {
-        if (linkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-          ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                Desktop.getDesktop().browse(linkEvent.getURL().toURI());
-              }
-              catch (Exception e) {
-                // ignore
-              }
-            }
-          });
-        }
-      }
-    };
+  private JEditorPane createPricingLinkPane(@NotNull Color backgroundColor) {
+    JEditorPane pricingLinkPane =
+      new JEditorPane(UIUtil.HTML_MIME, "<html>" + preparePricingAnchor("Pricing information &rsaquo;") + "</html>");
+    linkifyEditorPane(pricingLinkPane, backgroundColor);
+    return pricingLinkPane;
   }
 
   /**
