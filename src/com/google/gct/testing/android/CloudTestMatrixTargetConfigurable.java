@@ -75,7 +75,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
     connectToCloudPanel = new JPanel();
     connectToCloudPanel.setLayout(new GridLayoutManager(3, 1));
     cloudDeviceMatrixPanel = new JPanel();
-    cloudDeviceMatrixPanel.setLayout(new GridLayoutManager(2, 4));
+    cloudDeviceMatrixPanel.setLayout(new GridLayoutManager(3, 3));
     topPanel.add(connectToCloudPanel, preparePanelGridConstraints(0));
     topPanel.add(cloudDeviceMatrixPanel, preparePanelGridConstraints(1));
 
@@ -103,7 +103,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
     cloudProjectPanel.add(new ActionButton(
       cloudMatrixProjectAction, new PresentationFactory().getPresentation(cloudMatrixProjectAction), "MyPlace", JBUI.size(25, 25)));
     cloudDeviceMatrixPanel.add(cloudProjectPanel, prepareElementGridConstraints(1, 1));
-    cloudDeviceMatrixPanel.add(createPricingLinkPane(topPanel.getBackground()), prepareElementGridConstraints(1, 3));
+    cloudDeviceMatrixPanel.add(createPricingLinkPane(topPanel.getBackground()), prepareElementGridConstraints(2, 0));
 
     updateVisibility();
 
@@ -189,7 +189,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
                       "<html><p style='margin-top: " + topMargin + "px; margin-bottom: " + bottomMargin + "px;'>"
                       + "Run tests against a wide variety of physical and virtual devices simultaneously in "
                       + "<a href='https://developers.google.com/cloud-test-lab'>Google Cloud Test Lab</a>.<br>"
-                      + preparePricingAnchor("Pricing information &rsaquo;") + "</p></html>");
+                      + preparePricingAnchor("Pricing information") + "</p></html>");
     linkifyEditorPane(runTestsInCloudPane, backgroundColor);
     return runTestsInCloudPane;
   }
@@ -207,7 +207,8 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
 
   private JEditorPane createPricingLinkPane(@NotNull Color backgroundColor) {
     JEditorPane pricingLinkPane =
-      new JEditorPane(UIUtil.HTML_MIME, "<html>" + preparePricingAnchor("Pricing information &rsaquo;") + "</html>");
+      new JEditorPane(UIUtil.HTML_MIME, "<html>" + preparePricingAnchor("Pricing information") + "</html>");
+    pricingLinkPane.setMargin(new Insets(0, 1, 0, 0));
     linkifyEditorPane(pricingLinkPane, backgroundColor);
     return pricingLinkPane;
   }

@@ -23,14 +23,6 @@
   <depends>com.google.gct.login</depends>
   <depends>com.google.gct</depends>
 
-  <actions>
-    <action id="GoogleCloudTesting.TestService"
-            class="com.google.gct.testing.ui.GoogleCloudTestingAction"
-            text="Google Cloud Testing">
-      <add-to-group group-id="MainToolBar" anchor="first"  />
-    </action>
-  </actions>
-
   <extensions defaultExtensionNs="com.intellij">
     <projectConfigurable instance="com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable"/>
     <projectService serviceInterface="com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings"
