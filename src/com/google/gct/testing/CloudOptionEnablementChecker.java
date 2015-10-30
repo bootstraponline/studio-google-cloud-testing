@@ -34,7 +34,7 @@ public class CloudOptionEnablementChecker implements ApplicationComponent {
   @Override
   public void initComponent() {
     if (!isCloudOptionEnabled()) {
-      JobScheduler.getScheduler().schedule(new EnablementCheckerRunnable(), 20, TimeUnit.SECONDS);
+      //JobScheduler.getScheduler().schedule(new EnablementCheckerRunnable(), 20, TimeUnit.SECONDS);
     }
   }
 
@@ -49,7 +49,7 @@ public class CloudOptionEnablementChecker implements ApplicationComponent {
   }
 
   public static boolean isCloudOptionEnabled() {
-    return Boolean.getBoolean(LOCAL_ENABLE_FLAG) || PropertiesComponent.getInstance().getBoolean(ENABLE_CLOUD_TESTING_REMOTELY, false);
+    return Boolean.getBoolean(LOCAL_ENABLE_FLAG);// || PropertiesComponent.getInstance().getBoolean(ENABLE_CLOUD_TESTING_REMOTELY, false);
   }
 
   private class EnablementCheckerRunnable implements Runnable {
