@@ -67,7 +67,7 @@ public class CloudDebuggingTarget extends DeployTarget {
   @Nullable
   @Override
   public DeviceTarget getTarget(@NotNull DeployTargetState state, @NotNull AndroidFacet facet, @NotNull DeviceCount deviceCount,
-                                boolean debug, @NotNull String runConfigName, @NotNull ConsolePrinter printer) {
+                                boolean debug, int runConfigId, @NotNull ConsolePrinter printer) {
     return DeviceTarget.forDevices(DeviceSelectionUtils.getAllCompatibleDevices(new TargetDeviceFilter() {
       @Override
       public boolean matchesDevice(@NotNull IDevice device) {
