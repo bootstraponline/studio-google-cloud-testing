@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class CloudTestMatrixTarget extends DeployTarget {
+public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
   public static final class State extends DeployTargetState {
     public int SELECTED_CLOUD_MATRIX_CONFIGURATION_ID = -1;
     public String SELECTED_CLOUD_MATRIX_PROJECT_ID = "";
@@ -64,15 +64,6 @@ public class CloudTestMatrixTarget extends DeployTarget {
     return new State();
   }
 
-  @Nullable
-  @Override
-  public DeviceTarget getTarget(@NotNull DeployTargetState state, @NotNull AndroidFacet facet, @NotNull DeviceCount deviceCount,
-                                boolean debug, int runConfigId, @NotNull ConsolePrinter printer) {
-    // This method will be called only if hasCustomRunProfileState returned false (i.e., the user clicked Debug), so
-    // open the Device Chooser dialog.
-    return new ManualTargetChooser(new ShowChooserTarget.State(), facet, runConfigId).getTarget(printer, deviceCount, debug);
-  }
-
   @Override
   public DeployTargetConfigurable createConfigurable(@NotNull Project project, Disposable parentDisposable,
                                                      @NotNull DeployTargetConfigurableContext context) {
@@ -90,26 +81,43 @@ public class CloudTestMatrixTarget extends DeployTarget {
   }
 
   @Override
-  public boolean hasCustomRunProfileState(@NotNull Executor executor) {
-    return !(executor instanceof DefaultDebugExecutor);
+  public DeployTarget getDeployTarget() {
+    return new DeployTarget() {
+      @Override
+      public boolean hasCustomRunProfileState(@NotNull Executor executor) {
+        return !(executor instanceof DefaultDebugExecutor);
+      }
+
+      @Override
+      public RunProfileState getRunProfileState(@NotNull Executor executor,
+                                                @NotNull ExecutionEnvironment env,
+                                                @NotNull DeployTargetState state) throws ExecutionException {
+        RunProfile runProfile = env.getRunProfile();
+        // It is expected to be invoked for test run configurations only.
+        if (!(runProfile instanceof AndroidTestRunConfiguration)) {
+          return null;
+        }
+
+        AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) runProfile;
+        AndroidFacet facet = AndroidFacet.getInstance(runConfiguration.getConfigurationModule().getModule());
+        CloudTestMatrixTargetProvider.State cloudTargetState = (CloudTestMatrixTargetProvider.State) state;
+
+        return new CloudMatrixTestRunningState(env, facet, runConfiguration, cloudTargetState.SELECTED_CLOUD_MATRIX_CONFIGURATION_ID,
+                                               cloudTargetState.SELECTED_CLOUD_MATRIX_PROJECT_ID);
+      }
+
+      @Nullable
+      @Override
+      public DeviceTarget getTarget(@NotNull DeployTargetState state,
+                                    @NotNull AndroidFacet facet,
+                                    @NotNull DeviceCount deviceCount,
+                                    boolean debug,
+                                    int runConfigId,
+                                    @NotNull ConsolePrinter printer) {
+        // This method will be called only if hasCustomRunProfileState returned false (i.e., the user clicked Debug), so
+        // open the Device Chooser dialog.
+        return new ManualTargetChooser(new ShowChooserTargetProvider.State(), facet, runConfigId).getTarget(printer, deviceCount, debug);
+      }
+    };
   }
-
-  @Override
-  public RunProfileState getRunProfileState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment,
-                                            @NotNull DeployTargetState targetState) throws ExecutionException {
-
-    RunProfile runProfile = environment.getRunProfile();
-    // It is expected to be invoked for test run configurations only.
-    if (!(runProfile instanceof AndroidTestRunConfiguration)) {
-      return null;
-    }
-
-    AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) runProfile;
-    AndroidFacet facet = AndroidFacet.getInstance(runConfiguration.getConfigurationModule().getModule());
-    CloudTestMatrixTarget.State cloudTargetState = (CloudTestMatrixTarget.State) targetState;
-
-    return new CloudMatrixTestRunningState(environment, facet, runConfiguration, cloudTargetState.SELECTED_CLOUD_MATRIX_CONFIGURATION_ID,
-                                           cloudTargetState.SELECTED_CLOUD_MATRIX_PROJECT_ID);
-  }
-
 }

@@ -48,7 +48,7 @@ import static com.google.gct.testing.android.CloudConfiguration.Kind.MATRIX;
 import static com.google.gct.testing.launcher.CloudAuthenticator.authorize;
 import static com.google.gct.testing.launcher.CloudAuthenticator.isUserLoggedIn;
 
-public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurable<CloudTestMatrixTarget.State> {
+public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurable<CloudTestMatrixTargetProvider.State> {
   @Nullable private AndroidFacet myFacet;
   private final JPanel topPanel;
   private final JPanel connectToCloudPanel;
@@ -117,7 +117,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
   }
 
   @Override
-  public void resetFrom(@NotNull CloudTestMatrixTarget.State state, int configurationId) {
+  public void resetFrom(@NotNull CloudTestMatrixTargetProvider.State state, int configurationId) {
     myCloudConfigurationComboBox.setRunConfigurationId(configurationId);
     myCloudProjectIdLabel.setRunConfigurationId(configurationId);
 
@@ -134,7 +134,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
   }
 
   @Override
-  public void applyTo(@NotNull CloudTestMatrixTarget.State state, int configurationId) {
+  public void applyTo(@NotNull CloudTestMatrixTargetProvider.State state, int configurationId) {
     // Store the state only if there is some, i.e., the user is logged in.
     if (isUserLoggedIn()) {
       CloudConfiguration selectedConfiguration = (CloudConfiguration)myCloudConfigurationComboBox.getComboBox().getSelectedItem();

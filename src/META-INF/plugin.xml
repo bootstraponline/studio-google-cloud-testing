@@ -36,8 +36,8 @@
   </extensions>
 
   <extensions defaultExtensionNs="com.android.run">
-    <deployTarget implementation="com.google.gct.testing.android.CloudTestMatrixTarget" />
-    <deployTarget implementation="com.google.gct.testing.android.CloudDebuggingTarget" />
+    <deployTargetProvider implementation="com.google.gct.testing.android.CloudTestMatrixTargetProvider" />
+    <deployTargetProvider implementation="com.google.gct.testing.android.CloudDebuggingTargetProvider" />
     <deviceNameRenderer implementation="com.google.gct.testing.android.CloudDeviceNameRenderer" />
   </extensions>
 

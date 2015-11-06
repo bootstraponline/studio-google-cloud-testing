@@ -17,11 +17,12 @@ package com.google.gct.testing.android;
 
 import com.android.ddmlib.IDevice;
 import com.android.tools.idea.run.*;
-import com.android.tools.idea.run.editor.DeployTarget;
-import com.android.tools.idea.run.editor.DeployTargetConfigurable;
-import com.android.tools.idea.run.editor.DeployTargetConfigurableContext;
-import com.android.tools.idea.run.editor.DeployTargetState;
+import com.android.tools.idea.run.editor.*;
 import com.google.common.collect.Lists;
+import com.intellij.execution.ExecutionException;
+import com.intellij.execution.Executor;
+import com.intellij.execution.configurations.RunProfileState;
+import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.android.facet.AndroidFacet;
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class CloudDebuggingTarget extends DeployTarget {
+public class CloudDebuggingTargetProvider extends DeployTargetProvider {
 
   public static final String ID = "CLOUD_DEVICE_DEBUGGING";
 
@@ -64,25 +65,46 @@ public class CloudDebuggingTarget extends DeployTarget {
     return new State();
   }
 
-  @Nullable
-  @Override
-  public DeviceTarget getTarget(@NotNull DeployTargetState state, @NotNull AndroidFacet facet, @NotNull DeviceCount deviceCount,
-                                boolean debug, int runConfigId, @NotNull ConsolePrinter printer) {
-    return DeviceTarget.forDevices(DeviceSelectionUtils.getAllCompatibleDevices(new TargetDeviceFilter() {
-      @Override
-      public boolean matchesDevice(@NotNull IDevice device) {
-        if (device.isEmulator()) {
-          return false;
-        }
-        return device.getSerialNumber().equals(myCloudDeviceSerialNumber);
-      }
-    }));
-  }
-
   @Override
   public DeployTargetConfigurable createConfigurable(@NotNull Project project, Disposable parentDisposable,
                                                      @NotNull DeployTargetConfigurableContext context) {
     return new CloudDebuggingTargetConfigurable();
+  }
+
+  @Override
+  public DeployTarget getDeployTarget() {
+    return new DeployTarget() {
+      @Override
+      public boolean hasCustomRunProfileState(@NotNull Executor executor) {
+        return false;
+      }
+
+      @Override
+      public RunProfileState getRunProfileState(@NotNull Executor executor,
+                                                @NotNull ExecutionEnvironment env,
+                                                @NotNull DeployTargetState state) throws ExecutionException {
+        return null;
+      }
+
+      @Nullable
+      @Override
+      public DeviceTarget getTarget(@NotNull DeployTargetState state,
+                                    @NotNull AndroidFacet facet,
+                                    @NotNull DeviceCount deviceCount,
+                                    boolean debug,
+                                    int runConfigId,
+                                    @NotNull ConsolePrinter printer) {
+        return DeviceTarget.forDevices(DeviceSelectionUtils.getAllCompatibleDevices(new TargetDeviceFilter() {
+          @Override
+          public boolean matchesDevice(@NotNull IDevice device) {
+            if (device.isEmulator()) {
+              return false;
+            }
+            return device.getSerialNumber().equals(myCloudDeviceSerialNumber);
+          }
+        }));
+      }
+    };
   }
 
   @Override

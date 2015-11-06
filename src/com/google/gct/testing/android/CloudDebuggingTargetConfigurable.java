@@ -16,15 +16,12 @@
 package com.google.gct.testing.android;
 
 import com.android.tools.idea.run.editor.DeployTargetConfigurable;
-import com.android.tools.idea.run.editor.DeployTargetConfigurableContext;
-import com.intellij.openapi.Disposable;
-import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-public class CloudDebuggingTargetConfigurable implements DeployTargetConfigurable<CloudDebuggingTarget.State> {
+public class CloudDebuggingTargetConfigurable implements DeployTargetConfigurable<CloudDebuggingTargetProvider.State> {
 
   private final JPanel myPanel;
 
@@ -39,12 +36,12 @@ public class CloudDebuggingTargetConfigurable implements DeployTargetConfigurabl
   }
 
   @Override
-  public void resetFrom(@NotNull CloudDebuggingTarget.State state, int configurationId) {
+  public void resetFrom(@NotNull CloudDebuggingTargetProvider.State state, int configurationId) {
     // no-op
   }
 
   @Override
-  public void applyTo(@NotNull CloudDebuggingTarget.State state, int configurationId) {
+  public void applyTo(@NotNull CloudDebuggingTargetProvider.State state, int configurationId) {
     // no-op
   }
 
