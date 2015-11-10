@@ -16,13 +16,9 @@
 package com.google.gct.testing.results;
 
 
-import com.google.gct.testing.DebugConfigurationAction;
-import com.google.gct.testing.ShowScreenshotsAction;
-import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.testframework.TestConsoleProperties;
 import com.intellij.execution.testframework.TestFrameworkRunningModel;
 import com.intellij.execution.testframework.sm.runner.ui.SMTRunnerToolbarPanel;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
 
 import javax.swing.*;
 
@@ -33,14 +29,5 @@ public class GoogleCloudTestRunnerToolbarPanel extends SMTRunnerToolbarPanel {
                                            JComponent contentPane) {
     super(properties, model, contentPane);
   }
-
-  //@Override
-  //protected void appendAdditionalActions(DefaultActionGroup actionGroup, TestConsoleProperties properties,
-  //                                       ExecutionEnvironment environment, JComponent parent) {
-  //
-  //  super.appendAdditionalActions(actionGroup, properties, environment, parent);
-  //  actionGroup.addAction(new ShowScreenshotsAction());
-  //  actionGroup.addAction(new DebugConfigurationAction());
-  //}
 
 }

@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
+//TODO: Find out how to notify about test execution completion in IJ15.
 public class GoogleCloudTestingNotificationsHandler extends GoogleCloudTestEventsAdapter {
   private final TestConsoleProperties myConsoleProperties;
   //private boolean myFirstDefectWasFound;

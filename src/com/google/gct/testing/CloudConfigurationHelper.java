@@ -20,7 +20,6 @@ import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.BaseArtifact;
 import com.android.ddmlib.IDevice;
 import com.android.tools.idea.gradle.AndroidGradleModel;
-import com.android.tools.idea.run.testing.AndroidTestConsoleProperties;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.android.tools.idea.sdk.IdeSdks;
 import com.android.tools.idea.stats.UsageTracker;
@@ -44,6 +43,7 @@ import com.google.gct.testing.config.GoogleCloudTestingDeveloperSettings;
 import com.google.gct.testing.dimension.*;
 import com.google.gct.testing.launcher.CloudAuthenticator;
 import com.google.gct.testing.launcher.CloudTestsLauncher;
+import com.google.gct.testing.results.GoogleCloudTestConsoleProperties;
 import com.google.gct.testing.results.GoogleCloudTestListener;
 import com.google.gct.testing.results.GoogleCloudTestResultsConnectionUtil;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
@@ -571,7 +571,7 @@ public final class CloudConfigurationHelper {
     lastCloudProjectId = cloudProjectId;
 
     AndroidTestRunConfiguration testRunConfiguration = runningState.getConfiguration();
-    AndroidTestConsoleProperties properties = new AndroidTestConsoleProperties(testRunConfiguration, executor);
+    GoogleCloudTestConsoleProperties properties = new GoogleCloudTestConsoleProperties(testRunConfiguration, executor);
     CloudMatrixExecutionCancellator matrixExecutionCancellator = new CloudMatrixExecutionCancellator();
     ConsoleView console = GoogleCloudTestResultsConnectionUtil.createAndAttachConsole(
       "Cloud Testing", runningState.getProcessHandler(), properties, runningState.getEnvironment(), matrixExecutionCancellator);

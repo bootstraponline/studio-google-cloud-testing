@@ -17,22 +17,17 @@ package com.google.gct.testing.results;
 
 import com.google.gct.testing.CloudMatrixExecutionCancellator;
 import com.intellij.execution.ExecutionException;
-import com.intellij.execution.Executor;
-import com.intellij.execution.configurations.CommandLineState;
-import com.intellij.execution.configurations.ModuleRunConfiguration;
 import com.intellij.execution.process.ProcessAdapter;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.testframework.TestConsoleProperties;
 import com.intellij.execution.testframework.sm.CompositeTestLocationProvider;
-import com.intellij.execution.testframework.sm.runner.SMTRunnerConsoleProperties;
 import com.intellij.execution.testframework.sm.runner.SMTestLocator;
 import com.intellij.execution.testframework.sm.runner.TestProxyFilterProvider;
 import com.intellij.execution.testframework.sm.runner.TestProxyPrinterProvider;
 import com.intellij.execution.testframework.sm.runner.ui.AttachToProcessListener;
 import com.intellij.execution.testframework.ui.BaseTestsOutputConsoleView;
-import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.testIntegration.TestLocationProvider;
@@ -149,80 +144,6 @@ public class GoogleCloudTestResultsConnectionUtil {
   }
 
   /**
-   * Creates Test Runner console component with test tree, console, statistics tabs
-   * and attaches it to given Process handler.
-   *
-   * You can use this method in run configuration's CommandLineState. You should
-   * just override "executeCloudMatrixTests" method of your custom command line state and return
-   * test runner's console.
-   *
-   * E.g:
-   * <code>
-   * public class MyCommandLineState extends CommandLineState {
-   *
-   *   // ...
-   *
-   *   @Override
-   *   public ExecutionResult executeCloudMatrixTests(@NotNull final Executor executor,
-   *                                  @NotNull final ProgramRunner runner) throws ExecutionException {
-   *
-   *     final ProcessHandler processHandler = startProcess();
-   *     final AbstractRubyRunConfiguration runConfiguration = getConfig();
-   *     final Project project = runConfiguration.getProject();
-   *
-   *     final ConsoleView console =
-   *       SMTestRunnerConnectionUtil.attachRunner(project, processHandler, this, runConfiguration,
-   *                                               "MY_TESTRUNNER_SPLITTER_SETTINGS");
-   *
-   *     return new DefaultExecutionResult(console, processHandler,
-   *                                      createActions(console, processHandler));
-   *    }
-   * }
-   * </code>
-   *
-   *
-   * NB: For debug purposes please enable "debug mode". In this mode test runner will also validate
-   * consistency of test events communication protocol and throw assertion errors. To enable debug mode
-   * please set system property idea.smrunner.debug=true
-   *
-   * @param testFrameworkName Is used to store(project level) latest value of testTree/consoleTab splitter and other settings
-   * @param processHandler Process handler
-   * @param commandLineState  Command line state
-   * @param config User run configuration settings
-   * @param executor Executor
-   * @return Console view
-   * @throws com.intellij.execution.ExecutionException If IDEA cannot executeCloudMatrixTests process this Exception will
-   * be caught and shown in error message box
-   */
-  public static ConsoleView createAndAttachConsole(@NotNull final String testFrameworkName, @NotNull final ProcessHandler processHandler,
-                                                   @NotNull final CommandLineState commandLineState,
-                                                   @NotNull final ModuleRunConfiguration config,
-                                                   @NotNull final Executor executor,
-                                                   @NotNull final CloudMatrixExecutionCancellator matrixExecutionCancellator
-  ) throws ExecutionException {
-    // final String testFrameworkName
-    final TestConsoleProperties consoleProperties = new SMTRunnerConsoleProperties(config, testFrameworkName, executor);
-
-    return createAndAttachConsole(testFrameworkName, processHandler, consoleProperties,
-                                  commandLineState.getEnvironment(), matrixExecutionCancellator);
-  }
-
-  public static ConsoleView createConsole(@NotNull final String testFrameworkName,
-                                          @NotNull final CommandLineState commandLineState,
-                                          @NotNull final ModuleRunConfiguration config,
-                                          @NotNull final Executor executor,
-                                          @NotNull final CloudMatrixExecutionCancellator matrixExecutionCancellator
-  ) throws ExecutionException {
-    // final String testFrameworkName
-    final TestConsoleProperties consoleProperties = new SMTRunnerConsoleProperties(config, testFrameworkName, executor);
-
-    return createConsole(testFrameworkName,
-                         consoleProperties,
-                         commandLineState.getEnvironment(),
-                         matrixExecutionCancellator);
-  }
-
-  /**
    * In debug mode SM Runner will check events consistency. All errors will be reported using IDEA errors logger.
    * This mode must be disabled in production. The most widespread false positives were detected when you debug tests.
    * In such cases Test Framework may fire events several times, etc.
@@ -262,8 +183,6 @@ public class GoogleCloudTestResultsConnectionUtil {
 
     // ui actions
     final GoogleCloudTestingUIActionsHandler uiActionsHandler = new GoogleCloudTestingUIActionsHandler(consoleProperties);
-    // notifications
-    final GoogleCloudTestingNotificationsHandler notifierHandler = new GoogleCloudTestingNotificationsHandler(consoleProperties);
 
     // subscribe on events
 
@@ -275,8 +194,6 @@ public class GoogleCloudTestResultsConnectionUtil {
     resultsViewer.addEventsListener(uiActionsHandler);
     // subscribes statistics tab viewer on event processor
     eventsProcessor.addEventsListener(statisticsPane.createTestEventsListener());
-    // subscribes test runner's notification balloons on results viewer events
-    eventsProcessor.addEventsListener(notifierHandler);
 
     processHandler.addProcessListener(new ProcessAdapter() {
       @Override
