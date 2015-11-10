@@ -88,13 +88,13 @@ public class CloudDebuggingTargetProvider extends DeployTargetProvider {
 
       @Nullable
       @Override
-      public DeviceTarget getTarget(@NotNull DeployTargetState state,
-                                    @NotNull AndroidFacet facet,
-                                    @NotNull DeviceCount deviceCount,
-                                    boolean debug,
-                                    int runConfigId,
-                                    @NotNull ConsolePrinter printer) {
-        return DeviceTarget.forDevices(DeviceSelectionUtils.getAllCompatibleDevices(new TargetDeviceFilter() {
+      public DeviceFutures getDevices(@NotNull DeployTargetState state,
+                                      @NotNull AndroidFacet facet,
+                                      @NotNull DeviceCount deviceCount,
+                                      boolean debug,
+                                      int runConfigId,
+                                      @NotNull ConsolePrinter printer) {
+        return DeviceFutures.forDevices(DeviceSelectionUtils.getAllCompatibleDevices(new TargetDeviceFilter() {
           @Override
           public boolean matchesDevice(@NotNull IDevice device) {
             if (device.isEmulator()) {

@@ -108,15 +108,15 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
 
       @Nullable
       @Override
-      public DeviceTarget getTarget(@NotNull DeployTargetState state,
-                                    @NotNull AndroidFacet facet,
-                                    @NotNull DeviceCount deviceCount,
-                                    boolean debug,
-                                    int runConfigId,
-                                    @NotNull ConsolePrinter printer) {
+      public DeviceFutures getDevices(@NotNull DeployTargetState state,
+                                      @NotNull AndroidFacet facet,
+                                      @NotNull DeviceCount deviceCount,
+                                      boolean debug,
+                                      int runConfigId,
+                                      @NotNull ConsolePrinter printer) {
         // This method will be called only if hasCustomRunProfileState returned false (i.e., the user clicked Debug), so
         // open the Device Chooser dialog.
-        return new ManualTargetChooser(new ShowChooserTargetProvider.State(), facet, runConfigId).getTarget(printer, deviceCount, debug);
+        return new ManualTargetChooser(new ShowChooserTargetProvider.State(), facet, runConfigId).getDevices(printer, deviceCount, debug);
       }
     };
   }
