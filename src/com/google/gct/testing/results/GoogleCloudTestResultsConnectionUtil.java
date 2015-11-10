@@ -27,6 +27,7 @@ import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.testframework.TestConsoleProperties;
 import com.intellij.execution.testframework.sm.CompositeTestLocationProvider;
 import com.intellij.execution.testframework.sm.runner.SMTRunnerConsoleProperties;
+import com.intellij.execution.testframework.sm.runner.SMTestLocator;
 import com.intellij.execution.testframework.sm.runner.TestProxyFilterProvider;
 import com.intellij.execution.testframework.sm.runner.TestProxyPrinterProvider;
 import com.intellij.execution.testframework.sm.runner.ui.AttachToProcessListener;
@@ -93,7 +94,7 @@ public class GoogleCloudTestResultsConnectionUtil {
   public static GoogleCloudTestingConsoleView createConsoleWithCustomLocator(@NotNull final String testFrameworkName,
                                                                     @NotNull final TestConsoleProperties consoleProperties,
                                                                     ExecutionEnvironment environment,
-                                                                    @Nullable final TestLocationProvider locator,
+                                                                    @Nullable final SMTestLocator locator,
                                                                     final boolean idBasedTreeConstruction,
                                                                     @Nullable final TestProxyFilterProvider filterProvider,
                                                                     @NotNull final CloudMatrixExecutionCancellator matrixExecutionCancellator) {
@@ -112,7 +113,7 @@ public class GoogleCloudTestResultsConnectionUtil {
 
   public static void initConsoleView(@NotNull final GoogleCloudTestingConsoleView consoleView,
                                      @NotNull final String testFrameworkName,
-                                     @Nullable final TestLocationProvider locator,
+                                     @Nullable final SMTestLocator locator,
                                      final boolean idBasedTreeConstruction,
                                      @Nullable final TestProxyFilterProvider filterProvider,
                                      @NotNull final CloudMatrixExecutionCancellator matrixExecutionCancellator) {
@@ -236,7 +237,7 @@ public class GoogleCloudTestResultsConnectionUtil {
                                                        final GoogleCloudTestingStatisticsPanel statisticsPane,
                                                        final ProcessHandler processHandler,
                                                        @NotNull final String testFrameworkName,
-                                                       @Nullable final TestLocationProvider locator,
+                                                       @Nullable final SMTestLocator locator,
                                                        boolean idBasedTreeConstruction,
                                                        @Nullable TestProxyPrinterProvider printerProvider,
                                                        @NotNull final CloudMatrixExecutionCancellator matrixExecutionCancellator) {

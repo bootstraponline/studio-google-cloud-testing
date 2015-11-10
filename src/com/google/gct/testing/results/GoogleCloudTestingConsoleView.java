@@ -59,7 +59,6 @@ public class GoogleCloudTestingConsoleView extends BaseTestsOutputConsoleView {
                                                   getConsole().getComponent(),
                                                   getConsole().createConsoleActions(),
                                                   myProperties,
-                                                  myEnvironment,
                                                   mySplitterProperty);
     return myResultsViewer;
   }

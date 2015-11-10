@@ -19,6 +19,7 @@ import com.intellij.execution.Location;
 import com.intellij.execution.testframework.*;
 import com.intellij.execution.testframework.sm.SMStacktraceParser;
 import com.intellij.execution.testframework.sm.TestsLocationProviderUtil;
+import com.intellij.execution.testframework.sm.runner.SMTestLocator;
 import com.intellij.execution.testframework.sm.runner.states.*;
 import com.intellij.execution.testframework.stacktrace.DiffHyperlink;
 import com.intellij.execution.ui.ConsoleViewContentType;
@@ -60,7 +61,7 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
   private final boolean myIsSuite;
   private boolean myIsEmptyIsCached = false; // is used for separating unknown and unset values
   private boolean myIsEmpty = true;
-  TestLocationProvider myLocator = null;
+  SMTestLocator myLocator = null;
   private final boolean myPreservePresentableName;
   private Printer myPreferredPrinter = null;
 
@@ -78,7 +79,7 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     myPreservePresentableName = preservePresentableName;
   }
 
-  public void setLocator(@NotNull TestLocationProvider locator) {
+  public void setLocator(@NotNull SMTestLocator locator) {
     myLocator = locator;
   }
 
@@ -178,7 +179,8 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     return myState.wasTerminated();
   }
 
-  boolean hasPassedTests() {
+  @Override
+  public boolean hasPassedTests() {
     if (myHasPassedTestsCached) {
       return myHasPassedTests;
     }
@@ -279,6 +281,12 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
   }
 
   @Override
+  public boolean isConfig() {
+    //TODO: Investigate and return a more sensible value, if needed.
+    return false;
+  }
+
+  @Override
   @Nullable
   public Location getLocation(final Project project, GlobalSearchScope searchScope) {
     //determines location of test proxy
@@ -293,7 +301,7 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     final String path = TestsLocationProviderUtil.extractPath(myLocationUrl);
 
     if (protocolId != null && path != null) {
-      List<Location> locations = myLocator.getLocation(protocolId, path, project);
+      List<Location> locations = myLocator.getLocation(protocolId, path, project, searchScope);
       if (!locations.isEmpty()) {
         return locations.iterator().next();
       }
@@ -710,8 +718,9 @@ public class GoogleCloudTestProxy extends AbstractTestProxy {
     return myState.wasTerminated();
   }
 
+  @Override
   @Nullable
-  protected String getLocationUrl() {
+  public String getLocationUrl() {
     return myLocationUrl;
   }
 

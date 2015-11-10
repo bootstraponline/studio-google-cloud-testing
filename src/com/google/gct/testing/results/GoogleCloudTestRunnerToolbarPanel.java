@@ -29,19 +29,18 @@ import javax.swing.*;
 public class GoogleCloudTestRunnerToolbarPanel extends SMTRunnerToolbarPanel {
 
   public GoogleCloudTestRunnerToolbarPanel(TestConsoleProperties properties,
-                                           ExecutionEnvironment environment,
                                            TestFrameworkRunningModel model,
                                            JComponent contentPane) {
-    super(properties, environment, model, contentPane);
+    super(properties, model, contentPane);
   }
 
-  @Override
-  protected void appendAdditionalActions(DefaultActionGroup actionGroup, TestConsoleProperties properties,
-                                         ExecutionEnvironment environment, JComponent parent) {
-
-    super.appendAdditionalActions(actionGroup, properties, environment, parent);
-    actionGroup.addAction(new ShowScreenshotsAction());
-    actionGroup.addAction(new DebugConfigurationAction());
-  }
+  //@Override
+  //protected void appendAdditionalActions(DefaultActionGroup actionGroup, TestConsoleProperties properties,
+  //                                       ExecutionEnvironment environment, JComponent parent) {
+  //
+  //  super.appendAdditionalActions(actionGroup, properties, environment, parent);
+  //  actionGroup.addAction(new ShowScreenshotsAction());
+  //  actionGroup.addAction(new DebugConfigurationAction());
+  //}
 
 }

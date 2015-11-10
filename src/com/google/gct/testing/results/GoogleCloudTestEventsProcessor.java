@@ -16,6 +16,7 @@
 package com.google.gct.testing.results;
 
 import com.google.gct.testing.results.events.*;
+import com.intellij.execution.testframework.sm.runner.SMTestLocator;
 import com.intellij.execution.testframework.sm.runner.TestProxyPrinterProvider;
 import com.intellij.execution.testframework.sm.runner.events.TestSuiteFinishedEvent;
 import com.intellij.execution.testframework.sm.runner.events.TestSuiteStartedEvent;
@@ -98,7 +99,7 @@ public abstract class GoogleCloudTestEventsProcessor implements Disposable {
 
   public abstract void onTestsReporterAttached();
 
-  public abstract void setLocator(@NotNull TestLocationProvider locator);
+  public abstract void setLocator(@NotNull SMTestLocator locator);
 
   public abstract void addEventsListener(@NotNull GoogleCloudTestEventsListener viewer);
 

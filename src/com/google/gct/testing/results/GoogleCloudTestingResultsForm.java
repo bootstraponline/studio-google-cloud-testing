@@ -16,6 +16,7 @@
 package com.google.gct.testing.results;
 
 import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.execution.configurations.RunProfile;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.testframework.*;
 import com.intellij.execution.testframework.sm.SMRunnerUtil;
@@ -83,24 +84,22 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
   private final Set<String> myMentionedCategories = new LinkedHashSet<String>();
   private boolean myTestsRunning = true;
 
-  public GoogleCloudTestingResultsForm(final RunConfiguration runConfiguration,
+  public GoogleCloudTestingResultsForm(final RunProfile runProfile,
                                        @NotNull final JComponent console,
-                                       final TestConsoleProperties consoleProperties,
-                                       final ExecutionEnvironment environment) {
-    this(runConfiguration, console, AnAction.EMPTY_ARRAY, consoleProperties, environment, null);
+                                       final TestConsoleProperties consoleProperties) {
+    this(runProfile, console, AnAction.EMPTY_ARRAY, consoleProperties, null);
   }
 
-  public GoogleCloudTestingResultsForm(final RunConfiguration runConfiguration,
+  public GoogleCloudTestingResultsForm(final RunProfile runProfile,
                                        @NotNull final JComponent console,
                                        AnAction[] consoleActions,
                                        final TestConsoleProperties consoleProperties,
-                                       final ExecutionEnvironment environment,
                                        final String splitterPropertyName) {
-    super(console, consoleActions, consoleProperties, environment,
+    super(console, consoleActions, consoleProperties,
           splitterPropertyName != null ? splitterPropertyName : DEFAULT_SM_RUNNER_SPLITTER_PROPERTY, 0.5f);
     myConsoleProperties = consoleProperties;
 
-    myProject = runConfiguration.getProject();
+    myProject = ((RunConfiguration)runProfile).getProject();
 
     //Create tests common suite root
     //noinspection HardCodedStringLiteral
@@ -135,7 +134,7 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
 
   @Override
   protected ToolbarPanel createToolbarPanel() {
-    return new GoogleCloudTestRunnerToolbarPanel(myConsoleProperties, myEnvironment, this, this);
+    return new GoogleCloudTestRunnerToolbarPanel(myConsoleProperties, this, this);
   }
 
   @Override
@@ -160,7 +159,7 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
     myTreeBuilder.setTestsComparator(TestConsoleProperties.SORT_ALPHABETICALLY.value(myProperties));
     Disposer.register(this, myTreeBuilder);
 
-    myTestAnimator = new MyAnimator(this, myTreeBuilder);
+    myTestAnimator = new MyAnimator(myTreeBuilder);
 
     //TODO always hide root node
     //myTreeView.setRootVisible(false);
@@ -561,7 +560,7 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
       totalTestCount = myTotalTestCount;
       doneTestCount = myFinishedTestCount + myFailedTestCount + myIgnoredTestCount;
     }
-    TestsUIUtil.showIconProgress(myProject, doneTestCount, totalTestCount, myFailedTestCount);
+    TestsUIUtil.showIconProgress(myProject, doneTestCount, totalTestCount, myFailedTestCount, true);
   }
 
   /**
@@ -593,9 +592,8 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
 
 
   private static class MyAnimator extends TestsProgressAnimator {
-    public MyAnimator(final Disposable parentDisposable, final AbstractTestTreeBuilder builder) {
-      super(parentDisposable);
-      init(builder);
+    public MyAnimator(final AbstractTestTreeBuilder builder) {
+      super(builder);
     }
   }
 

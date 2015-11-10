@@ -22,6 +22,7 @@ import com.google.gct.testing.results.events.*;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.AbstractTestProxy;
 import com.intellij.execution.testframework.sm.SMTestsRunnerBundle;
+import com.intellij.execution.testframework.sm.runner.SMTestLocator;
 import com.intellij.execution.testframework.sm.runner.TestProxyPrinterProvider;
 import com.intellij.execution.testframework.sm.runner.events.TestSuiteFinishedEvent;
 import com.intellij.execution.testframework.sm.runner.events.TestSuiteStartedEvent;
@@ -57,7 +58,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
   private final GoogleCloudTestProxy.GoogleCloudRootTestProxy myTestsRootNode;
   private final String myTestFrameworkName;
   private boolean myIsTestingFinished;
-  private TestLocationProvider myLocator = null;
+  private SMTestLocator myLocator = null;
 
   private GoogleCloudTestProxy lastUpdatedTest = null;
 
@@ -68,7 +69,7 @@ public class GoogleCloudTestingToSMTRunnerEventsConvertor extends GoogleCloudTes
   }
 
   @Override
-  public void setLocator(@NotNull TestLocationProvider customLocator) {
+  public void setLocator(@NotNull SMTestLocator customLocator) {
     myLocator = customLocator;
   }
 

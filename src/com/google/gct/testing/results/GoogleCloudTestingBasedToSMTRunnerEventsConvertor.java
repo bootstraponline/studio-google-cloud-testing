@@ -19,6 +19,7 @@ import com.google.gct.testing.results.events.*;
 import com.intellij.execution.process.ProcessOutputTypes;
 import com.intellij.execution.testframework.Printer;
 import com.intellij.execution.testframework.sm.SMTestRunnerConnectionUtil;
+import com.intellij.execution.testframework.sm.runner.SMTestLocator;
 import com.intellij.execution.testframework.sm.runner.TestProxyPrinterProvider;
 import com.intellij.execution.testframework.sm.runner.events.BaseStartedNodeEvent;
 import com.intellij.execution.testframework.sm.runner.events.TestSuiteFinishedEvent;
@@ -28,7 +29,6 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
-import com.intellij.testIntegration.TestLocationProvider;
 import com.intellij.util.containers.ContainerUtil;
 import gnu.trove.TIntObjectHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +47,7 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
   private final Node myTestsRootNode;
   private final String myTestFrameworkName;
   private boolean myIsTestingFinished = false;
-  private TestLocationProvider myLocator = null;
+  private SMTestLocator myLocator = null;
   private TestProxyPrinterProvider myTestProxyPrinterProvider = null;
 
   public GoogleCloudTestingBasedToSMTRunnerEventsConvertor(@NotNull GoogleCloudTestProxy.GoogleCloudRootTestProxy testsRootProxy,
@@ -59,7 +59,7 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
   }
 
   @Override
-  public void setLocator(@NotNull TestLocationProvider customLocator) {
+  public void setLocator(@NotNull SMTestLocator customLocator) {
     myLocator = customLocator;
   }
 
