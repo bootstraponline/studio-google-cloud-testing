@@ -42,4 +42,14 @@ public class CloudDeviceNameRenderer implements DeviceNameRendererEx {
       component.append(cloudDeviceConfiguration, SimpleTextAttributes.REGULAR_ATTRIBUTES);
     }
   }
+
+  @NotNull
+  @Override
+  public String getName(@NotNull IDevice device) {
+    String deviceName = getCloudDeviceConfiguration(device);
+    if (deviceName == null) { // It means this method was invoked without first checking whether the renderer is applicable.
+      throw new IllegalArgumentException("This device name renderer is not applicable to the given device: " + device);
+    }
+    return deviceName;
+  }
 }
