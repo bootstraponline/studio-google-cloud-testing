@@ -26,15 +26,24 @@ import java.util.concurrent.TimeUnit;
 public class CloudOptionEnablementChecker implements ApplicationComponent {
 
   private static final String ENABLE_CLOUD_TESTING_REMOTELY = "com.google.gct.enable.cloud.testing";
+  private static final String ENABLE_CLOUD_DEBUGGING_REMOTELY = "com.google.gct.enable.cloud.debugging";
 
   // If this JVM option is present and set to true, enable the cloud matrix testing regardless of anything.
-  private static final String LOCAL_ENABLE_FLAG = "enable.google.cloud.testing.plugin";
+  private static final String LOCAL_ENABLE_CLOUD_TESTING_FLAG = "enable.google.cloud.testing.plugin";
+
+  // If this JVM option is present and set to true, enable cloud debugging regardless of anything.
+  private static final String LOCAL_ENABLE_CLOUD_DEBUGGING_FLAG = "enable.google.cloud.debugging";
 
 
   @Override
   public void initComponent() {
-    if (!isCloudOptionEnabled()) {
-      //JobScheduler.getScheduler().schedule(new EnablementCheckerRunnable(), 20, TimeUnit.SECONDS);
+    scheduleCheckingCloudOption(false);
+    scheduleCheckingCloudOption(true);
+  }
+
+  private void scheduleCheckingCloudOption(boolean isDebugging) {
+    if (!isCloudOptionEnabled(isDebugging)) {
+      JobScheduler.getScheduler().schedule(new CloudOptionEnablementCheckerRunnable(isDebugging), 20, TimeUnit.SECONDS);
     }
   }
 
@@ -48,19 +57,38 @@ public class CloudOptionEnablementChecker implements ApplicationComponent {
     return "CloudOptionEnablementChecker";
   }
 
-  public static boolean isCloudOptionEnabled() {
-    return Boolean.getBoolean(LOCAL_ENABLE_FLAG);// || PropertiesComponent.getInstance().getBoolean(ENABLE_CLOUD_TESTING_REMOTELY, false);
+  public static boolean isCloudTestingEnabled() {
+    return isCloudOptionEnabled(false);
   }
 
-  private class EnablementCheckerRunnable implements Runnable {
+  public static boolean isCloudDebuggingEnabled() {
+    return isCloudOptionEnabled(true);
+  }
+
+  private static boolean isCloudOptionEnabled(boolean isDebugging) {
+    String localFlag = isDebugging ? LOCAL_ENABLE_CLOUD_DEBUGGING_FLAG : LOCAL_ENABLE_CLOUD_TESTING_FLAG;
+    String remoteFlag = isDebugging ? ENABLE_CLOUD_DEBUGGING_REMOTELY : ENABLE_CLOUD_TESTING_REMOTELY;
+
+    return Boolean.getBoolean(localFlag) || PropertiesComponent.getInstance().getBoolean(remoteFlag, false);
+  }
+
+  private class CloudOptionEnablementCheckerRunnable implements Runnable {
+    private final boolean isDebugging;
+    private final String remoteFlag;
+
+    CloudOptionEnablementCheckerRunnable(boolean isDebugging) {
+      this.isDebugging = isDebugging;
+      remoteFlag = isDebugging ? ENABLE_CLOUD_DEBUGGING_REMOTELY : ENABLE_CLOUD_TESTING_REMOTELY;
+    }
+
     @Override
     public void run() {
-      if (!isCloudOptionEnabled()) {
+      if (!isCloudOptionEnabled(isDebugging)) {
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
           @Override
           public void run() {
-            if (CloudConfigurationHelper.isCloudTestingEnabledRemotely()) {
-              PropertiesComponent.getInstance().setValue(ENABLE_CLOUD_TESTING_REMOTELY, "true");
+            if (CloudConfigurationHelper.isCloudOptionEnabledRemotely(isDebugging)) {
+              PropertiesComponent.getInstance().setValue(remoteFlag, "true");
             }
           }
         });

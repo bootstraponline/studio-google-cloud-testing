@@ -92,7 +92,7 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
   }
 
   public void setFacet(@Nullable AndroidFacet facet) {
-    if (!CloudOptionEnablementChecker.isCloudOptionEnabled()) {
+    if (!CloudOptionEnablementChecker.isCloudTestingEnabled()) {
       return; // Running tests in cloud is not enabled!
     }
 

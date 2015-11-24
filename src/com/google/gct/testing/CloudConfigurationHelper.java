@@ -602,9 +602,9 @@ public final class CloudConfigurationHelper {
     return new DefaultExecutionResult(console, runningState.getProcessHandler());
   }
 
-  static boolean isCloudTestingEnabledRemotely() {
+  static boolean isCloudOptionEnabledRemotely(boolean isDebugging) {
     final String publicBucketName = "cloud-testing-plugin-enablement";
-    final String triggerFileName = "ENABLED";
+    final String triggerFileName = isDebugging ? "DEBUGGING_ENABLED" : "TESTING_ENABLED";
     try {
       Storage.Objects.List objects = CloudAuthenticator.getPublicStorage().objects().list(publicBucketName);
       List<StorageObject> storageObjects = objects.execute().getItems();

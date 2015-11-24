@@ -77,7 +77,7 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
 
   @Override
   public boolean isApplicable(boolean isTestConfig) {
-    return isTestConfig && CloudOptionEnablementChecker.isCloudOptionEnabled();
+    return isTestConfig && CloudOptionEnablementChecker.isCloudTestingEnabled();
   }
 
   @Override

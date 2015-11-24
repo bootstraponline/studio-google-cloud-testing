@@ -18,6 +18,7 @@ package com.google.gct.testing.results;
 
 import com.android.tools.idea.run.testing.AndroidTestConsoleProperties;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.google.gct.testing.CloudOptionEnablementChecker;
 import com.google.gct.testing.DebugConfigurationAction;
 import com.google.gct.testing.ShowScreenshotsAction;
 import com.intellij.execution.Executor;
@@ -37,7 +38,9 @@ public class GoogleCloudTestConsoleProperties extends AndroidTestConsoleProperti
   public void appendAdditionalActions(DefaultActionGroup actionGroup, JComponent parent, TestConsoleProperties target) {
     super.appendAdditionalActions(actionGroup, parent, target);
     actionGroup.addAction(new ShowScreenshotsAction());
-    actionGroup.addAction(new DebugConfigurationAction());
+    if (CloudOptionEnablementChecker.isCloudDebuggingEnabled()) {
+      actionGroup.addAction(new DebugConfigurationAction());
+    }
   }
 
 }
