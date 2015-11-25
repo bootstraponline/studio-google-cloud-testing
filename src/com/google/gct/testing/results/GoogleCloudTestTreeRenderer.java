@@ -16,19 +16,24 @@
 package com.google.gct.testing.results;
 
 import com.intellij.execution.testframework.TestConsoleProperties;
+import com.intellij.execution.testframework.TestTreeView;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.awt.*;
 
 public class GoogleCloudTestTreeRenderer extends ColoredTreeCellRenderer {
   @NonNls private static final String SPACE_STRING = " ";
 
   private final TestConsoleProperties myConsoleProperties;
   private GoogleCloudTestingRootTestProxyFormatter myAdditionalRootFormatter;
+  private int myDurationWidth = -1;
+  private int myRow;
 
   public GoogleCloudTestTreeRenderer(final TestConsoleProperties consoleProperties) {
     myConsoleProperties = consoleProperties;
@@ -42,6 +47,8 @@ public class GoogleCloudTestTreeRenderer extends ColoredTreeCellRenderer {
                                     final boolean leaf,
                                     final int row,
                                     final boolean hasFocus) {
+    myRow = row;
+    myDurationWidth = -1;
     final DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
     final Object userObj = node.getUserObject();
     if (userObj instanceof GoogleCloudTestNodeDescriptor) {
@@ -61,6 +68,17 @@ public class GoogleCloudTestTreeRenderer extends ColoredTreeCellRenderer {
       } else {
         GoogleCloudTestsPresentationUtil.formatTestProxy(testProxy, this);
       }
+
+      if (TestConsoleProperties.SHOW_INLINE_STATISTICS.value(myConsoleProperties)) {
+        String durationString = testProxy.getDurationString(myConsoleProperties);
+        if (durationString != null) {
+          durationString = "  " + durationString;
+          myDurationWidth = getFontMetrics(getFont()).stringWidth(durationString);
+          if (((TestTreeView)myTree).isExpandableHandlerVisibleForCurrentRow(myRow)) {
+            append(durationString);
+          }
+        }
+      }
       //Done
       return;
     }
@@ -69,6 +87,15 @@ public class GoogleCloudTestTreeRenderer extends ColoredTreeCellRenderer {
     final String text = node.toString();
     //no icon
     append(text != null ? text : SPACE_STRING, SimpleTextAttributes.GRAYED_ATTRIBUTES);
+  }
+
+  @NotNull
+  @Override
+  public Dimension getPreferredSize() {
+    final Dimension preferredSize = super.getPreferredSize();
+    return myDurationWidth < 0 || ((TestTreeView)myTree).isExpandableHandlerVisibleForCurrentRow(myRow)
+           ? preferredSize
+           : JBUI.size(preferredSize.width + myDurationWidth, preferredSize.height);
   }
 
   public TestConsoleProperties getConsoleProperties() {
