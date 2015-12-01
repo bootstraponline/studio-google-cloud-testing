@@ -18,6 +18,8 @@ package com.google.gct.testing.android;
 import com.android.tools.idea.run.*;
 import com.android.tools.idea.run.editor.*;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.google.api.client.util.Maps;
+import com.google.common.collect.ImmutableMap;
 import com.google.gct.testing.CloudOptionEnablementChecker;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
@@ -31,7 +33,9 @@ import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
   public static final class State extends DeployTargetState {
@@ -116,7 +120,18 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
                                       @NotNull ConsolePrinter printer) {
         // This method will be called only if hasCustomRunProfileState returned false (i.e., the user clicked Debug), so
         // open the Device Chooser dialog.
-        return new ManualTargetChooser(new ShowChooserTargetProvider.State(), facet, runConfigId).getDevices(printer, deviceCount, debug);
+        List<DeployTargetProvider> deployTargetProviders = Collections.emptyList();
+        Map<String, DeployTargetState> deployTargetStates = Maps.newHashMap();
+        deployTargetStates.put(ShowChooserTargetProvider.ID, new ShowChooserTargetProvider.State());
+
+        DeployTargetPickerDialog dialog =
+          new DeployTargetPickerDialog(runConfigId, facet, deviceCount, deployTargetProviders, deployTargetStates, printer);
+        if (dialog.showAndGet()) {
+          return dialog.getSelectedDeployTarget().getDevices(state, facet, deviceCount, debug, runConfigId, printer);
+        }
+        else {
+          return null;
+        }
       }
     };
   }
