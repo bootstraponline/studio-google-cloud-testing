@@ -34,13 +34,4 @@ public class GoogleCloudTestConsoleProperties extends AndroidTestConsoleProperti
     super(configuration, executor);
   }
 
-  @Override
-  public void appendAdditionalActions(DefaultActionGroup actionGroup, JComponent parent, TestConsoleProperties target) {
-    super.appendAdditionalActions(actionGroup, parent, target);
-    actionGroup.addAction(new ShowScreenshotsAction());
-    if (CloudOptionEnablementChecker.isCloudDebuggingEnabled()) {
-      actionGroup.addAction(new DebugConfigurationAction());
-    }
-  }
-
 }

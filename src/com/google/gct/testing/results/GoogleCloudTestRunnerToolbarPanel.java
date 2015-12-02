@@ -16,11 +16,17 @@
 package com.google.gct.testing.results;
 
 
+import com.google.gct.testing.CloudOptionEnablementChecker;
+import com.google.gct.testing.DebugConfigurationAction;
+import com.google.gct.testing.ShowScreenshotsAction;
 import com.intellij.execution.testframework.TestConsoleProperties;
 import com.intellij.execution.testframework.TestFrameworkRunningModel;
 import com.intellij.execution.testframework.sm.runner.ui.SMTRunnerToolbarPanel;
+import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.impl.ActionToolbarImpl;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class GoogleCloudTestRunnerToolbarPanel extends SMTRunnerToolbarPanel {
 
@@ -28,6 +34,38 @@ public class GoogleCloudTestRunnerToolbarPanel extends SMTRunnerToolbarPanel {
                                            TestFrameworkRunningModel model,
                                            JComponent contentPane) {
     super(properties, model, contentPane);
+
+    int lastComponentIndex = getComponentCount() - 1;
+    ActionToolbarImpl actionToolbar = (ActionToolbarImpl)getComponent(lastComponentIndex);
+    final DefaultActionGroup cloudActionGroup = new DefaultActionGroup(null, false);
+    int separatorCounter = 0;
+    boolean cloudActionsAdded = false;
+    for (AnAction action : actionToolbar.getActions(true)) {
+      cloudActionGroup.add(action);
+      if (!cloudActionsAdded) {
+        if (action instanceof Separator) {
+          separatorCounter++;
+        }
+        // Add cloud actions as a 4th group of actions.
+        if (separatorCounter == 3) {
+          addCloudActions(cloudActionGroup);
+          cloudActionsAdded = true;
+        }
+      }
+    }
+
+    // Remove the original action bar and add a cloud action bar instead.
+    remove(lastComponentIndex);
+    add(ActionManager.getInstance().createActionToolbar(ActionPlaces.TESTTREE_VIEW_TOOLBAR, cloudActionGroup, true).getComponent(),
+        BorderLayout.CENTER);
+  }
+
+  private void addCloudActions(DefaultActionGroup actionGroup) {
+    actionGroup.addAction(new ShowScreenshotsAction());
+    if (CloudOptionEnablementChecker.isCloudDebuggingEnabled()) {
+      actionGroup.addAction(new DebugConfigurationAction());
+    }
+    actionGroup.addSeparator();
   }
 
 }
