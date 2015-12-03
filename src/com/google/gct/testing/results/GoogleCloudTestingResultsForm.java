@@ -17,18 +17,18 @@ package com.google.gct.testing.results;
 
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.configurations.RunProfile;
-import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.testframework.*;
 import com.intellij.execution.testframework.sm.SMRunnerUtil;
+import com.intellij.execution.testframework.sm.runner.ui.TestsPresentationUtil;
 import com.intellij.execution.testframework.ui.AbstractTestTreeBuilder;
 import com.intellij.execution.testframework.ui.TestResultsPanel;
 import com.intellij.execution.testframework.ui.TestsProgressAnimator;
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.util.ColorProgressBar;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.ui.JBColor;
 import com.intellij.util.containers.ContainerUtil;
@@ -535,12 +535,22 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
     // launchedAndFinished - is launched and not in progress. If we remove "launched' that onTestingStarted() before
     // initializing will be "launchedAndFinished"
     final boolean launchedAndFinished = myTestsRootNode.wasLaunched() && !myTestsRootNode.isInProgress();
-    //TODO: Come up with a more meaningful status.
-    myStatusLine.setText("");
-    //myStatusLine.setText(TestsPresentationUtil.getProgressStatus_Text(myStartTime, myEndTime,
-    //                                                                  myTotalTestCount, myFinishedTestCount,
-    //                                                                  myFailedTestCount, myMentionedCategories,
-    //                                                                  launchedAndFinished));
+    if (!TestsPresentationUtil.hasNonDefaultCategories(myMentionedCategories)) {
+      // TODO: For cloud test runs no statistics (e.g., total tests count, passed tests count, etc.) make sense,
+      // so showing only duration for now.
+      //myStatusLine.formatTestMessage(myTotalTestCount, myFinishedTestCount, myFailedTestCount, myIgnoredTestCount, myTestsRootNode.getDuration(), myEndTime);
+      if (myTestsRootNode.getDuration() == null || myEndTime == 0) {
+        myStatusLine.setText("");
+      } else {
+        myStatusLine.setText("Total time – " + StringUtil.formatDuration(myTestsRootNode.getDuration()));
+      }
+    }
+    else {
+      myStatusLine.setText(TestsPresentationUtil.getProgressStatus_Text(myStartTime, myEndTime,
+                                                                        myTotalTestCount, myFinishedTestCount,
+                                                                        myFailedTestCount, myMentionedCategories,
+                                                                        launchedAndFinished));
+    }
   }
 
   /**
