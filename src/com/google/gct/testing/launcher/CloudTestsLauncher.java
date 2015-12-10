@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.google.gct.testing.CloudTestingUtils.ANDROID_STUDIO_URL_FLAG;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
@@ -159,7 +160,8 @@ public class CloudTestsLauncher {
             int urlIndex = urlPrefixIndex + urlPrefix.length();
             String url = message.substring(urlIndex);
             final String userMessage = "<html>" + message.substring(0, urlPrefixIndex) + "<br>" +
-                                       message.substring(urlPrefixIndex, urlIndex) + "<a href='" + url + "'>" + url + "</a></html>";
+                                       message.substring(urlPrefixIndex, urlIndex) + "<a href='" + url + ANDROID_STUDIO_URL_FLAG + "'>" +
+                                       url + "</a></html>";
             SwingUtilities.invokeLater(new Runnable() {
               @Override
               public void run() {

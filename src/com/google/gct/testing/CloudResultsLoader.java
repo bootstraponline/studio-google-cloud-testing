@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.*;
 
 import static com.google.gct.testing.BucketFileMetadata.Type.*;
+import static com.google.gct.testing.CloudTestingUtils.ANDROID_STUDIO_URL_FLAG;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 import static com.google.gct.testing.launcher.CloudAuthenticator.getToolresults;
@@ -307,7 +308,7 @@ public class CloudResultsLoader {
     }
     return "https://console.developers.google.com/project/" + cloudProjectId
            + "/testlab/mobile/histories/" + toolResultsExecution.getHistoryId()
-           + "/executions/" + toolResultsExecution.getExecutionId();
+           + "/executions/" + toolResultsExecution.getExecutionId() + ANDROID_STUDIO_URL_FLAG;
   }
 
   private String getEncodedConfigurationNameForTestExecution(TestExecution testExecution) {

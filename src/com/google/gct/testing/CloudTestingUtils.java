@@ -48,6 +48,8 @@ public class CloudTestingUtils {
 
   public static final String PRICING_LINK = "https://cloud.google.com/pricing";
 
+  public static final String ANDROID_STUDIO_URL_FLAG = "?source=android-studio";
+
   //private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/a/google.com/forum/#!newtopic/cloud-test-lab-users-external'";
   private static final String GOOGLE_GROUP_URL = "'https://groups.google.com/forum/#!newtopic/google-cloud-test-lab-external'";
 
