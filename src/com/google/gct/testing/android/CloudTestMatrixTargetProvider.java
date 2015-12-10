@@ -116,8 +116,7 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
                                       @NotNull AndroidFacet facet,
                                       @NotNull DeviceCount deviceCount,
                                       boolean debug,
-                                      int runConfigId,
-                                      @NotNull ConsolePrinter printer) {
+                                      int runConfigId) {
         // This method will be called only if hasCustomRunProfileState returned false (i.e., the user clicked Debug), so
         // open the Device Chooser dialog.
         List<DeployTargetProvider> deployTargetProviders = Collections.emptyList();
@@ -125,9 +124,9 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
         deployTargetStates.put(ShowChooserTargetProvider.ID, new ShowChooserTargetProvider.State());
 
         DeployTargetPickerDialog dialog =
-          new DeployTargetPickerDialog(runConfigId, facet, deviceCount, deployTargetProviders, deployTargetStates, printer);
+          new DeployTargetPickerDialog(runConfigId, facet, deviceCount, deployTargetProviders, deployTargetStates);
         if (dialog.showAndGet()) {
-          return dialog.getSelectedDeployTarget().getDevices(state, facet, deviceCount, debug, runConfigId, printer);
+          return dialog.getSelectedDeployTarget().getDevices(state, facet, deviceCount, debug, runConfigId);
         }
         else {
           return null;
