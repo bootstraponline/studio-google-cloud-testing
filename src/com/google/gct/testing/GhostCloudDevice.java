@@ -22,6 +22,7 @@ import com.android.ddmlib.log.LogReceiver;
 import com.google.api.services.testing.model.AndroidDevice;
 import com.google.api.services.testing.model.Device;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -242,7 +243,11 @@ public class GhostCloudDevice implements IDevice {
   }
 
   @Override
-  public void installPackages(List<String> apkFilePaths, int timeOutInMs, boolean reinstall, String... extraArgs) throws InstallException {
+  public void installPackages(@NonNull List<File> apks,
+                              boolean reinstall,
+                              @NonNull List<String> installOptions,
+                              long timeout,
+                              @NonNull TimeUnit timeoutUnit) throws InstallException {
 
   }
 
