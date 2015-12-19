@@ -19,6 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.*;
 import com.android.ddmlib.log.LogReceiver;
+import com.android.sdklib.AndroidVersion;
 import com.google.api.services.testing.model.AndroidDevice;
 import com.google.api.services.testing.model.Device;
 
@@ -331,14 +332,14 @@ public class GhostCloudDevice implements IDevice {
   }
 
   @Override
-  public int getApiLevel() {
+  public AndroidVersion getVersion() {
     String apiString = device.getAndroidDevice().getAndroidVersionId();
     if (apiString == null) {
       throw new IllegalStateException("Unexpected error: Device does not have a build API level.");
     }
 
     try {
-      return Integer.parseInt(apiString);
+      return new AndroidVersion(Integer.parseInt(apiString), null);
     }
     catch (NumberFormatException e) {
       throw new IllegalStateException("Unexpected error: Build API level '" + apiString + "' is not an integer: ");
