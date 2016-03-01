@@ -75,8 +75,8 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
   }
 
   @Override
-  public boolean showInDevicePicker() {
-    return true;
+  public boolean showInDevicePicker(@NotNull Executor executor) {
+    return !(executor instanceof DefaultDebugExecutor);
   }
 
   @Override
