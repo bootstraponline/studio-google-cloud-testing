@@ -25,15 +25,6 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../tools/core-plugin/lib/google-api-services-developerprojects-v1-rev20140815212553-1.19.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/google-api-services-storage-v1-rev1-1.18.0-rc.jar!/" />
         </CLASSES>
         <JAVADOC />
