@@ -15,11 +15,13 @@
  */
 package com.google.gct.testing.android;
 
-import com.android.tools.idea.run.*;
+import com.android.tools.idea.run.DeviceCount;
+import com.android.tools.idea.run.DeviceFutures;
+import com.android.tools.idea.run.LaunchCompatibilityCheckerImpl;
+import com.android.tools.idea.run.ValidationError;
 import com.android.tools.idea.run.editor.*;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
 import com.google.gct.testing.CloudOptionEnablementChecker;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
@@ -123,8 +125,14 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
         Map<String, DeployTargetState> deployTargetStates = Maps.newHashMap();
         deployTargetStates.put(ShowChooserTargetProvider.ID, new ShowChooserTargetProvider.State());
 
-        DeployTargetPickerDialog dialog =
-          new DeployTargetPickerDialog(runConfigId, facet, deviceCount, deployTargetProviders, deployTargetStates);
+        DeployTargetPickerDialog dialog = new DeployTargetPickerDialog(
+          runConfigId,
+          facet,
+          deviceCount,
+          deployTargetProviders,
+          deployTargetStates,
+          LaunchCompatibilityCheckerImpl.create(facet)
+        );
         if (dialog.showAndGet()) {
           return dialog.getSelectedDeployTarget().getDevices(state, facet, deviceCount, debug, runConfigId);
         }
