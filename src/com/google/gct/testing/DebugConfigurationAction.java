@@ -48,8 +48,8 @@ import javax.swing.*;
 
 public class DebugConfigurationAction extends AnAction {
 
-  private final static String TEXT = "Debug Configuration in Cloud";
-  private final static String DESCRIPTION = "Debug Configuration on a Cloud Device";
+  private final static String TEXT = "Debug Configuration in Firebase";
+  private final static String DESCRIPTION = "Debug Configuration on a Firebase Device";
   private AndroidDebugBridge myAndroidDebugBridge;
 
   public DebugConfigurationAction() {
@@ -169,7 +169,7 @@ public class DebugConfigurationAction extends AnAction {
             SwingUtilities.invokeLater(new Runnable() {
               @Override
               public void run() {
-                CloudTestingUtils.showBalloonMessage(project, "Could not find a launched cloud device!", MessageType.WARNING, 10);
+                CloudTestingUtils.showBalloonMessage(project, "Could not find a launched firebase device!", MessageType.WARNING, 10);
               }
             });
             return;
@@ -182,7 +182,7 @@ public class DebugConfigurationAction extends AnAction {
           SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-              CloudTestingUtils.showBalloonMessage(project, "Could not prepare a run configuration for cloud debugging",
+              CloudTestingUtils.showBalloonMessage(project, "Could not prepare a run configuration for firebase debugging",
                                                    MessageType.WARNING, 10);
             }
           });
@@ -198,7 +198,7 @@ public class DebugConfigurationAction extends AnAction {
                                .runProfile(runConfiguration)
                                .build());
             } catch (ExecutionException e) {
-              CloudTestingUtils.showBalloonMessage(project, "Failed to start debugging on a cloud device: " +
+              CloudTestingUtils.showBalloonMessage(project, "Failed to start debugging on a firebase device: " +
                                                             deviceSerialNumber, MessageType.WARNING, 10);
             }
           }

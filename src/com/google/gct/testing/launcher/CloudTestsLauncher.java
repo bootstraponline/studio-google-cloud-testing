@@ -153,7 +153,7 @@ public class CloudTestsLauncher {
       if (indexOfBackendMessage != -1) {
         int startOfBackendMessageText = indexOfBackendMessage + backendMessageHeader.length();
         final String message = exceptionMessage.substring(startOfBackendMessageText, exceptionMessage.indexOf("\",", startOfBackendMessageText));
-        if (message.contains("is not registered for Cloud Test Lab")) {
+        if (message.contains("is not registered for Firebase Test Lab")) {
           String urlPrefix = "Please visit: ";
           int urlPrefixIndex = message.indexOf(urlPrefix);
           if (urlPrefixIndex != -1) {
@@ -172,7 +172,7 @@ public class CloudTestsLauncher {
           }
         }
       }
-      CloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test", "Failed to trigger a cloud matrix execution!\n" +
+      CloudTestingUtils.showErrorMessage(null, "Error triggering a matrix test", "Failed to trigger a firebase matrix execution!\n" +
                                                                                  "Exception while triggering a matrix execution\n\n" +
                                                                                  exceptionMessage);
     }

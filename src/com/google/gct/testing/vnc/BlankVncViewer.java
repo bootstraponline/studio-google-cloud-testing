@@ -35,7 +35,7 @@ public class BlankVncViewer extends JApplet implements Runnable {
       @Override
       public void windowClosing(WindowEvent e) {
         int confirm = JOptionPane.showOptionDialog(blankFrame,
-                                                   "Are you sure you want to close the window? Closing the window will delete the Google Cloud instance.",
+                                                   "Are you sure you want to close the window? Closing the window will delete the Firebase instance.",
                                                    "Exit Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null,
                                                    null, null);
         if (confirm == 0) {
@@ -49,7 +49,7 @@ public class BlankVncViewer extends JApplet implements Runnable {
 
   @Override
   public void run() {
-    blankFrame = new JFrame("Launching Cloud Device");
+    blankFrame = new JFrame("Launching Firebase Device");
     blankFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     blankFrame.addWindowListener(exitListener);
     JLabel infoLabel = new JLabel("Launching " + myConfigurationName, SwingConstants.CENTER);

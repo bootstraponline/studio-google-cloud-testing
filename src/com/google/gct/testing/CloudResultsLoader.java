@@ -203,7 +203,7 @@ public class CloudResultsLoader {
           }
         }
         CloudTestingUtils
-          .showErrorMessage(null, "Error retrieving matrix test results", "Failed to retrieve results of a cloud test matrix!\n" +
+          .showErrorMessage(null, "Error retrieving matrix test results", "Failed to retrieve results of a firebase test matrix!\n" +
                                                                           "Exception while updating results for test matrix " +
                                                                           testMatrixId +
                                                                           "\n\n" +
@@ -306,9 +306,9 @@ public class CloudResultsLoader {
     if (toolResultsExecution == null) { // Should never happen if the APK validation is finished.
       return "";
     }
-    return "https://console.developers.google.com/project/" + cloudProjectId
-           + "/testlab/mobile/histories/" + toolResultsExecution.getHistoryId()
-           + "/executions/" + toolResultsExecution.getExecutionId() + ANDROID_STUDIO_URL_FLAG;
+    return "https://console.firebase.google.com/project/" + cloudProjectId
+           + "/testlab/histories/" + toolResultsExecution.getHistoryId()
+           + "/matrices/" + toolResultsExecution.getExecutionId() + ANDROID_STUDIO_URL_FLAG;
   }
 
   private String getEncodedConfigurationNameForTestExecution(TestExecution testExecution) {

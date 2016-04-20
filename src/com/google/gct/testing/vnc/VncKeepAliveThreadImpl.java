@@ -89,7 +89,7 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
   private void tearDown() {
     // Perform tearing down in separate try blocks to make sure that every step gets a chance to be executed.
     try {
-      // Disconnect adb from the deleted device (otherwise, it will keep showing the stale cloud device).
+      // Disconnect adb from the deleted device (otherwise, it will keep showing the stale firebase device).
       File adbFile = new File(workingDir, System.getProperty("os.name").toLowerCase().indexOf("win") != -1 ? "adb.exe" : "adb");
       Runtime.getRuntime().exec(new String[]{adbFile.getAbsolutePath(), "disconnect", deviceAddress}, null, workingDir);
     } catch (Exception exception) {
@@ -97,7 +97,7 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
     }
 
     try {
-      // Delete the cloud device after the viewer is closed.
+      // Delete the firebase device after the viewer is closed.
       getTest().projects().devices().delete(cloudProjectId, cloudDeviceId).execute();
     } catch (Exception exception) {
       exception.printStackTrace();

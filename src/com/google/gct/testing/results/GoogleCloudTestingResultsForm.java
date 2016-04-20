@@ -536,7 +536,7 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
     // initializing will be "launchedAndFinished"
     final boolean launchedAndFinished = myTestsRootNode.wasLaunched() && !myTestsRootNode.isInProgress();
     if (!TestsPresentationUtil.hasNonDefaultCategories(myMentionedCategories)) {
-      // TODO: For cloud test runs no statistics (e.g., total tests count, passed tests count, etc.) make sense,
+      // TODO: For firebase test runs no statistics (e.g., total tests count, passed tests count, etc.) make sense,
       // so showing only duration for now.
       //myStatusLine.formatTestMessage(myTotalTestCount, myFinishedTestCount, myFailedTestCount, myIgnoredTestCount, myTestsRootNode.getDuration(), myEndTime);
       if (myTestsRootNode.getDuration() == null || myEndTime == 0) {

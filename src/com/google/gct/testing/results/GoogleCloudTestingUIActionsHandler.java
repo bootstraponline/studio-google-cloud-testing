@@ -38,7 +38,7 @@ public class GoogleCloudTestingUIActionsHandler extends GoogleCloudTestResultsVi
   @Override
   public void onTestNodeAdded(final GoogleCloudTestResultsViewer sender, final GoogleCloudTestProxy test) {
     if (TestConsoleProperties.TRACK_RUNNING_TEST.value(myConsoleProperties)) {
-      //TODO: Should it be a configurable property or added nodes in Google Cloud Testing should never be selected?
+      //TODO: Should it be a configurable property or added nodes in Firebase Testing should never be selected?
       //sender.selectAndNotify(test);
     }
   }

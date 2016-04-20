@@ -42,7 +42,7 @@ public class GoogleCloudTestResultsConnectionUtil {
   }
 
   /**
-   * Creates Google Cloud Test Runner console component with test tree, console, statistics tabs
+   * Creates Firebase Test Runner console component with test tree, console, statistics tabs
    * and attaches it to given Process handler.
    *
    * You can use this method in run configuration's CommandLineState. You should

@@ -27,7 +27,7 @@ public abstract class CloudConfiguration {
 
   public abstract Icon getIcon();
 
-  /** Returns the number of device configurations included in this cloud configuration. */
+  /** Returns the number of device configurations included in this firebase configuration. */
   public abstract int getDeviceConfigurationCount();
 
   public abstract boolean isEditable();

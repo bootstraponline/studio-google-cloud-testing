@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A run configuration execution which runs an Android test on a matrix of cloud devices.
+ * A run configuration execution which runs an Android test on a matrix of firebase devices.
  */
 public class CloudMatrixTestRunningState implements RunProfileState {
 

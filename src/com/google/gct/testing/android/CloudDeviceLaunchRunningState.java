@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A run configuration execution state that just launches a cloud device.
+ * A run configuration execution state that just launches a firebase device.
  * TODO: This should probably not be a run configuration execution, since it does not actually execute any project code.
  * Rather, the device should be launched before the run configuration execution where it is actually used.
  */

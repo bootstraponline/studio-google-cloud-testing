@@ -28,10 +28,10 @@ public class CloudOptionEnablementChecker implements ApplicationComponent {
   private static final String ENABLE_CLOUD_TESTING_REMOTELY = "com.google.gct.enable.cloud.testing";
   private static final String ENABLE_CLOUD_DEBUGGING_REMOTELY = "com.google.gct.enable.cloud.debugging";
 
-  // If this JVM option is present and set to true, enable the cloud matrix testing regardless of anything.
+  // If this JVM option is present and set to true, enable the firebase matrix testing regardless of anything.
   private static final String LOCAL_ENABLE_CLOUD_TESTING_FLAG = "enable.google.cloud.testing.plugin";
 
-  // If this JVM option is present and set to true, enable cloud debugging regardless of anything.
+  // If this JVM option is present and set to true, enable firebase debugging regardless of anything.
   private static final String LOCAL_ENABLE_CLOUD_DEBUGGING_FLAG = "enable.google.cloud.debugging";
 
 

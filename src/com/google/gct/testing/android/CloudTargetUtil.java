@@ -36,7 +36,7 @@ public final class CloudTargetUtil {
                                                @NotNull String cloudProjectId, int cloudConfigurationId) {
     List<ValidationError> errors = Lists.newArrayList();
     if (!isUserLoggedIn()) {
-      errors.add(ValidationError.fatal("Not connected to Google Cloud Platform."));
+      errors.add(ValidationError.fatal("Not connected to Firebase."));
       // Can't continue.
       return errors;
     }
@@ -53,13 +53,13 @@ public final class CloudTargetUtil {
     }
 
     if (selectedConfig == null) {
-      errors.add(ValidationError.fatal("Cloud configuration not specified."));
+      errors.add(ValidationError.fatal("Matrix configuration not specified."));
       // Can't continue.
       return errors;
     }
 
     if (selectedConfig.getDeviceConfigurationCount() < 1) {
-      errors.add(ValidationError.fatal("Selected cloud configuration is empty."));
+      errors.add(ValidationError.fatal("Selected matrix configuration is empty."));
     }
 
     return errors;

@@ -348,7 +348,7 @@ public class GhostCloudDevice implements IDevice {
 
   @Override
   public String getName() {
-    return "Cloud device: " + device.getId();
+    return "Firebase device: " + device.getId();
   }
 
   @Override

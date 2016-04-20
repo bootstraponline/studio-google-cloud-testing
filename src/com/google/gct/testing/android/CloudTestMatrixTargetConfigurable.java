@@ -80,7 +80,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
     topPanel.add(cloudDeviceMatrixPanel, preparePanelGridConstraints(1));
 
     connectToCloudPanel.add(createRunTestsInCloudPane(topPanel.getBackground(), 6, 4), prepareEditorPaneGridConstraints(0));
-    JButton connectToCloudButton = new JButton("Connect to Google Cloud Platform");
+    JButton connectToCloudButton = new JButton("Connect to Firebase");
     connectToCloudButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
@@ -188,7 +188,7 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
       new JEditorPane(UIUtil.HTML_MIME,
                       "<html><p style='margin-top: " + topMargin + "px; margin-bottom: " + bottomMargin + "px;'>"
                       + "Run tests against a wide variety of physical and virtual devices simultaneously in "
-                      + "<a href='https://developers.google.com/cloud-test-lab'>Google Cloud Test Lab</a>.<br>"
+                      + "<a href='https://firebase.google.com/docs/test-lab'>Firebase Test Lab</a>.<br>"
                       + preparePricingAnchor("Pricing information") + "</p></html>");
     linkifyEditorPane(runTestsInCloudPane, backgroundColor);
     return runTestsInCloudPane;
@@ -198,9 +198,8 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
     JEditorPane signupForCloudPane =
       new JEditorPane(UIUtil.HTML_MIME,
                       "<html><p style='margin-top: " + topMargin + "px; margin-bottom: " + bottomMargin + "px;'>"
-                      + "Don&rsquo;t have a Google Cloud Platform account? "
-                      + "<a href='https://console.developers.google.com/freetrial'>Sign up</a> for one and "
-                      + "receive free credits.</p></html>");
+                      + "Don&rsquo;t have a Firebase account? "
+                      + "<a href='https://console.firebase.google.com'>Sign up</a> for one now.</p></html>");
     linkifyEditorPane(signupForCloudPane, backgroundColor);
     return signupForCloudPane;
   }

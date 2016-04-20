@@ -33,7 +33,7 @@ import java.util.List;
 
 public class CloudDebuggingTargetProvider extends DeployTargetProvider {
 
-  public static final String ID = "CLOUD_DEVICE_DEBUGGING";
+  public static final String ID = "FIREBASE_DEVICE_DEBUGGING";
 
   private String myCloudDeviceSerialNumber;
 
@@ -56,7 +56,7 @@ public class CloudDebuggingTargetProvider extends DeployTargetProvider {
   @NotNull
   @Override
   public String getDisplayName() {
-    return "Cloud Test Lab Debugging Device";
+    return "Firebase Test Lab Debugging Device";
   }
 
   @NotNull

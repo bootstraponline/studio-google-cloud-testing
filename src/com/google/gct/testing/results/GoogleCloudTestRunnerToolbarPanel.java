@@ -46,7 +46,7 @@ public class GoogleCloudTestRunnerToolbarPanel extends SMTRunnerToolbarPanel {
         if (action instanceof Separator) {
           separatorCounter++;
         }
-        // Add cloud actions as a 4th group of actions.
+        // Add firebase actions as a 4th group of actions.
         if (separatorCounter == 3) {
           addCloudActions(cloudActionGroup);
           cloudActionsAdded = true;
@@ -54,7 +54,7 @@ public class GoogleCloudTestRunnerToolbarPanel extends SMTRunnerToolbarPanel {
       }
     }
 
-    // Remove the original action bar and add a cloud action bar instead.
+    // Remove the original action bar and add a firebase action bar instead.
     remove(lastComponentIndex);
     add(ActionManager.getInstance().createActionToolbar(ActionPlaces.TESTTREE_VIEW_TOOLBAR, cloudActionGroup, true).getComponent(),
         BorderLayout.CENTER);

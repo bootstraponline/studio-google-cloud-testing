@@ -301,8 +301,8 @@ public final class CloudConfigurationHelper {
     } finally {
       if (buckets == null) {
         CloudTestingUtils
-          .showErrorMessage(project, "Cloud test configuration is invalid",
-                            "Failed to authorize to Google Cloud project! Please select a project you are authorized to use.\n"
+          .showErrorMessage(project, "Firebase test configuration is invalid",
+                            "Failed to authorize to Cloud project! Please select a project you are authorized to use.\n"
                             + "Exception while performing a pre-trigger sanity check\n\n" + message);
         return false;
       }
@@ -314,8 +314,8 @@ public final class CloudConfigurationHelper {
       createBucket(cloudProjectId, checkBucketName);
     } catch (Exception e) {
       CloudTestingUtils
-        .showErrorMessage(project, "Cloud test configuration is invalid",
-                          "Please enable billing in your Google Cloud project.\n"
+        .showErrorMessage(project, "Firebase test configuration is invalid",
+                          "Please enable billing in your Cloud project.\n"
                           + "Exception while performing a pre-trigger sanity check\n\n" + e.getMessage());
       return false;
     }
@@ -356,7 +356,7 @@ public final class CloudConfigurationHelper {
     try {
       publicKey = generateSshKeys(jsch);
     } catch (Exception e) {
-      CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+      CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
                                                                                  "Exception while generating ssh keys\n\n" +
                                                                                  e.getMessage());
       return;
@@ -375,14 +375,14 @@ public final class CloudConfigurationHelper {
     try {
       createdDevice = getTest().projects().devices().create(cloudProjectId, device).setSshPublicKey(publicKey).execute();
     } catch (Exception e) {
-      CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
-                                                                                 "Exception while launching a cloud device\n\n" +
+      CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
+                                                                                 "Exception while launching a firebase device\n\n" +
                                                                                  e.getMessage());
       return;
     }
     if (createdDevice == null) {
-      CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
-                                                                                 "Could not access cloud device\n\n");
+      CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
+                                                                                 "Could not access firebase device\n\n");
     }
 
     final String deviceId = createdDevice.getId();
@@ -421,8 +421,8 @@ public final class CloudConfigurationHelper {
         createdDevice = getTest().projects().devices().get(cloudProjectId, deviceId).execute();
         System.out.println("Polling for device... (time: " + System.currentTimeMillis() + ", status: " + createdDevice.getState() + ")");
         if (createdDevice.getState().equals("DEVICE_ERROR")) {
-          CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
-                                                                                     "The polled cloud device has ERROR state\n\n");
+          CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
+                                                                                     "The polled firebase device has ERROR state\n\n");
           return;
         }
         if (createdDevice.getState().equals("READY")) {
@@ -436,7 +436,7 @@ public final class CloudConfigurationHelper {
           try {
             session = connectSession(jsch, ipAddress, sshPort);
           } catch (Exception e) {
-            CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+            CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
                                                                                        "Exception while connecting through SSH\n\n" +
                                                                                        e.getMessage());
             return;
@@ -446,7 +446,7 @@ public final class CloudConfigurationHelper {
           try {
             adbLocalPort = session.setPortForwardingL(0, "localhost", adbPort);
           } catch (Exception e) {
-            CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+            CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
                                                                                        "Exception while tunneling through SSH\n\n" +
                                                                                        e.getMessage());
             return;
@@ -456,7 +456,7 @@ public final class CloudConfigurationHelper {
           try {
             vncLocalPort = session.setPortForwardingL(0, "localhost", vncPort);
           } catch (Exception e) {
-            CloudTestingUtils.showErrorMessage(null, "Error launching a cloud device", "Failed to launch a cloud device!\n" +
+            CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
                                                                                        "Exception while tunneling through SSH\n\n" +
                                                                                        e.getMessage());
             return;
@@ -470,7 +470,7 @@ public final class CloudConfigurationHelper {
           connect.waitFor();
           serialNumberToConfigurationInstance.put(deviceAddress, configurationInstance);
           // Do not wait for "finally" to remove the ghost device
-          // to minimize the time both a ghost device and an actual cloud device are present in the devices table.
+          // to minimize the time both a ghost device and an actual firebase device are present in the devices table.
           synchronized (ghostCloudDevices) {
             ghostCloudDevices.remove(ghostCloudDevice);
           }
@@ -485,15 +485,15 @@ public final class CloudConfigurationHelper {
           Process unlock = runtime.exec(
             new String[]{adbFile.getAbsolutePath(), "-s", deviceAddress, "wait-for-device", "shell", "input", "keyevent", "82"}, null, workingDir);
           unlock.waitFor();
-          // Open the VNC window for the cloud device.
+          // Open the VNC window for the firebase device.
           String[] viewerArgs = new String[]{"-port=" + vncLocalPort, "-host=localhost", "-password=" + vncPassword, "-fullScreen=false"};
           VncKeepAliveThreadImpl.startVnc(viewerArgs, configurationName, cloudProjectId, deviceId, deviceAddress, workingDir);
           return;
         }
         Thread.sleep(POLLING_INTERVAL);
       }
-      CloudTestingUtils.showErrorMessage(null, "Timed out connecting to a cloud device", "Timed out connecting to a cloud device!\n" +
-                                                                                         "Timed out connecting to a cloud device:\n\n" +
+      CloudTestingUtils.showErrorMessage(null, "Timed out connecting to a firebase device", "Timed out connecting to a firebase device!\n" +
+                                                                                         "Timed out connecting to a firebase device:\n\n" +
                                                                                          deviceId);
     } catch (Exception e) {
       showCloudDevicePollingError(e, deviceId);
@@ -541,8 +541,8 @@ public final class CloudConfigurationHelper {
   }
 
   private static void showCloudDevicePollingError(Exception e, String deviceId) {
-    CloudTestingUtils.showErrorMessage(null, "Error polling for a cloud device", "Failed to connect to a cloud device!\n" +
-                                                                                 "Exception while polling for a cloud device\n\n" +
+    CloudTestingUtils.showErrorMessage(null, "Error polling for a firebase device", "Failed to connect to a firebase device!\n" +
+                                                                                 "Exception while polling for a firebase device\n\n" +
                                                                                  deviceId +
                                                                                  e.getMessage());
   }
@@ -574,11 +574,11 @@ public final class CloudConfigurationHelper {
     GoogleCloudTestConsoleProperties properties = new GoogleCloudTestConsoleProperties(testRunConfiguration, executor);
     CloudMatrixExecutionCancellator matrixExecutionCancellator = new CloudMatrixExecutionCancellator();
     ConsoleView console = GoogleCloudTestResultsConnectionUtil.createAndAttachConsole(
-      "Cloud Testing", runningState.getProcessHandler(), properties, runningState.getEnvironment(), matrixExecutionCancellator);
+      "Firebase Testing", runningState.getProcessHandler(), properties, runningState.getEnvironment(), matrixExecutionCancellator);
     Disposer.register(project, console);
 
     GoogleCloudTestingResultParser
-      cloudResultParser = new GoogleCloudTestingResultParser("Cloud Test Run", new GoogleCloudTestListener(runningState));
+      cloudResultParser = new GoogleCloudTestingResultParser("Firebase Test Run", new GoogleCloudTestListener(runningState));
 
     List<String> expectedConfigurationInstances =
       cloudConfiguration.computeConfigurationInstances(ConfigurationInstance.DISPLAY_NAME_DELIMITER);
@@ -693,7 +693,7 @@ public final class CloudConfigurationHelper {
           if (matrixExecutionCancellator.isCancelled()) {
             return;
           }
-          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Submitting tests to Cloud Test Lab ...", ""),
+          runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Submitting tests to Firebase Test Lab ...", ""),
                                                                ProcessOutputTypes.STDOUT);
           String testSpecification = CloudTestingUtils.prepareTestSpecification(testRunConfiguration);
 
@@ -822,14 +822,14 @@ public final class CloudConfigurationHelper {
 
   private static void addCloudResultsAdapter(String testRunId, CloudResultsAdapter cloudResultsAdapter) {
     if (testRunIdToCloudResultsAdapter.get(testRunId) != null) {
-      throw new IllegalStateException("Cannot add more than one cloud results adapter for test run id: " + testRunId);
+      throw new IllegalStateException("Cannot add more than one firebase results adapter for test run id: " + testRunId);
     }
     testRunIdToCloudResultsAdapter.put(testRunId, cloudResultsAdapter);
   }
 
   private static void addCloudConfiguration(String testRunId, CloudConfigurationImpl cloudConfiguration) {
     if (testRunIdToCloudConfiguration.get(testRunId) != null) {
-      throw new IllegalStateException("Cannot add more than one cloud configuration for test run id: " + testRunId);
+      throw new IllegalStateException("Cannot add more than one firebase configuration for test run id: " + testRunId);
     }
     testRunIdToCloudConfiguration.put(testRunId, cloudConfiguration);
   }

@@ -1,10 +1,10 @@
 <idea-plugin version="2">
   <id>com.google.gct.testing</id>
-  <name>Google Cloud Testing</name>
+  <name>Firebase Testing</name>
   <version>1.0</version>
   <vendor>Google</vendor>
 
-  <description>Enables Google Cloud Testing.</description>
+  <description>Enables Firebase Testing.</description>
 
   <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
   <idea-version since-build="107.107"/>

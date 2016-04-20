@@ -60,13 +60,13 @@ public class GoogleCloudTestingDeveloperConfigurable implements OptionalConfigur
   @Nls
   @Override
   public String getDisplayName() {
-    return "Google Cloud Testing Developer";
+    return "Firebase Testing Developer";
   }
 
   @Nullable
   @Override
   public String getHelpTopic() {
-    return "google.cloud.testing.developer";
+    return "firebase.testing.developer";
   }
 
   @Override

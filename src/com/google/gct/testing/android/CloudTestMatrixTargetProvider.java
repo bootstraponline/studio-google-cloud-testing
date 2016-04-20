@@ -55,13 +55,13 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
   @NotNull
   @Override
   public String getId() {
-    return "CLOUD_DEVICE_MATRIX";
+    return "FIREBASE_DEVICE_MATRIX";
   }
 
   @NotNull
   @Override
   public String getDisplayName() {
-    return "Cloud Test Lab Device Matrix";
+    return "Firebase Test Lab Device Matrix";
   }
 
   @NotNull

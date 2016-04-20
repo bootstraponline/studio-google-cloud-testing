@@ -102,7 +102,7 @@ public class CloudAuthenticator {
     // The error should be reported just once per burst of invocations.
     if (currentTimestamp - lastDiscoveryServiceInvocationTimestamp > 1000l) { // If more than a second has passed.
       CloudTestingUtils.showErrorMessage(null, "Error retrieving android device catalog",
-                                         "Failed to retrieve available cloud devices! Please try again later.\n" + errorMessageSuffix);
+                                         "Failed to retrieve available firebase devices! Please try again later.\n" + errorMessageSuffix);
     }
   }
 

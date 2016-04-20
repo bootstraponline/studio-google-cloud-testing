@@ -46,7 +46,7 @@ import java.awt.*;
 
 public class CloudTestingUtils {
 
-  public static final String PRICING_LINK = "https://cloud.google.com/pricing";
+  public static final String PRICING_LINK = "https://firebase.google.com/pricing";
 
   public static final String ANDROID_STUDIO_URL_FLAG = "?source=android-studio";
 
@@ -116,7 +116,7 @@ public class CloudTestingUtils {
   }
 
   /**
-   * Returns {@code false} iff the Java version is too old for launching cloud devices (i.e., < 1.8).
+   * Returns {@code false} iff the Java version is too old for launching firebase devices (i.e., < 1.8).
    *
    */
   public static boolean checkJavaVersion() {
@@ -124,14 +124,14 @@ public class CloudTestingUtils {
     String[] versionParts = javaVersion.split("\\.");
     if (Double.parseDouble(versionParts[0] + "." + versionParts[1]) < 1.8) {
       final String message = "<html>You are using Java <b>" + javaVersion + "</b>.<br>"
-                             + "Due to security reasons, to launch cloud devices, you need to upgrade to Java <b>1.8</b> or higher.<br>"
+                             + "Due to security reasons, to launch firebase devices, you need to upgrade to Java <b>1.8</b> or higher.<br>"
                              + "You can download the latest Java release from <a href='https://java.com'>here</a>.</html>";
       final Project project = null;
       SwingUtilities.invokeLater(new Runnable() {
         @Override
         public void run() {
           Messages
-            .showDialog(project, message, "Your Java is too old for launching cloud devices!", new String[]{Messages.CANCEL_BUTTON}, 0, null);
+            .showDialog(project, message, "Your Java is too old for launching firebase devices!", new String[]{Messages.CANCEL_BUTTON}, 0, null);
         }
       });
       return false;

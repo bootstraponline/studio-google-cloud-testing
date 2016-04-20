@@ -156,7 +156,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
 
   private void updateConfigurationCountPane() {
     int numberOfConfigurations = configuration.getDeviceConfigurationCount();
-    String pricingText = numberOfConfigurations > 0 ? " and " + preparePricingAnchor("Cloud Test Lab pricing") + " will apply." : ".";
+    String pricingText = numberOfConfigurations > 0 ? " and " + preparePricingAnchor("Firebase Test Lab pricing") + " will apply." : ".";
     JEditorPane countPane =
       new JEditorPane(UIUtil.HTML_MIME, "<html>Tests will run on <b>" + numberOfConfigurations + " configurations</b>"
                                         + pricingText + "</html>");
@@ -282,7 +282,7 @@ public class TwoPanelTree extends MouseAdapter implements ListSelectionListener,
     List<? extends CloudTestingTypeGroup> supportedGroups = dimension.getSupportedGroups();
     for (CloudTestingTypeGroup group : supportedGroups) {
       if (configuration.getKind() == CloudConfiguration.Kind.SINGLE_DEVICE && dimension instanceof DeviceDimension && group.getName().equals("PHYSICAL")) {
-        // Do not show physical devices since we cannot launch them in the user project (e.g., for debugging on a cloud device).
+        // Do not show physical devices since we cannot launch them in the user project (e.g., for debugging on a firebase device).
         continue;
       }
       List<CloudTestingType> types = group.getTypes();
