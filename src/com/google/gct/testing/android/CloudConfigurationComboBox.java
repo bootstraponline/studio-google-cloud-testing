@@ -17,7 +17,6 @@ package com.google.gct.testing.android;
 
 import com.google.common.collect.Maps;
 import com.google.gct.testing.CloudConfigurationHelper;
-import com.google.gct.testing.CloudOptionEnablementChecker;
 import com.google.gct.testing.android.CloudConfiguration.Kind;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.util.Pair;
@@ -92,10 +91,6 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
   }
 
   public void setFacet(@Nullable AndroidFacet facet) {
-    if (!CloudOptionEnablementChecker.isCloudTestingEnabled()) {
-      return; // Running tests in firebase is not enabled!
-    }
-
     if (facet == null) {
       return;
     }

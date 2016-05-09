@@ -10,10 +10,6 @@
   <idea-version since-build="107.107"/>
 
   <application-components>
-    <component>
-      <implementation-class>com.google.gct.testing.CloudOptionEnablementChecker</implementation-class>
-      <interface-class>com.google.gct.testing.CloudOptionEnablementChecker</interface-class>
-    </component>
   </application-components>
 
   <project-components>

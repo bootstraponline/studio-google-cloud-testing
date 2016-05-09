@@ -22,7 +22,6 @@ import com.android.tools.idea.run.ValidationError;
 import com.android.tools.idea.run.editor.*;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.google.api.client.util.Maps;
-import com.google.gct.testing.CloudOptionEnablementChecker;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.RunProfile;
@@ -83,7 +82,7 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
 
   @Override
   public boolean isApplicable(boolean isTestConfig) {
-    return isTestConfig && CloudOptionEnablementChecker.isCloudTestingEnabled();
+    return isTestConfig;
   }
 
   @Override
