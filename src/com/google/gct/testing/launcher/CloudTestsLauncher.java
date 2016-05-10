@@ -120,10 +120,13 @@ public class CloudTestsLauncher {
 
     testMatrix.setClientInfo(new ClientInfo().setName("Android Studio"));
 
-    testMatrix.setTestSpecification(new TestSpecification().setAndroidInstrumentationTest(
-      new AndroidInstrumentationTest().setAppApk(new FileReference().setGcsPath(appApkGcsPath))
-        .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
-        .setTestRunnerClass(instrumentationTestRunner).setTestTargets(Lists.newArrayList(testSpecification))));
+    final String testTimeout = "1800s"; // 30 minutes in seconds
+
+    testMatrix.setTestSpecification(
+      new TestSpecification().setTestTimeout(testTimeout).setAndroidInstrumentationTest(
+        new AndroidInstrumentationTest().setAppApk(new FileReference().setGcsPath(appApkGcsPath))
+          .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
+          .setTestRunnerClass(instrumentationTestRunner).setTestTargets(Lists.newArrayList(testSpecification))));
 
     testMatrix.setResultStorage(new ResultStorage().setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath)));
 
