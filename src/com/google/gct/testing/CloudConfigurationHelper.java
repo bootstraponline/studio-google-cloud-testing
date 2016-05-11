@@ -17,7 +17,6 @@ package com.google.gct.testing;
 
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
-import com.android.builder.model.BaseArtifact;
 import com.android.ddmlib.IDevice;
 import com.android.tools.idea.gradle.AndroidGradleModel;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
@@ -664,14 +663,15 @@ public final class CloudConfigurationHelper {
           }
           File appApk = mainOutputs.get(0).getMainOutputFile().getOutputFile();
 
-          BaseArtifact testArtifactInfo = androidModel.findSelectedTestArtifactInSelectedVariant();
-          if (!(testArtifactInfo instanceof AndroidArtifact)) {
+          AndroidArtifact testArtifactInfo = androidModel.getAndroidTestArtifactInSelectedVariant();
+
+          if (testArtifactInfo == null) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
-                                               "Your test artifact is not an android artifact!\n");
+                                               "Could not find your Android test artifact!\n");
             return;
           }
 
-          List<AndroidArtifactOutput> testOutputs = Lists.newArrayList(((AndroidArtifact)testArtifactInfo).getOutputs());
+          List<AndroidArtifactOutput> testOutputs = Lists.newArrayList(testArtifactInfo.getOutputs());
           if (testOutputs.isEmpty()) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error finding test APK",
                                                "Could not find your test APK!\n");
