@@ -164,7 +164,7 @@ public class TestCodeMapper {
     MatcherBuilder matcherBuilder = new MatcherBuilder();
 
     // Only the first descriptor could be empty, but check the index anyway.
-    if (elementDescriptor.isEmpty() && index == 0) {
+    if (index == 0 && (elementDescriptor.isEmpty() || isLoginRadioButton(affectedElementType, elementDescriptors))) {
       matcherBuilder.addMatcher(ClassName, affectedElementType, true);
     } else {
       matcherBuilder.addMatcher(Id, resourceId, false);
@@ -197,6 +197,20 @@ public class TestCodeMapper {
     return "allOf(" + matcherBuilder.getMatchers() + ", withParent("
            + generateElementHierarchyConditionsRecursively(affectedElementType, elementDescriptors, index + 1)
            + ")" + isDisplayedSuffix + ")";
+  }
+
+  /**
+   * TODO: This is a temporary workaround for picking a login option in a username-agnostic way
+   * such that the generated test is generic enough to run on other devices.
+   * TODO: Also, it assumes a single radio button choice (such that it could be identified by the class name).
+   */
+  private boolean isLoginRadioButton(String affectedElementType, List<ElementDescriptor> elementDescriptors) {
+    if (affectedElementType.endsWith(".widget.AppCompatRadioButton") && elementDescriptors.size() > 1
+        && "R.id.welcome_account_list".equals(convertIdToTestCodeFormat(elementDescriptors.get(1).getResourceId()))) {
+      return true;
+    }
+
+    return false;
   }
 
   private String convertIdToTestCodeFormat(String resourceId) {
