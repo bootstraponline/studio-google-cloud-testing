@@ -1,0 +1,40 @@
+#if (${PackageName} && ${PackageName} != "")
+package ${PackageName};
+
+#end
+
+import ${EspressoPackageName}.espresso.ViewInteraction;
+import android.test.ActivityInstrumentationTestCase2;
+import android.test.suitebuilder.annotation.LargeTest;
+
+import static ${EspressoPackageName}.espresso.Espresso.onView;
+import static ${EspressoPackageName}.espresso.Espresso.pressBack;
+import static ${EspressoPackageName}.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition;
+import static ${EspressoPackageName}.espresso.action.ViewActions.*;
+import static ${EspressoPackageName}.espresso.assertion.ViewAssertions.*;
+import static ${EspressoPackageName}.espresso.matcher.ViewMatchers.*;
+
+import ${ResourcePackageName}.R;
+
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.is;
+
+@LargeTest
+public class ${ClassName} extends ActivityInstrumentationTestCase2<${TestActivityName}> {
+
+    public ${ClassName}() {
+        super(${TestActivityName}.class);
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        getActivity();
+    }
+
+    public void test${ClassName}() {
+    #foreach (${line} in ${TestCode})
+    ${line}
+    #end
+    }
+}
