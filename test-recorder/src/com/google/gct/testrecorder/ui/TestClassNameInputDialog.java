@@ -15,7 +15,9 @@
  */
 package com.google.gct.testrecorder.ui;
 
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.collect.Lists;
+import com.google.gct.testrecorder.util.TestRecorderTracking;
 import com.intellij.ide.fileTemplates.JavaTemplateUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.StdFileTypes;
@@ -106,7 +108,11 @@ public class TestClassNameInputDialog extends DialogWrapper {
 
   private VirtualFile detectOrCreateTestSourceDirectory() {
     List<VirtualFile> testSourceRoots = getTestSourceRoots();
+    // TODO: If there are test roots but none of them are instrumentation test roots, an instrumentation test root should be created.
     if (testSourceRoots.isEmpty()) {
+      UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.MISSING_INSTRUMENTATION_TEST_FOLDER,
+                                            TestRecorderTracking.SESSION_LABEL, null);
+
       // Create a test source root following naming convention (i.e., $MODULE_DIR$/src/androidTest/java).
       // TODO: If there are examples when naming convention fails, consider updating .iml as well,
       // e.g., using contentEntry.addSourceFolder(VfsUtilCore.pathToUrl(parentSourceRoot.getCanonicalPath() + "/androidTest/java"), true);

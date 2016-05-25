@@ -20,9 +20,11 @@ import com.android.tools.idea.run.AndroidRunConfigurationType;
 import com.android.tools.idea.run.editor.DefaultActivityLaunch;
 import com.android.tools.idea.run.editor.LaunchOptionState;
 import com.android.tools.idea.run.editor.SpecificActivityLaunch;
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gct.testrecorder.debugger.SessionInitializer;
+import com.google.gct.testrecorder.util.TestRecorderTracking;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.RunnerAndConfigurationSettings;
@@ -123,6 +125,9 @@ public class TestRecorderAction extends AnAction {
 
   @Override
   public void actionPerformed(AnActionEvent event) {
+    UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.LAUNCH_TEST_RECORDER,
+                                          TestRecorderTracking.SESSION_LABEL, null);
+
     myProject = event.getProject();
     if (myProject == null || myProject.isDisposed()) {
       return;

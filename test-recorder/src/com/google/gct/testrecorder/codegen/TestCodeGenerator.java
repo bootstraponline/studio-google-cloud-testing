@@ -15,10 +15,12 @@
  */
 package com.google.gct.testrecorder.codegen;
 
+import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.ui.RecordingDialog;
 import com.google.gct.testrecorder.util.ResourceHelper;
+import com.google.gct.testrecorder.util.TestRecorderTracking;
 import com.intellij.codeInsight.actions.OptimizeImportsProcessor;
 import com.intellij.codeInsight.actions.ReformatCodeProcessor;
 import com.intellij.concurrency.JobScheduler;
@@ -178,14 +180,24 @@ public class TestCodeGenerator {
     // Generate test code.
     TestCodeMapper codeMapper = new TestCodeMapper(resourcePackageName, myHasCustomEspressoDependency);
     ArrayList<String> testCodeLines = new ArrayList<String>();
+    int eventCount = 0;
+    int assertionCount = 0;
     for (Object event : myEvents) {
       if (event instanceof TestRecorderEvent) {
         testCodeLines.addAll(codeMapper.getTestCodeLinesForEvent((TestRecorderEvent)event));
+        eventCount++;
       } else {
         testCodeLines.addAll(codeMapper.getTestCodeLinesForAssertion((TestRecorderAssertion)event));
+        assertionCount++;
       }
       testCodeLines.add("");
     }
+
+    UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.GENERATE_TEST_CLASS_EVENTS,
+                                          TestRecorderTracking.SESSION_LABEL, eventCount);
+
+    UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.GENERATE_TEST_CLASS_ASSERTIONS,
+                                          TestRecorderTracking.SESSION_LABEL, assertionCount);
 
     velocityContext.put("TestCode", testCodeLines);
 
