@@ -40,6 +40,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.UIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.annotations.NotNull;
@@ -56,6 +57,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import static com.android.tools.idea.gradle.dsl.model.dependencies.CommonConfigurationNames.COMPILE;
+import static com.google.gct.testing.CloudTestingUtils.linkifyEditorPane;
 import static com.google.gct.testrecorder.event.TestRecorderAssertion.*;
 import static com.google.gct.testrecorder.event.TestRecorderEvent.SUPPORTED_EVENTS;
 
@@ -112,6 +114,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   private JButton mySaveAssertionAndAddAnotherButton;
   private JButton myCompleteRecordingButton;
   private JPanel myRecordingPanel;
+  private JEditorPane myDisclaimerPane;
 
   public RecordingDialog(AndroidFacet facet, IDevice device, String packageName, String launchedActivityName) {
     super(facet.getModule().getProject());
@@ -400,6 +403,13 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myScreenshotPanel = new ScreenshotPanel(this);
     myScreenshotPanel.setPreferredSize(new Dimension(0, 0));
     myScreenshotPanel.setVisible(false);
+
+    myDisclaimerPane = new JEditorPane(
+      UIUtil.HTML_MIME, "<html><a href='https://developer.android.com/r/studio-ui/test-recorder.html'>Espresso Test Recorder</a> is currently experimental. "
+                        + "Please <a href='https://code.google.com/p/android/issues/entry?template=Espresso%20Test%20Recorder%20Bug'>report any issues</a>.</html>");
+
+    myDisclaimerPane.setFont(myDisclaimerPane.getFont().deriveFont(12f));
+    linkifyEditorPane(myDisclaimerPane, myScreenshotPanel.getBackground());
   }
 
   @Nullable
