@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.gct.testrecorder.util.StringUtil.getClassName;
+import static com.google.gct.testrecorder.util.StringHelper.getClassName;
 
 public class TestRecorderEvent extends ElementAction {
   public static final String VIEW_CLICK = "VIEW_CLICKED";

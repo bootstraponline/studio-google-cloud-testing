@@ -16,11 +16,11 @@
 package com.google.gct.testrecorder.util;
 
 import com.android.utils.Pair;
-import org.apache.commons.lang.StringEscapeUtils;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class StringUtil {
+public class StringHelper {
 
   /**
    * trim (double) quotation marks in the ends of the given string
@@ -42,15 +42,8 @@ public class StringUtil {
    * @param str
    * @return
    */
-  public static String boxString(String str) {
-    return "\"" + StringEscapeUtils.escapeJava(str) + "\"";
-  }
-
-  public static String boxStringIfNotEmpty(String str) {
-    if (str.isEmpty()) {
-      return "";
-    }
-    return boxString(str);
+  public static String boxString(@NotNull String str) {
+    return "\"" + StringUtil.escapeStringCharacters(str) + "\"";
   }
 
   public static String lowerCaseFirstCharacter(String originalString) {

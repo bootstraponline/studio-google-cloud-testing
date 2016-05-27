@@ -24,8 +24,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.gct.testrecorder.util.StringUtil.getClassName;
-import static com.google.gct.testrecorder.util.StringUtil.parseId;
+import static com.google.gct.testrecorder.util.StringHelper.getClassName;
+import static com.google.gct.testrecorder.util.StringHelper.parseId;
 import static com.intellij.util.ui.UIUtil.isUnderDarcula;
 
 public abstract class ElementAction {

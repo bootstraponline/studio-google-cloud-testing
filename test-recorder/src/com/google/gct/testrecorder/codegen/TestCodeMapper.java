@@ -30,7 +30,7 @@ import java.util.Map;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.gct.testrecorder.codegen.TestCodeMapper.MatcherBuilder.Kind.*;
 import static com.google.gct.testrecorder.event.TestRecorderAssertion.*;
-import static com.google.gct.testrecorder.util.StringUtil.*;
+import static com.google.gct.testrecorder.util.StringHelper.*;
 
 public class TestCodeMapper {
 
