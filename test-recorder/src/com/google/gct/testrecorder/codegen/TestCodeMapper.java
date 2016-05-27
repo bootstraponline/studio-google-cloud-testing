@@ -121,7 +121,7 @@ public class TestCodeMapper {
 
   private String addViewPickingStatement(ElementAction action, List<String> testCodeLines) {
     String variableName = generateVariableNameFromElementType(action.getElementType());
-    testCodeLines.add(VIEW_VARIABLE_TYPE + " " + variableName + " = onView(" + generateElementHierarchyConditions(action) + ");");
+    testCodeLines.add(VIEW_VARIABLE_TYPE + " " + variableName + " = onView(\n" + generateElementHierarchyConditions(action) + ");");
     return variableName;
   }
 
@@ -156,8 +156,6 @@ public class TestCodeMapper {
   private String generateElementHierarchyConditionsRecursively(String affectedElementType, List<ElementDescriptor> elementDescriptors,
                                                                int index) {
 
-    // Add isDisplayed() only to the innermost element.
-    final String isDisplayedSuffix = index == 0 ? ", isDisplayed()" : "";
 
     ElementDescriptor elementDescriptor = elementDescriptors.get(index);
     String resourceId = convertIdToTestCodeFormat(elementDescriptor.getResourceId());
@@ -188,15 +186,15 @@ public class TestCodeMapper {
         // look into android framework library ids.xml file to decide whether an id will be visible to a compiler or not.
         || "android.R.id.button1".equals(resourceId) || "android.R.id.button2".equals(resourceId) || "android.R.id.button3".equals(resourceId)) {
       if (matcherBuilder.getMatcherCount() > 1 || index == 0) {
-        return "allOf(" + matcherBuilder.getMatchers() + isDisplayedSuffix + ")";
+        return "allOf(" + matcherBuilder.getMatchers() + (index == 0 ? ", isDisplayed()" : "") + ")";
       }
       return matcherBuilder.getMatchers();
     }
-
-
-    return "allOf(" + matcherBuilder.getMatchers() + ", withParent("
+    
+    // Add isDisplayed() only to the innermost element.
+    return "allOf(" + matcherBuilder.getMatchers() + ",\nwithParent("
            + generateElementHierarchyConditionsRecursively(affectedElementType, elementDescriptors, index + 1)
-           + ")" + isDisplayedSuffix + ")";
+           + ")" + (index == 0 ? ",\nisDisplayed()" : "") + ")";
   }
 
   /**
