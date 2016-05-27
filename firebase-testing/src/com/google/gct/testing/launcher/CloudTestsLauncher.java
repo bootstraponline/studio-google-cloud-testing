@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.gct.testing.CloudConfigurationImpl;
 import com.google.gct.testing.CloudTestingUtils;
 import com.google.gct.testing.dimension.CloudTestingType;
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.ui.Messages;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -118,7 +119,7 @@ public class CloudTestsLauncher {
 
     TestMatrix testMatrix = new TestMatrix();
 
-    testMatrix.setClientInfo(new ClientInfo().setName("Android Studio"));
+    testMatrix.setClientInfo(new ClientInfo().setName("Android Studio " + ApplicationInfo.getInstance().getFullVersion()));
 
     final String testTimeout = "1800s"; // 30 minutes in seconds
 
