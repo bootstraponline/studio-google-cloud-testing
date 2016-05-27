@@ -21,6 +21,8 @@ import com.google.gct.testrecorder.event.ElementAction;
 import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
+import com.intellij.lang.java.lexer.JavaLexer;
+import com.intellij.pom.java.LanguageLevel;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedList;
@@ -134,6 +136,10 @@ public class TestCodeMapper {
 
   private String generateVariableNameFromTemplate(String template) {
     String variableName = lowerCaseFirstCharacter(template);
+    if (JavaLexer.isKeyword(variableName, LanguageLevel.HIGHEST)) {
+      variableName += "_";
+    }
+
     Integer unusedIndex = myVariableNameIndexes.get(variableName);
     if (unusedIndex == null) {
       myVariableNameIndexes.put(variableName, 2);
@@ -190,7 +196,7 @@ public class TestCodeMapper {
       }
       return matcherBuilder.getMatchers();
     }
-    
+
     // Add isDisplayed() only to the innermost element.
     return "allOf(" + matcherBuilder.getMatchers() + ",\nwithParent("
            + generateElementHierarchyConditionsRecursively(affectedElementType, elementDescriptors, index + 1)
