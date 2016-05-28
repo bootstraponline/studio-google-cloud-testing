@@ -330,8 +330,8 @@ public class SessionInitializer implements Runnable {
     }
     if (myDevice != null) {
       try {
-        // Uninstall the app such that there is no stale state => the generated test can run (pass) immediately.
-        myDevice.executeShellCommand("pm uninstall " + myPackageName, new CollectingOutputReceiver(), 5, TimeUnit.SECONDS);
+        // Clear app data such that there is no stale state => the generated test can run (pass) immediately.
+        myDevice.executeShellCommand("pm clear " + myPackageName, new CollectingOutputReceiver(), 5, TimeUnit.SECONDS);
       } catch (Exception e) {
         LOGGER.warn("Exception stopping the app", e);
       }
