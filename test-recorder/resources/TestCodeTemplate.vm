@@ -4,7 +4,8 @@ package ${PackageName};
 #end
 
 import ${EspressoPackageName}.espresso.ViewInteraction;
-import android.test.ActivityInstrumentationTestCase2;
+import android.support.test.rule.ActivityTestRule;
+import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.LargeTest;
 
 import static ${EspressoPackageName}.espresso.Espresso.onView;
@@ -16,23 +17,22 @@ import static ${EspressoPackageName}.espresso.matcher.ViewMatchers.*;
 
 import ${ResourcePackageName}.R;
 
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.is;
 
 @LargeTest
-public class ${ClassName} extends ActivityInstrumentationTestCase2<${TestActivityName}> {
+@RunWith(AndroidJUnit4.class)
+public class ${ClassName} {
 
-    public ${ClassName}() {
-        super(${TestActivityName}.class);
-    }
+    @Rule
+    public ActivityTestRule<${TestActivityName}> mActivityTestRule = new ActivityTestRule<>(${TestActivityName}.class);
 
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        getActivity();
-    }
-
-    public void test${ClassName}() {
+    @Test
+    public void ${TestMethodName}() {
     #foreach (${line} in ${TestCode})
     ${line}
     #end

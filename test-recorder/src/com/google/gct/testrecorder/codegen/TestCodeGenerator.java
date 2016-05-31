@@ -51,6 +51,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.gct.testrecorder.util.StringHelper.getClassName;
+import static com.google.gct.testrecorder.util.StringHelper.lowerCaseFirstCharacter;
 import static org.jetbrains.android.util.AndroidUtils.computePackageName;
 
 /**
@@ -168,8 +170,9 @@ public class TestCodeGenerator {
   @NotNull
   private VelocityContext createVelocityContext(VirtualFile testCodeVirtualFile) {
     VelocityContext velocityContext = new VelocityContext();
-    velocityContext.put("TestActivityName", myLaunchedActivityName);
+    velocityContext.put("TestActivityName", getClassName(myLaunchedActivityName));
     velocityContext.put("ClassName", myTestClass.getName());
+    velocityContext.put("TestMethodName", lowerCaseFirstCharacter(myTestClass.getName()));
     velocityContext.put("PackageName", computePackageName(myFacet.getModule(), testCodeVirtualFile));
 
     velocityContext.put("EspressoPackageName", myHasCustomEspressoDependency ? ESPRESSO_CUSTOM_PACKAGE : ESPRESSO_STANDARD_PACKAGE);
