@@ -19,7 +19,6 @@ import com.android.utils.Pair;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -29,11 +28,6 @@ import static com.google.gct.testrecorder.util.StringHelper.parseId;
 import static com.intellij.util.ui.UIUtil.isUnderDarcula;
 
 public abstract class ElementAction {
-
-  /**
-   * Type of the affected UI hierarchy element.
-   */
-  protected String elementType;
 
   /**
    * Descriptors of elements starting with the affected one and up the UI hierarchy.
@@ -54,15 +48,6 @@ public abstract class ElementAction {
 
   public void addElementDescriptor(ElementDescriptor descriptor) {
     elementDescriptors.add(descriptor);
-  }
-
-  @Nullable
-  public String getElementType() {
-    return elementType;
-  }
-
-  public void setElementType(String elementType) {
-    this.elementType = elementType;
   }
 
   /**
@@ -102,8 +87,19 @@ public abstract class ElementAction {
 
   @NotNull
   protected String getRendererString(String displayElementAttribute) {
-    String displayElementType = isNullOrEmpty(elementType) ? "element" : getClassName(elementType);
+    String elementClassName = getElementClassName();
+    String displayElementType = isNullOrEmpty(elementClassName) ? "element" : getClassName(elementClassName);
     return displayElementType + " with " + displayElementAttribute;
+  }
+
+  /**
+   * Returns top-level element class name, if present. Otherwise, returns an empty string.
+   */
+  public String getElementClassName() {
+    if (!elementDescriptors.isEmpty()) {
+      return elementDescriptors.get(0).getClassName();
+    }
+    return "";
   }
 
   /**

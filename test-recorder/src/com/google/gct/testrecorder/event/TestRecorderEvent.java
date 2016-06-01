@@ -163,8 +163,9 @@ public class TestRecorderEvent extends ElementAction {
       return getRendererString(displayResourceId);
     }
 
-    if (!isNullOrEmpty(elementType)) {
-      return getClassName(elementType);
+    String className = getElementClassName();
+    if (!isNullOrEmpty(className)) {
+      return getClassName(className);
     }
 
     return "unknown source";

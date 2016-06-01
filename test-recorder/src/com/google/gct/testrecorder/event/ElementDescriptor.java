@@ -18,14 +18,24 @@ package com.google.gct.testrecorder.event;
 import static com.google.common.base.Strings.isNullOrEmpty;
 
 public class ElementDescriptor {
+  // Fully qualified class name of the element.
+  private final String className;
+
+  // Attribute fields.
   private final String resourceId;
   private final String contentDescription;
   private final String text;
 
-  public ElementDescriptor(String resourceId, String contentDescription, String text) {
+
+  public ElementDescriptor(String className, String resourceId, String contentDescription, String text) {
+    this.className = className;
     this.resourceId = resourceId;
     this.contentDescription = contentDescription;
     this.text = text;
+  }
+
+  public String getClassName() {
+    return className;
   }
 
   public String getResourceId() {
@@ -40,7 +50,11 @@ public class ElementDescriptor {
     return text;
   }
 
+  /**
+   * Returns {@code true} iff all attribute fields are empty.
+   */
   public boolean isEmpty() {
     return isNullOrEmpty(resourceId) && isNullOrEmpty(text) && isNullOrEmpty(contentDescription);
   }
+
 }

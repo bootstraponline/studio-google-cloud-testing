@@ -40,6 +40,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.jetbrains.android.facet.AndroidFacet;
+import org.jetbrains.android.sdk.AndroidPlatform;
+import org.jetbrains.android.sdk.AndroidTargetData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -92,22 +94,13 @@ public class TestCodeGenerator {
       return;
     }
 
-    // Read test template file into string.
-    File testTemplateFile = ResourceHelper.getFileForResource(this, TEST_CODE_TEMPLATE_FILE_NAME, "test_code_template_", "vm");
-    String testTemplate = "";
-    try {
-      testTemplate = FileUtils.readFileToString(testTemplateFile);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to read the test template file " + testTemplateFile.getAbsolutePath(), e);
-    }
-
     // Write code to the test class file.
     BufferedWriter writer = null;
     try {
       writer = new BufferedWriter(new FileWriter(testFilePath));
       VelocityEngine velocityEngine = new VelocityEngine();
       velocityEngine.init();
-      velocityEngine.evaluate(createVelocityContext(testVirtualFile), writer, RecordingDialog.class.getName(), testTemplate);
+      velocityEngine.evaluate(createVelocityContext(testVirtualFile), writer, RecordingDialog.class.getName(), readTemplateFileContent());
       writer.flush();
     } catch (Exception e) {
       throw new RuntimeException("Failed to generate test class file: ", e);
@@ -167,6 +160,15 @@ public class TestCodeGenerator {
     });
   }
 
+  private String readTemplateFileContent() {
+    File testTemplateFile = ResourceHelper.getFileForResource(this, TEST_CODE_TEMPLATE_FILE_NAME, "test_code_template_", "vm");
+    try {
+      return FileUtils.readFileToString(testTemplateFile);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to read the test template file " + testTemplateFile.getAbsolutePath(), e);
+    }
+  }
+
   @NotNull
   private VelocityContext createVelocityContext(VirtualFile testCodeVirtualFile) {
     VelocityContext velocityContext = new VelocityContext();
@@ -181,7 +183,7 @@ public class TestCodeGenerator {
     velocityContext.put("ResourcePackageName", resourcePackageName);
 
     // Generate test code.
-    TestCodeMapper codeMapper = new TestCodeMapper(resourcePackageName, myHasCustomEspressoDependency);
+    TestCodeMapper codeMapper = new TestCodeMapper(resourcePackageName, myHasCustomEspressoDependency, myProject, getAndroidTargetData());
     ArrayList<String> testCodeLines = new ArrayList<String>();
     int eventCount = 0;
     int assertionCount = 0;
@@ -205,6 +207,12 @@ public class TestCodeGenerator {
     velocityContext.put("TestCode", testCodeLines);
 
     return velocityContext;
+  }
+
+  @NotNull
+  private AndroidTargetData getAndroidTargetData() {
+    AndroidPlatform androidPlatform = AndroidPlatform.getInstance(myFacet.getModule());
+    return androidPlatform.getSdkData().getTargetData(androidPlatform.getTarget());
   }
 
 }
