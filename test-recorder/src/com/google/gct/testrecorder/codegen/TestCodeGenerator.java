@@ -16,6 +16,7 @@
 package com.google.gct.testrecorder.codegen;
 
 import com.android.tools.idea.stats.UsageTracker;
+import com.google.common.collect.Sets;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.ui.RecordingDialog;
@@ -49,6 +50,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.gct.testrecorder.util.StringHelper.getClassName;
@@ -61,6 +63,7 @@ import static org.jetbrains.android.util.AndroidUtils.computePackageName;
  */
 public class TestCodeGenerator {
   private static final String TEST_CODE_TEMPLATE_FILE_NAME = "TestCodeTemplate.vm";
+  private static final String ANDROID_FRAMEWORK_PUBLIC_IDS_FILE_NAME = "AndroidFrameworkPublicIds";
 
   private static final String ESPRESSO_CUSTOM_PACKAGE = "com.google.android.apps.common.testing.ui";
   private static final String ESPRESSO_STANDARD_PACKAGE = "android.support.test";
@@ -92,22 +95,13 @@ public class TestCodeGenerator {
       return;
     }
 
-    // Read test template file into string.
-    File testTemplateFile = ResourceHelper.getFileForResource(this, TEST_CODE_TEMPLATE_FILE_NAME, "test_code_template_", "vm");
-    String testTemplate = "";
-    try {
-      testTemplate = FileUtils.readFileToString(testTemplateFile);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to read the test template file " + testTemplateFile.getAbsolutePath(), e);
-    }
-
     // Write code to the test class file.
     BufferedWriter writer = null;
     try {
       writer = new BufferedWriter(new FileWriter(testFilePath));
       VelocityEngine velocityEngine = new VelocityEngine();
       velocityEngine.init();
-      velocityEngine.evaluate(createVelocityContext(testVirtualFile), writer, RecordingDialog.class.getName(), testTemplate);
+      velocityEngine.evaluate(createVelocityContext(testVirtualFile), writer, RecordingDialog.class.getName(), readTemplateFileContent());
       writer.flush();
     } catch (Exception e) {
       throw new RuntimeException("Failed to generate test class file: ", e);
@@ -167,6 +161,24 @@ public class TestCodeGenerator {
     });
   }
 
+  private String readTemplateFileContent() {
+    File testTemplateFile = ResourceHelper.getFileForResource(this, TEST_CODE_TEMPLATE_FILE_NAME, "test_code_template_", "vm");
+    try {
+      return FileUtils.readFileToString(testTemplateFile);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to read the test template file " + testTemplateFile.getAbsolutePath(), e);
+    }
+  }
+
+  private Set<String> readAndroidFrameworkPublicIds() {
+    File publicIdsFile = ResourceHelper.getFileForResource(this, ANDROID_FRAMEWORK_PUBLIC_IDS_FILE_NAME, "android_framework_public_ids_", "");
+    try {
+      return Sets.newHashSet(FileUtils.readFileToString(publicIdsFile).split("\n"));
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to read the android framework public ids file " + publicIdsFile.getAbsolutePath(), e);
+    }
+  }
+
   @NotNull
   private VelocityContext createVelocityContext(VirtualFile testCodeVirtualFile) {
     VelocityContext velocityContext = new VelocityContext();
@@ -181,7 +193,7 @@ public class TestCodeGenerator {
     velocityContext.put("ResourcePackageName", resourcePackageName);
 
     // Generate test code.
-    TestCodeMapper codeMapper = new TestCodeMapper(resourcePackageName, myHasCustomEspressoDependency);
+    TestCodeMapper codeMapper = new TestCodeMapper(resourcePackageName, myHasCustomEspressoDependency, readAndroidFrameworkPublicIds());
     ArrayList<String> testCodeLines = new ArrayList<String>();
     int eventCount = 0;
     int assertionCount = 0;

@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.gct.testrecorder.codegen.TestCodeMapper.MatcherBuilder.Kind.*;
@@ -36,10 +37,11 @@ import static com.google.gct.testrecorder.util.StringHelper.*;
 
 public class TestCodeMapper {
 
-  private static final String VIEW_VARIABLE_TYPE = "ViewInteraction";
+  private static final String VIEW_VARIABLE_CLASS_NAME = "ViewInteraction";
 
   private final String myResourcePackageName;
   private final boolean myIsUsingCustomEspresso;
+  private final Set<String> myAndroidPublicIds;
 
   /**
    * Map of variable_name -> first_unused_index. This map is used to ensure that variable names are unique.
@@ -49,9 +51,10 @@ public class TestCodeMapper {
   private String myLastUsedEventVariableName;
 
 
-  public TestCodeMapper(String resourcePackageName, boolean isUsingCustomEspresso) {
+  public TestCodeMapper(String resourcePackageName, boolean isUsingCustomEspresso, Set<String> androidPublicIds) {
     myResourcePackageName = resourcePackageName;
     myIsUsingCustomEspresso = isUsingCustomEspresso;
+    myAndroidPublicIds = androidPublicIds;
   }
 
   public List<String> getTestCodeLinesForEvent(TestRecorderEvent event) {
@@ -122,16 +125,16 @@ public class TestCodeMapper {
   }
 
   private String addViewPickingStatement(ElementAction action, List<String> testCodeLines) {
-    String variableName = generateVariableNameFromElementType(action.getElementType());
-    testCodeLines.add(VIEW_VARIABLE_TYPE + " " + variableName + " = onView(\n" + generateElementHierarchyConditions(action) + ");");
+    String variableName = generateVariableNameFromElementClassName(action.getElementClassName());
+    testCodeLines.add(VIEW_VARIABLE_CLASS_NAME + " " + variableName + " = onView(\n" + generateElementHierarchyConditions(action) + ");");
     return variableName;
   }
 
-  private String generateVariableNameFromElementType(@Nullable String elementType) {
-    if (isNullOrEmpty(elementType)) {
-      return generateVariableNameFromTemplate(VIEW_VARIABLE_TYPE);
+  private String generateVariableNameFromElementClassName(@Nullable String elementClassName) {
+    if (isNullOrEmpty(elementClassName)) {
+      return generateVariableNameFromTemplate(VIEW_VARIABLE_CLASS_NAME);
     }
-    return generateVariableNameFromTemplate(getClassName(elementType));
+    return generateVariableNameFromTemplate(getClassName(elementClassName));
   }
 
   private String generateVariableNameFromTemplate(String template) {
@@ -156,41 +159,33 @@ public class TestCodeMapper {
     if (elementDescriptors.isEmpty()) {
       return "UNKNOWN";
     }
-    return generateElementHierarchyConditionsRecursively(action.getElementType(), elementDescriptors, 0);
+    return generateElementHierarchyConditionsRecursively(elementDescriptors, 0);
   }
 
-  private String generateElementHierarchyConditionsRecursively(String affectedElementType, List<ElementDescriptor> elementDescriptors,
-                                                               int index) {
-
-
+  private String generateElementHierarchyConditionsRecursively(List<ElementDescriptor> elementDescriptors, int index) {
     ElementDescriptor elementDescriptor = elementDescriptors.get(index);
-    String resourceId = convertIdToTestCodeFormat(elementDescriptor.getResourceId());
     MatcherBuilder matcherBuilder = new MatcherBuilder();
 
     // Only the first descriptor could be empty, but check the index anyway.
-    if (index == 0 && (elementDescriptor.isEmpty() || isLoginRadioButton(affectedElementType, elementDescriptors))) {
-      matcherBuilder.addMatcher(ClassName, affectedElementType, true);
+    if (index == 0 && (elementDescriptor.isEmpty() || isLoginRadioButton(elementDescriptors))) {
+      matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true);
     } else {
-      matcherBuilder.addMatcher(Id, resourceId, false);
+      // Do not use android framework ids that are not visible to the compiler.
+      String resourceId = elementDescriptor.getResourceId();
+      if (isAndroidFrameworkPrivateId(resourceId)) {
+        matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true);
+      } else {
+        matcherBuilder.addMatcher(Id, convertIdToTestCodeFormat(resourceId), false);
+      }
+
       matcherBuilder.addMatcher(Text, elementDescriptor.getText(), true);
       matcherBuilder.addMatcher(ContentDescription, elementDescriptor.getContentDescription(), true);
     }
 
-    // TODO: This is a workaround to overcome the compiler not being able to see some android framework ids.
-    // Test Recorder will identify the search input field by its class name and will not use parent hierarchy, if any.
-    boolean isSearchSrcTextId = "android.R.id.search_src_text".equals(resourceId);
-    if (isSearchSrcTextId) {
-      matcherBuilder = new MatcherBuilder();
-      matcherBuilder.addMatcher(ClassName, "android.widget.SearchView$SearchAutoComplete", true);
-    }
-
     // TODO: Consider minimizing the generated statement to improve test's readability and maintainability (e.g., by capping parent hierarchy).
 
-    // The last element has no parent. Also, stop traversing parent hierarchy if search id or the root view (R.id.content) were encountered.
-    if (index == elementDescriptors.size() - 1 || isSearchSrcTextId || "android.R.id.content".equals(resourceId)
-        // TODO: Rather than specifically checking for some android framework ids whose parents should not be considered (because their ids are not public),
-        // look into android framework library ids.xml file to decide whether an id will be visible to a compiler or not.
-        || "android.R.id.button1".equals(resourceId) || "android.R.id.button2".equals(resourceId) || "android.R.id.button3".equals(resourceId)) {
+    // The last element has no parent.
+    if (index == elementDescriptors.size() - 1) {
       if (matcherBuilder.getMatcherCount() > 1 || index == 0) {
         return "allOf(" + matcherBuilder.getMatchers() + (index == 0 ? ", isDisplayed()" : "") + ")";
       }
@@ -199,8 +194,13 @@ public class TestCodeMapper {
 
     // Add isDisplayed() only to the innermost element.
     return "allOf(" + matcherBuilder.getMatchers() + ",\nwithParent("
-           + generateElementHierarchyConditionsRecursively(affectedElementType, elementDescriptors, index + 1)
+           + generateElementHierarchyConditionsRecursively(elementDescriptors, index + 1)
            + ")" + (index == 0 ? ",\nisDisplayed()" : "") + ")";
+  }
+
+  private boolean isAndroidFrameworkPrivateId(String resourceId) {
+    Pair<String, String> parsedId = parseId(resourceId);
+    return "android".equals(parsedId.getFirst()) && !myAndroidPublicIds.contains(parsedId.getSecond());
   }
 
   /**
@@ -208,8 +208,8 @@ public class TestCodeMapper {
    * such that the generated test is generic enough to run on other devices.
    * TODO: Also, it assumes a single radio button choice (such that it could be identified by the class name).
    */
-  private boolean isLoginRadioButton(String affectedElementType, List<ElementDescriptor> elementDescriptors) {
-    if (affectedElementType.endsWith(".widget.AppCompatRadioButton") && elementDescriptors.size() > 1
+  private boolean isLoginRadioButton(List<ElementDescriptor> elementDescriptors) {
+    if (elementDescriptors.size() > 1 && elementDescriptors.get(0).getClassName().endsWith(".widget.AppCompatRadioButton")
         && "R.id.welcome_account_list".equals(convertIdToTestCodeFormat(elementDescriptors.get(1).getResourceId()))) {
       return true;
     }
