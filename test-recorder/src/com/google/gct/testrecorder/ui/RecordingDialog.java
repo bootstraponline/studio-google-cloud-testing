@@ -538,11 +538,12 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   }
 
   private TestRecorderAssertion buildAssertionForCurrentSelection() {
-    UiNode node = (UiNode)myAssertionElementComboBox.getSelectedItem();
+    UiNode uiNode = (UiNode)myAssertionElementComboBox.getSelectedItem();
     String rule = myAssertionRuleComboBox.getSelectedItem().toString();
 
     TestRecorderAssertion assertion = new TestRecorderAssertion(rule);
-    addElementDescriptors(assertion, node);
+    assertion.setElementType(uiNode.getAttribute("class"));
+    addElementDescriptors(assertion, uiNode);
 
     if (TEXT_IS.equals(rule)) {
       assertion.setText(myAssertionTextField.getText());
@@ -556,13 +557,12 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
       return;
     }
 
-    String className = node.getAttribute("class");
     String resourceId = node.getAttribute("resource-id");
     String text = node.getAttribute("text");
     String contentDescription = node.getAttribute("content-desc");
 
     if (!resourceId.isEmpty() || !text.isEmpty() || !contentDescription.isEmpty()) {
-      assertion.addElementDescriptor(new ElementDescriptor(className, resourceId, contentDescription, text));
+      assertion.addElementDescriptor(new ElementDescriptor(resourceId, contentDescription, text));
       addElementDescriptors(assertion, (UiNode)node.getParent());
     }
   }
