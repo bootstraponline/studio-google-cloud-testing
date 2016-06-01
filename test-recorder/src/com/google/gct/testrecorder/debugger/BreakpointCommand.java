@@ -165,13 +165,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     }
 
     String receiverReference = getReceiverReference(evalContext, nodeManager);
-    Value elementType = evaluateExpression(receiverReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
 
-    if (elementType != null) {
-      event.setElementType(getStringValue(elementType));
-    }
-
-    // Try to populate element descriptors even if event source is null.
     populateElementDescriptors(event, evalContext, nodeManager, receiverReference, 1);
 
     if (event.getElementDescriptorsCount() > 0) {
@@ -271,8 +265,10 @@ public class BreakpointCommand extends DebuggerCommandImpl {
         }
       }
 
+      Value className = evaluateExpression(objectReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
+
       // An empty element descriptor for the non-identifiable element.
-      event.addElementDescriptor(new ElementDescriptor("", "", ""));
+      event.addElementDescriptor(new ElementDescriptor(className == null ? "" : getStringValue(className), "", "", ""));
 
       // In case there is no text-identifiable child, use the parent node as the means of identification.
       populateElementDescriptors(event, evalContext, nodeManager, objectReference + parentNodeCall, level + 1);
@@ -280,7 +276,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   }
 
   /**
-   * Returns {@code true} iff the element descriptor was added (i.e., at least one of its fields was not {@code null}
+   * Returns {@code true} iff the element descriptor was added (i.e., at least one of its attribute fields was not {@code null}
    * or text was present if mandatory).
    */
   private boolean evaluateAndAddElementDescriptor(TestRecorderEvent event, EvaluationContextImpl evalContext, NodeManagerImpl nodeManager,
@@ -297,7 +293,10 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     Value contentDescription = evaluateExpression(objectReference + ".getContentDescription()", evalContext, nodeManager);
 
     if (resourceId != null || contentDescription != null || text != null) {
-      event.addElementDescriptor(new ElementDescriptor(resourceId == null ? "" : getStringValue(resourceId),
+      Value className = evaluateExpression(objectReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
+
+      event.addElementDescriptor(new ElementDescriptor(className == null ? "" : getStringValue(className),
+                                                       resourceId == null ? "" : getStringValue(resourceId),
                                                        contentDescription == null ? "" : getStringValue(contentDescription),
                                                        text == null ? "" : getStringValue(text)));
       return true;
