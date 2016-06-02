@@ -44,7 +44,7 @@ public class TestCodeMapper {
   private final String myResourcePackageName;
   private final boolean myIsUsingCustomEspresso;
   private final Project myProject;
-  private final AndroidTargetData myAndroidTargetData;
+  @Nullable private final AndroidTargetData myAndroidTargetData;
 
   /**
    * Map of variable_name -> first_unused_index. This map is used to ensure that variable names are unique.
@@ -54,7 +54,9 @@ public class TestCodeMapper {
   private String myLastUsedEventVariableName;
 
 
-  public TestCodeMapper(String resourcePackageName, boolean isUsingCustomEspresso, Project project, AndroidTargetData androidTargetData) {
+  public TestCodeMapper(
+    String resourcePackageName, boolean isUsingCustomEspresso, Project project, @Nullable AndroidTargetData androidTargetData) {
+
     myResourcePackageName = resourcePackageName;
     myIsUsingCustomEspresso = isUsingCustomEspresso;
     myProject = project;
@@ -204,7 +206,8 @@ public class TestCodeMapper {
 
   private boolean isAndroidFrameworkPrivateId(String resourceId) {
     Pair<String, String> parsedId = parseId(resourceId);
-    return "android".equals(parsedId.getFirst()) && !myAndroidTargetData.isResourcePublic(ResourceType.ID.getName(), parsedId.getSecond());
+    return myAndroidTargetData != null && parsedId != null && "android".equals(parsedId.getFirst())
+           && !myAndroidTargetData.isResourcePublic(ResourceType.ID.getName(), parsedId.getSecond());
   }
 
   /**
