@@ -31,6 +31,8 @@
   <project-components>
   </project-components>
 
+  <depends>com.google.gct.testing</depends>
+
   <actions>
     <action id="GoogleCloudTesting.TestRecorder" class="com.google.gct.testrecorder.ui.TestRecorderAction" text="Record Espresso Test" description="Record Espresso test for selected configuration">
       <add-to-group group-id="RunMenu" anchor="after" relative-to-action="ChooseDebugConfiguration"/>
