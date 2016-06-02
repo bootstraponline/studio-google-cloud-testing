@@ -209,9 +209,13 @@ public class TestCodeGenerator {
     return velocityContext;
   }
 
-  @NotNull
+  @Nullable
   private AndroidTargetData getAndroidTargetData() {
     AndroidPlatform androidPlatform = AndroidPlatform.getInstance(myFacet.getModule());
+    if (androidPlatform == null) {
+      return null;
+    }
+
     return androidPlatform.getSdkData().getTargetData(androidPlatform.getTarget());
   }
 
