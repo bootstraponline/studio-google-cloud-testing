@@ -16,7 +16,7 @@
 package com.google.gct.testrecorder.util;
 
 
-import com.google.gct.testing.util.CloudTestingTracking;
+import com.android.tools.idea.stats.UsageTracker;
 
 public class TestRecorderTracking {
 
@@ -31,7 +31,5 @@ public class TestRecorderTracking {
   public static final String MISSING_INSTRUMENTATION_TEST_FOLDER = "missing.instrumentation.test.folder";
 
   // labels
-  // Although this induces a dependency on the Firebase Testing plugin, reusing the same session label enables us
-  // to correlate usage of Test Recorder and Firebase Testing in the same user session.
-  public static final String SESSION_LABEL = CloudTestingTracking.SESSION_LABEL;
+  public static final String SESSION_LABEL = UsageTracker.SESSION_ID;
 }

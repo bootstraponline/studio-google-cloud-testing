@@ -36,6 +36,5 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module" module-name="firebase-testing" />
   </component>
 </module>

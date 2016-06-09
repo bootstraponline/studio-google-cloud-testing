@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing.util;
 
-import java.util.UUID;
+import com.android.tools.idea.stats.UsageTracker;
 
 public class CloudTestingTracking {
 
@@ -33,5 +33,5 @@ public class CloudTestingTracking {
   public static final String CONFIGURE_CLOUD_DEVICE = "configure.cloud.device";
 
   // labels
-  public static final String SESSION_LABEL = UUID.randomUUID().toString();
+  public static final String SESSION_LABEL = UsageTracker.SESSION_ID;
 }

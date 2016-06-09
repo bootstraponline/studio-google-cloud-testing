@@ -30,6 +30,7 @@ import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.event.TestRecorderEventListener;
 import com.google.gct.testrecorder.util.ElementLevelMapCreator;
 import com.google.gct.testrecorder.util.TestRecorderTracking;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -47,6 +48,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -57,7 +60,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import static com.android.tools.idea.gradle.dsl.model.dependencies.CommonConfigurationNames.COMPILE;
-import static com.google.gct.testing.CloudTestingUtils.linkifyEditorPane;
 import static com.google.gct.testrecorder.event.TestRecorderAssertion.*;
 import static com.google.gct.testrecorder.event.TestRecorderEvent.SUPPORTED_EVENTS;
 
@@ -410,6 +412,34 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
     myDisclaimerPane.setFont(myDisclaimerPane.getFont().deriveFont(12f));
     linkifyEditorPane(myDisclaimerPane, myScreenshotPanel.getBackground());
+  }
+
+  private void linkifyEditorPane(@NotNull JEditorPane editorPane, @NotNull Color backgroundColor) {
+    editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+    editorPane.setEditable(false);
+    editorPane.setBackground(backgroundColor);
+    editorPane.addHyperlinkListener(getHyperlinkListener());
+  }
+
+  private HyperlinkListener getHyperlinkListener() {
+    return new HyperlinkListener() {
+      @Override
+      public void hyperlinkUpdate(final HyperlinkEvent linkEvent) {
+        if (linkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+          ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            @Override
+            public void run() {
+              try {
+                Desktop.getDesktop().browse(linkEvent.getURL().toURI());
+              }
+              catch (Exception e) {
+                // ignore
+              }
+            }
+          });
+        }
+      }
+    };
   }
 
   @Nullable
