@@ -51,8 +51,6 @@ public class TestCodeMapper {
    */
   private final Map<String, Integer> myVariableNameIndexes = Maps.newHashMap();
 
-  private String myLastUsedEventVariableName;
-
 
   public TestCodeMapper(
     String resourcePackageName, boolean isUsingCustomEspresso, Project project, @Nullable AndroidTargetData androidTargetData) {
@@ -66,13 +64,16 @@ public class TestCodeMapper {
   public List<String> getTestCodeLinesForEvent(TestRecorderEvent event) {
     List<String> testCodeLines = new LinkedList<String>();
 
-    if (event.isPressEvent()) {
-      addTestCodeLinesForPressEvent(event, testCodeLines);
+    if (event.isPressBack()) {
+      testCodeLines.add("pressBack();");
       return testCodeLines;
     }
 
     String variableName = addViewPickingStatement(event, testCodeLines);
-    if (event.isClickEvent()) {
+    if (event.isPressEditorAction()) {
+      // TODO: If this is the same element that was just edited, consider reusing the same view interaction (i.e., variable name).
+      testCodeLines.add(variableName + ".perform(pressImeActionButton());");
+    } else if (event.isClickEvent()) {
       if (event.getPositionIndex() != -1) {
         testCodeLines.add(variableName + ".perform(actionOnItemAtPosition(" + event.getPositionIndex() + ", click()));");
       } else {
@@ -92,22 +93,7 @@ public class TestCodeMapper {
       throw new RuntimeException("Unsupported event type: " + event.getEventType());
     }
 
-    myLastUsedEventVariableName = variableName;
-
     return testCodeLines;
-  }
-
-  private void addTestCodeLinesForPressEvent(TestRecorderEvent event, List<String> testCodeLines) {
-    if (event.isPressBack()) {
-      testCodeLines.add("pressBack();");
-    } else if (event.isPressEditorAction()) {
-      // Pressing an editor action (return) key belongs to the last affected element, which is represented by myLastUsedEventVariableName.
-      String variableName = myLastUsedEventVariableName == null || myLastUsedEventVariableName.isEmpty()
-                            ? "unknownElement" : myLastUsedEventVariableName;
-      testCodeLines.add(variableName + ".perform(pressImeActionButton());");
-    } else {
-      throw new RuntimeException("Unsupported press event type: " + event.getEventType());
-    }
   }
 
   public List<String> getTestCodeLinesForAssertion(TestRecorderAssertion assertion) {

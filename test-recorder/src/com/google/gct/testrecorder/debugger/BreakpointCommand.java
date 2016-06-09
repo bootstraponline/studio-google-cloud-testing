@@ -161,7 +161,25 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     TestRecorderEvent event = new TestRecorderEvent(myBreakpointDescriptor.eventType, System.currentTimeMillis());
 
     if (event.isPressEvent()) {
-      return populatePressEvent(event, evalContext, nodeManager);
+      if (event.isPressBack()) {
+        // The press back breakpoint corresponds to a finished input event rather than just pressed back key,
+        // so detect if this is indeed a press back event (also, to avoid duplicates, consider only action up).
+
+        Value isKeyCodeBackActionUp = evaluateExpression(
+          "p.mEvent.mKeyCode == android.view.KeyEvent.KEYCODE_BACK && p.mEvent.mAction == android.view.KeyEvent.ACTION_UP",
+          evalContext, nodeManager);
+
+        if (isKeyCodeBackActionUp != null && Boolean.parseBoolean(getStringValue(isKeyCodeBackActionUp))) {
+          return event; // Nothing else to collect for this event.
+        }
+        return null; // Not a press back action up event, so suppress.
+      }
+
+      Value actionCode = evaluateExpression("actionCode", evalContext, nodeManager);
+
+      if (actionCode != null) {
+        event.setActionCode(Integer.parseInt(getStringValue(actionCode)));
+      }
     }
 
     String receiverReference = getReceiverReference(evalContext, nodeManager);
@@ -170,34 +188,6 @@ public class BreakpointCommand extends DebuggerCommandImpl {
 
     if (event.getElementDescriptorsCount() > 0) {
       event.setReplacementText(event.getElementDescriptor(0).getText());
-    }
-
-    return event;
-  }
-
-  /**
-   * Returns {@code null} iff the event is not the expected kind of a press key event.
-   */
-  @Nullable
-  private TestRecorderEvent populatePressEvent(TestRecorderEvent event, EvaluationContextImpl evalContext, NodeManagerImpl nodeManager) {
-    if (event.isPressBack()) {
-      // The press back breakpoint corresponds to a finished input event rather than just pressed back key,
-      // so detect if this is indeed a press back event (also, to avoid duplicates, consider only action up).
-
-      Value isKeyCodeBackActionUp = evaluateExpression(
-        "p.mEvent.mKeyCode == android.view.KeyEvent.KEYCODE_BACK && p.mEvent.mAction == android.view.KeyEvent.ACTION_UP",
-        evalContext, nodeManager);
-
-      if (isKeyCodeBackActionUp != null && Boolean.parseBoolean(getStringValue(isKeyCodeBackActionUp))) {
-        return event; // Nothing else to collect for this event.
-      }
-      return null; // Not a press back action up event, so suppress.
-    }
-
-    Value actionCode = evaluateExpression("actionCode", evalContext, nodeManager);
-
-    if (actionCode != null) {
-      event.setActionCode(Integer.parseInt(getStringValue(actionCode)));
     }
 
     return event;
