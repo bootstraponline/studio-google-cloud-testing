@@ -44,8 +44,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import static com.google.gct.testrecorder.event.TestRecorderEvent.MENU_ITEM_CLICK;
-import static com.google.gct.testrecorder.event.TestRecorderEvent.TEXT_CHANGE;
+import static com.google.gct.testrecorder.event.TestRecorderEvent.*;
 
 public class BreakpointCommand extends DebuggerCommandImpl {
   private static final Logger LOGGER = Logger.getInstance(BreakpointCommand.class);
@@ -195,7 +194,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
 
   @NotNull
   private String getReceiverReference(EvaluationContextImpl evalContext, NodeManagerImpl nodeManager) {
-    if (myBreakpointDescriptor.eventType.equals(TEXT_CHANGE)) {
+    if (myBreakpointDescriptor.eventType.equals(VIEW_CLICK) || myBreakpointDescriptor.eventType.equals(TEXT_CHANGE)) {
       return "this.this$0";
     } else if (myBreakpointDescriptor.eventType.equals(MENU_ITEM_CLICK)) {
       String titleViewReference = "view.mTitleView";
