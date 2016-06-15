@@ -20,6 +20,7 @@ import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.gradle.AndroidGradleModel;
 import com.android.tools.idea.gradle.dsl.model.GradleBuildModel;
 import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencySpec;
+import com.android.tools.idea.gradle.dsl.model.android.AndroidModel;
 import com.android.tools.idea.gradle.project.GradleProjectImporter;
 import com.android.tools.idea.gradle.util.GradleUtil;
 import com.android.uiautomator.UiAutomatorModel;
@@ -299,7 +300,12 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
         TestClassNameInputDialog chooser = new TestClassNameInputDialog(myFacet, launchedActivityName);
         chooser.show();
 
-        if (!hasAllRequiredEspressoDependencies()) {
+        assert myGradleBuildModel != null;
+        AndroidModel androidModel = myGradleBuildModel.android();
+        // androidModel will be null when the Gradle experimental plugin is used and it's not possible to update the instrumentation runner.
+        // TODO: Provide an appropriate error message or some alternative way to update instrumentation runner when the Gradle experimental
+        // plugin is used.
+        if (androidModel != null && !hasAllRequiredEspressoDependencies(androidModel)) {
           UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
                                          .setCategory(EventCategory.TEST_RECORDER)
                                          .setKind(EventKind.TEST_RECORDER_MISSING_ESPRESSO_DEPENDENCIES));
@@ -475,11 +481,11 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     return myRootPanel;
   }
 
-  private boolean hasAllRequiredEspressoDependencies() {
+  private boolean hasAllRequiredEspressoDependencies(@NotNull AndroidModel androidModel) {
     // TODO: To improve performance, consider doing these checks in a single pass.
     return (hasEspressoCoreDependency() || hasCustomEspressoDependency())
            && (!needsEspressoContribDependency() || hasEspressoContribDependency())
-           && hasSetInstrumentationRunner();
+           && hasSetInstrumentationRunner(androidModel);
   }
 
   private boolean needsEspressoContribDependency() {
@@ -507,8 +513,8 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     return GradleUtil.dependsOnAndroidTest(myAndroidGradleModel, artifact) || GradleUtil.dependsOn(myAndroidGradleModel, artifact);
   }
 
-  private boolean hasSetInstrumentationRunner() {
-    String testInstrumentationRunner = myGradleBuildModel.android().defaultConfig().testInstrumentationRunner();
+  private boolean hasSetInstrumentationRunner(@NotNull AndroidModel androidModel) {
+    String testInstrumentationRunner = androidModel.defaultConfig().testInstrumentationRunner();
     return testInstrumentationRunner != null && !testInstrumentationRunner.isEmpty();
   }
 
@@ -544,8 +550,9 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
                                                           ESPRESSO_CONTRIB_EXCLUDES);
           }
 
-          if (!hasSetInstrumentationRunner()) {
-            myGradleBuildModel.android().defaultConfig().setTestInstrumentationRunner(TEST_INSTRUMENTATION_RUNNER);
+          AndroidModel androidModel = myGradleBuildModel.android();
+          if (androidModel != null && !hasSetInstrumentationRunner(androidModel)) {
+            androidModel.defaultConfig().setTestInstrumentationRunner(TEST_INSTRUMENTATION_RUNNER);
           }
 
           myGradleBuildModel.applyChanges();
