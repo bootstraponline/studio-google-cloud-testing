@@ -54,6 +54,13 @@ public class BreakpointCommand extends DebuggerCommandImpl {
    */
   private static final int MAX_PARENT_HIERARCHY_EVALUATION_DEPTH = 3;
 
+  /**
+   * The number of UI hierarchy nodes, including the immediately affected one, that are checked for being a scroll view.
+   */
+  private static final int MAX_PARENT_HIERARCHY_SCROLL_EVALUATION_DEPTH = 5;
+
+  private final static String PARENT_NODE_CALL = ".getParent()";
+
   private final DebugProcessImpl myDebugProcess;
   private final BreakpointDescriptor myBreakpointDescriptor;
   private volatile TestRecorderEventListener myEventListener;
@@ -189,6 +196,8 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       event.setReplacementText(event.getElementDescriptor(0).getText());
     }
 
+    setScrollableState(event, evalContext, nodeManager, receiverReference + PARENT_NODE_CALL, 2);
+
     return event;
   }
 
@@ -211,6 +220,27 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     return "this";
   }
 
+  private void setScrollableState(TestRecorderEvent event, EvaluationContextImpl evalContext, NodeManagerImpl nodeManager,
+                                  String objectReference, int level) {
+
+    if (level > MAX_PARENT_HIERARCHY_SCROLL_EVALUATION_DEPTH) {
+      return;
+    }
+
+    Value parentElementTypeValue = evaluateExpression(objectReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
+
+    if (parentElementTypeValue != null) {
+      String parentElementType = getStringValue(parentElementTypeValue);
+      if ("android.widget.ScrollView".equals(parentElementType) || "android.widget.HorizontalScrollView".equals(parentElementType)) {
+        event.setCanScrollTo(true);
+        return;
+      }
+    }
+
+    setScrollableState(event, evalContext, nodeManager, objectReference + PARENT_NODE_CALL, level + 1);
+  }
+
+
   // TODO: After handling more user actions, use the appropriate structures rather than piggybacking on this method.
   private void populateElementDescriptors(TestRecorderEvent event, EvaluationContextImpl evalContext, NodeManagerImpl nodeManager,
                                           String objectReference, int level) {
@@ -219,11 +249,9 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       return;
     }
 
-    final String parentNodeCall = ".getParent()";
-
     // Perform the check only for clicks on the inner most (i.e., first in the hierarchy) element.
     if (event.isViewClick() && level == 1) {
-      String parentReference = objectReference + parentNodeCall;
+      String parentReference = objectReference + PARENT_NODE_CALL;
       Value parentElementType = evaluateExpression(parentReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
       if (parentElementType != null && "android.support.v7.widget.RecyclerView".equals(getStringValue(parentElementType))) {
         // Do not use getChildAdapterPosition as it is more than 20x slower!!!
@@ -238,7 +266,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
 
     if (evaluateAndAddElementDescriptor(event, evalContext, nodeManager, objectReference, false)) {
       // TODO: Consider more efficient expressions rather than growing getParent() calls sequence if this improves performance.
-      populateElementDescriptors(event, evalContext, nodeManager, objectReference + parentNodeCall, level + 1);
+      populateElementDescriptors(event, evalContext, nodeManager, objectReference + PARENT_NODE_CALL, level + 1);
     } else if (level == 1) { // The immediately affected element is non-identifiable.
       // TODO: After looking at a number of examples where these heuristics fail, consider identifying the affected element by its XPath.
 
@@ -260,7 +288,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       event.addElementDescriptor(new ElementDescriptor(className == null ? "" : getStringValue(className), "", "", ""));
 
       // In case there is no text-identifiable child, use the parent node as the means of identification.
-      populateElementDescriptors(event, evalContext, nodeManager, objectReference + parentNodeCall, level + 1);
+      populateElementDescriptors(event, evalContext, nodeManager, objectReference + PARENT_NODE_CALL, level + 1);
     }
   }
 
