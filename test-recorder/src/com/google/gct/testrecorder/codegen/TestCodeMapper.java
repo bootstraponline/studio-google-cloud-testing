@@ -72,28 +72,29 @@ public class TestCodeMapper {
     String variableName = addViewPickingStatement(event, testCodeLines);
     if (event.isPressEditorAction()) {
       // TODO: If this is the same element that was just edited, consider reusing the same view interaction (i.e., variable name).
-      testCodeLines.add(variableName + ".perform(pressImeActionButton());");
+      testCodeLines.add(createActionStatement(variableName, "pressImeActionButton()", false));
     } else if (event.isClickEvent()) {
       if (event.getPositionIndex() != -1) {
-        testCodeLines.add(variableName + ".perform(actionOnItemAtPosition(" + event.getPositionIndex() + ", click()));");
+        testCodeLines.add(createActionStatement(variableName, "actionOnItemAtPosition(" + event.getPositionIndex() + ", click())", false));
       } else {
-        testCodeLines.add(variableName + ".perform(click());");
+        testCodeLines.add(createActionStatement(variableName, "click()", event.canScrollTo()));
       }
     } else if (event.isTextChange()) {
       if (myIsUsingCustomEspresso) {
-        testCodeLines.add(variableName + ".perform(clearText());");
-        testCodeLines.add(variableName + ".perform(typeText(\"" + event.getReplacementText() + "\"));");
+        testCodeLines.add(createActionStatement(variableName, "clearText()", event.canScrollTo()));
+        testCodeLines.add(createActionStatement(variableName, "typeText(\"" + event.getReplacementText() + "\")", false));
       } else {
-        testCodeLines.add(variableName + ".perform(replaceText(\"" + event.getReplacementText() + "\"));");
+        testCodeLines.add(createActionStatement(variableName, "replaceText(\"" + event.getReplacementText() + "\")", event.canScrollTo()));
       }
-      // TODO: Closing soft keyboard should be performed explicitly (similarly to replaceText() above), if needed,
-      // but probably it will be replaced with a more specialized handling of pressed keys (e.g., press search, done, etc.).
-      //testCodeLines.add("closeSoftKeyboard();");
     } else {
       throw new RuntimeException("Unsupported event type: " + event.getEventType());
     }
 
     return testCodeLines;
+  }
+
+  private String createActionStatement(String variableName, String action, boolean addScrollTo) {
+    return variableName + ".perform(" + (addScrollTo ? "scrollTo(), " : "") + action + ");";
   }
 
   public List<String> getTestCodeLinesForAssertion(TestRecorderAssertion assertion) {

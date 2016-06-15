@@ -64,6 +64,11 @@ public class TestRecorderEvent extends ElementAction {
    */
   private int actionCode = -1;
 
+  /**
+   * Whether the element can be scrolled to (e.g., when it is inside a ScrollView).
+   */
+  private boolean canScrollTo;
+
 
   public TestRecorderEvent(String eventType, long timestamp) {
     this.eventType = eventType;
@@ -136,6 +141,14 @@ public class TestRecorderEvent extends ElementAction {
 
   public boolean isPressEvent() {
     return isPressBack() || isPressEditorAction();
+  }
+
+  public boolean canScrollTo() {
+    return canScrollTo;
+  }
+
+  public void setCanScrollTo(boolean canScrollTo) {
+    this.canScrollTo = canScrollTo;
   }
 
   @Override
