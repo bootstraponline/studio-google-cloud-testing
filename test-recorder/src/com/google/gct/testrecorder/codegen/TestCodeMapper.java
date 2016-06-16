@@ -41,7 +41,7 @@ public class TestCodeMapper {
 
   private static final String VIEW_VARIABLE_CLASS_NAME = "ViewInteraction";
 
-  private final String myResourcePackageName;
+  private final String myApplicationId;
   private final boolean myIsUsingCustomEspresso;
   private final Project myProject;
   @Nullable private final AndroidTargetData myAndroidTargetData;
@@ -53,9 +53,9 @@ public class TestCodeMapper {
 
 
   public TestCodeMapper(
-    String resourcePackageName, boolean isUsingCustomEspresso, Project project, @Nullable AndroidTargetData androidTargetData) {
+    String applicationId, boolean isUsingCustomEspresso, Project project, @Nullable AndroidTargetData androidTargetData) {
 
-    myResourcePackageName = resourcePackageName;
+    myApplicationId = applicationId;
     myIsUsingCustomEspresso = isUsingCustomEspresso;
     myProject = project;
     myAndroidTargetData = androidTargetData;
@@ -220,8 +220,8 @@ public class TestCodeMapper {
     }
 
     String testCodeId = "R.id." + parsedId.getSecond();
-    if (!parsedId.getFirst().equals(myResourcePackageName)) {
-      // Only the app's resource package name will be explicitly imported, so use a fully qualified id for other packages.
+    if (!parsedId.getFirst().equals(myApplicationId)) {
+      // Only the app's resource package will be explicitly imported, so use a fully qualified id for other packages.
       testCodeId = parsedId.getFirst() + "." + testCodeId;
     }
 
