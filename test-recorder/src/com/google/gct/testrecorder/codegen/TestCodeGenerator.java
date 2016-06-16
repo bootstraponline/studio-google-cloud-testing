@@ -179,11 +179,11 @@ public class TestCodeGenerator {
 
     velocityContext.put("EspressoPackageName", myHasCustomEspressoDependency ? ESPRESSO_CUSTOM_PACKAGE : ESPRESSO_STANDARD_PACKAGE);
 
-    String resourcePackageName = myFacet.getManifest().getPackage().getStringValue();
-    velocityContext.put("ResourcePackageName", resourcePackageName);
+    velocityContext.put("ResourcePackageName", myFacet.getManifest().getPackage().getStringValue());
 
     // Generate test code.
-    TestCodeMapper codeMapper = new TestCodeMapper(resourcePackageName, myHasCustomEspressoDependency, myProject, getAndroidTargetData());
+    TestCodeMapper codeMapper =
+      new TestCodeMapper(myFacet.getAndroidModel().getApplicationId(), myHasCustomEspressoDependency, myProject, getAndroidTargetData());
     ArrayList<String> testCodeLines = new ArrayList<String>();
     int eventCount = 0;
     int assertionCount = 0;
