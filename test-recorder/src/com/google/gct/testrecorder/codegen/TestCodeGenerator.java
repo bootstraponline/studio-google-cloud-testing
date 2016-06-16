@@ -39,6 +39,7 @@ import com.intellij.psi.PsiManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.android.sdk.AndroidPlatform;
 import org.jetbrains.android.sdk.AndroidTargetData;
@@ -99,6 +100,8 @@ public class TestCodeGenerator {
     try {
       writer = new BufferedWriter(new FileWriter(testFilePath));
       VelocityEngine velocityEngine = new VelocityEngine();
+      // Suppress creation of velocity.log file.
+      velocityEngine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.NullLogChute");
       velocityEngine.init();
       velocityEngine.evaluate(createVelocityContext(testVirtualFile), writer, RecordingDialog.class.getName(), readTemplateFileContent());
       writer.flush();
