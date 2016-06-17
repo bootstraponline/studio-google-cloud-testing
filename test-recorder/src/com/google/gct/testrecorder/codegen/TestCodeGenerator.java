@@ -15,6 +15,7 @@
  */
 package com.google.gct.testrecorder.codegen;
 
+import com.android.tools.idea.run.ApkProviderUtil;
 import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
@@ -182,11 +183,12 @@ public class TestCodeGenerator {
 
     velocityContext.put("EspressoPackageName", myHasCustomEspressoDependency ? ESPRESSO_CUSTOM_PACKAGE : ESPRESSO_STANDARD_PACKAGE);
 
-    velocityContext.put("ResourcePackageName", myFacet.getManifest().getPackage().getStringValue());
+    String resourcePackageName = myFacet.getManifest().getPackage().getStringValue();
+    velocityContext.put("ResourcePackageName", resourcePackageName);
 
     // Generate test code.
     TestCodeMapper codeMapper =
-      new TestCodeMapper(myFacet.getAndroidModel().getApplicationId(), myHasCustomEspressoDependency, myProject, getAndroidTargetData());
+      new TestCodeMapper(getApplicationId(resourcePackageName), myHasCustomEspressoDependency, myProject, getAndroidTargetData());
     ArrayList<String> testCodeLines = new ArrayList<String>();
     int eventCount = 0;
     int assertionCount = 0;
@@ -210,6 +212,14 @@ public class TestCodeGenerator {
     velocityContext.put("TestCode", testCodeLines);
 
     return velocityContext;
+  }
+
+  private String getApplicationId(String defaultId) {
+    try {
+      return ApkProviderUtil.computePackageName(myFacet);
+    } catch (Exception e) {
+      return defaultId;
+    }
   }
 
   @Nullable
