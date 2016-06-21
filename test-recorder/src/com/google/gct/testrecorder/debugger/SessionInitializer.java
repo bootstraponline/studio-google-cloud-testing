@@ -19,6 +19,7 @@ import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.tools.idea.run.AndroidRunConfigContext;
+import com.android.tools.idea.run.AndroidSessionInfo;
 import com.android.tools.idea.run.ApkProviderUtil;
 import com.android.tools.idea.run.activity.ActivityLocatorUtils;
 import com.android.tools.idea.run.activity.DefaultActivityLocator;
@@ -31,6 +32,7 @@ import com.intellij.debugger.DebuggerManagerEx;
 import com.intellij.debugger.DefaultDebugEnvironment;
 import com.intellij.debugger.engine.*;
 import com.intellij.debugger.impl.DebuggerManagerAdapter;
+import com.intellij.debugger.impl.DebuggerManagerListener;
 import com.intellij.debugger.impl.DebuggerSession;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
@@ -75,16 +77,19 @@ public class SessionInitializer implements Runnable {
   private final Project myProject;
   private final ExecutionEnvironment myEnvironment;
   private final LaunchOptionState myLaunchOptionState;
+  private final int myConfigurationId;
   private IDevice myDevice;
   private String myPackageName;
   private volatile DebuggerSession myDebuggerSession;
+  private volatile DebuggerManagerListener myDebuggerManagerListener;
   private volatile RecordingDialog myRecordingDialog;
 
-  public SessionInitializer(AndroidFacet facet, ExecutionEnvironment environment, LaunchOptionState launchOptionState) {
+  public SessionInitializer(AndroidFacet facet, ExecutionEnvironment environment, LaunchOptionState launchOptionState, int configurationId) {
     myFacet = facet;
     myProject = myFacet.getModule().getProject();
     myEnvironment = environment;
     myLaunchOptionState = launchOptionState;
+    myConfigurationId = configurationId;
     // TODO: Although more robust than android.view.View#performClick() breakpoint, this might miss "contrived" clicks,
     // originating from the View object itself (e.g., as a result of processing a touch event).
     myBreakpointDescriptors.add(new BreakpointDescriptor(VIEW_CLICK, "android.view.View$PerformClick", "run", false));
@@ -102,7 +107,7 @@ public class SessionInitializer implements Runnable {
 
   @Override
   public void run() {
-    DebuggerManagerEx.getInstanceEx(myProject).addDebuggerManagerListener(new DebuggerManagerAdapter() {
+    myDebuggerManagerListener = new DebuggerManagerAdapter() {
       @Override
       public void sessionCreated(DebuggerSession session) {
         myDebuggerSession = session;
@@ -112,10 +117,12 @@ public class SessionInitializer implements Runnable {
       @Override
       public void sessionDetached(DebuggerSession session) {
         if (myDebuggerSession == session) {
-          DebuggerManagerEx.getInstanceEx(myProject).removeDebuggerManagerListener(this);
+          DebuggerManagerEx.getInstanceEx(myProject).removeDebuggerManagerListener(myDebuggerManagerListener);
         }
       }
-    });
+    };
+
+    DebuggerManagerEx.getInstanceEx(myProject).addDebuggerManagerListener(myDebuggerManagerListener);
 
     try {
       assignDeviceAndClearAppData();
@@ -137,6 +144,13 @@ public class SessionInitializer implements Runnable {
     return new DebugProcessAdapter() {
       @Override
       public void processAttached(DebugProcess process) {
+        AndroidSessionInfo sessionInfo = process.getProcessHandler().getUserData(AndroidSessionInfo.KEY);
+        if (sessionInfo != null && sessionInfo.getRunConfigurationId() != myConfigurationId) {
+          // Not my debugger session (probably, my session failed midway) => stop listening.
+          DebuggerManagerEx.getInstanceEx(myProject).removeDebuggerManagerListener(myDebuggerManagerListener);
+          return;
+        }
+
         // Mute any user-defined breakpoints to avoid Test Recorder hanging the app when such a breakpoint gets hit.
         // This event arrives before initBreakpoints is called in DebugProcessEvents,
         // but after XDebugSession is supposed to be initialized, so looks like a perfect time to mute breakpoints.
