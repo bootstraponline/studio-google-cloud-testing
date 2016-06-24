@@ -152,10 +152,12 @@ public class TestCodeMapper {
     if (elementDescriptors.isEmpty()) {
       return "UNKNOWN";
     }
-    return generateElementHierarchyConditionsRecursively(elementDescriptors, 0);
+    return generateElementHierarchyConditionsRecursively(!action.canScrollTo(), elementDescriptors, 0);
   }
 
-  private String generateElementHierarchyConditionsRecursively(List<ElementDescriptor> elementDescriptors, int index) {
+  private String generateElementHierarchyConditionsRecursively(
+    boolean checkIsDisplayed, List<ElementDescriptor> elementDescriptors, int index) {
+
     ElementDescriptor elementDescriptor = elementDescriptors.get(index);
     MatcherBuilder matcherBuilder = new MatcherBuilder(myProject);
 
@@ -179,16 +181,16 @@ public class TestCodeMapper {
 
     // The last element has no parent.
     if (index == elementDescriptors.size() - 1) {
-      if (matcherBuilder.getMatcherCount() > 1 || index == 0) {
-        return "allOf(" + matcherBuilder.getMatchers() + (index == 0 ? ", isDisplayed()" : "") + ")";
+      if (matcherBuilder.getMatcherCount() > 1 || checkIsDisplayed && index == 0) {
+        return "allOf(" + matcherBuilder.getMatchers() + (checkIsDisplayed && index == 0 ? ", isDisplayed()" : "") + ")";
       }
       return matcherBuilder.getMatchers();
     }
 
     // Add isDisplayed() only to the innermost element.
     return "allOf(" + matcherBuilder.getMatchers() + ",\nwithParent("
-           + generateElementHierarchyConditionsRecursively(elementDescriptors, index + 1)
-           + ")" + (index == 0 ? ",\nisDisplayed()" : "") + ")";
+           + generateElementHierarchyConditionsRecursively(checkIsDisplayed, elementDescriptors, index + 1)
+           + ")" + (checkIsDisplayed && index == 0 ? ",\nisDisplayed()" : "") + ")";
   }
 
   private boolean isAndroidFrameworkPrivateId(String resourceId) {
