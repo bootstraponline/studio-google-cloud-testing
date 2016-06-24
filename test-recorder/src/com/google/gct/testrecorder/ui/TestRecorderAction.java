@@ -21,13 +21,13 @@ import com.android.tools.idea.run.editor.DefaultActivityLaunch;
 import com.android.tools.idea.run.editor.LaunchOptionState;
 import com.android.tools.idea.run.editor.SpecificActivityLaunch;
 import com.android.tools.idea.stats.UsageTracker;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import com.google.gct.testrecorder.debugger.SessionInitializer;
 import com.google.gct.testrecorder.util.TestRecorderTracking;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.RunnerAndConfigurationSettings;
+import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
@@ -40,49 +40,27 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.popup.PopupStep;
+import com.intellij.openapi.ui.popup.util.BaseListPopupStep;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.ui.popup.list.ListPopupImpl;
 import org.jetbrains.android.facet.AndroidFacet;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 
 public class TestRecorderAction extends AnAction {
-  private static final String DEFAULT_TEXT = "Record Espresso Test";
-  private static final String DEFAULT_DESCRIPTION = "Record Espresso test for selected configuration";
-
   public static final Icon TEST_RECORDER_ICON = IconLoader.getIcon("circle_small.png", TestRecorderAction.class);
 
   private Project myProject;
-  private AndroidFacet myFacet;
-  private volatile boolean isTestRecorderRunning = false;
 
-  private final DocumentBuilderFactory myDocumentBuilderFactory;
-
-  private final Set<String> existingIds = Sets.newHashSet();
-  /**
-   * Maps a given id prefix to the last used id increment, e.g.,
-   * linearLayout -> 2 (i.e., the last used id for a LinearLayout was linearLayout2)
-   * textView -> 5 (i.e., the last used id for a TextView was textView5)
-   */
-  private final Map<String, Integer> lastUsedIdIndexMap = Maps.newHashMap();
-
-
-  public TestRecorderAction() {
-    myDocumentBuilderFactory = DocumentBuilderFactory.newInstance();
-    myDocumentBuilderFactory.setNamespaceAware(true);
-  }
 
   @Override
   public void update(final AnActionEvent event) {
     final Presentation presentation = event.getPresentation();
     presentation.setIcon(TEST_RECORDER_ICON);
-
-    if (isTestRecorderRunning) {
-      presentation.setEnabled(false);
-      return;
-    }
 
     final Project project = event.getProject();
 
@@ -91,36 +69,7 @@ public class TestRecorderAction extends AnAction {
       return;
     }
 
-    boolean isEnabled = true;
-    String text = DEFAULT_TEXT;
-    String description = DEFAULT_DESCRIPTION;
-
-    RunnerAndConfigurationSettings configuration = RunManagerEx.getInstanceEx(project).getSelectedConfiguration();
-    if (configuration == null || configuration.getConfiguration() == null
-        || !(configuration.getConfiguration().getType() instanceof AndroidRunConfigurationType)) {
-      isEnabled = false;
-      text = "Not an Android Application configuration";
-      description = "Please select an Android Application configuration";
-    } else {
-      AndroidRunConfiguration androidRunConfiguration = (AndroidRunConfiguration)configuration.getConfiguration();
-      if (androidRunConfiguration.getConfigurationModule().getModule() == null) {
-        isEnabled = false;
-        text = "No module selected in the chosen Run/Debug configuration";
-        description = "Please select a module in the chosen Run/Debug configuration";
-      } else {
-        LaunchOptionState launchOptionState = androidRunConfiguration.getLaunchOptionState(androidRunConfiguration.MODE);
-        if (!(launchOptionState instanceof DefaultActivityLaunch.State) && !(launchOptionState instanceof SpecificActivityLaunch.State)) {
-          isEnabled = false;
-          text = "Launch activity is neither default nor specified in the chosen Run/Debug configuration";
-          description = "Please select either default or specified launch activity in the chosen Run/Debug configuration";
-        }
-      }
-    }
-
-    // TODO: Restore setting the text and description after this action is shown (again) in the main toolbar.
-    //presentation.setText(text);
-    //presentation.setDescription(description);
-    presentation.setEnabled(isEnabled);
+    presentation.setEnabled(true);
   }
 
   @Override
@@ -133,49 +82,97 @@ public class TestRecorderAction extends AnAction {
       return;
     }
 
-    RunnerAndConfigurationSettings configurationSettings = RunManagerEx.getInstanceEx(myProject).getSelectedConfiguration();
-
-    if (configurationSettings == null || configurationSettings.getConfiguration() == null
-        || !(configurationSettings.getConfiguration().getType() instanceof AndroidRunConfigurationType)) {
-      return; // Should never happen, but check just in case.
+    List<AndroidRunConfiguration> suitableRunConfigurations = getSuitableRunConfigurations();
+    if (suitableRunConfigurations.isEmpty()) {
+      String message = "Please create an Android Application configuration with a valid module and Default or Specified launch activity.";
+      Messages.showDialog(myProject, message, "No suitable Android Application configuration found", new String[]{"OK"}, 0, null);
+      return;
     }
 
-    AndroidRunConfiguration testRecorderConfiguration = (AndroidRunConfiguration) configurationSettings.getConfiguration().clone();
+    if (suitableRunConfigurations.size() == 1) {
+      // If only one configuration is suitable, use it.
+      launchTestRecorder(event, suitableRunConfigurations.get(0));
+    } else {
+      RunnerAndConfigurationSettings selectedConfiguration = RunManagerEx.getInstanceEx(myProject).getSelectedConfiguration();
+      if (selectedConfiguration != null && suitableRunConfigurations.contains(selectedConfiguration.getConfiguration())) {
+        // If currently selected configuration is suitable, use it.
+        launchTestRecorder(event, (AndroidRunConfiguration) selectedConfiguration.getConfiguration());
+      } else {
+        // If there is more than one possible choice, ask the user to pick a configuration.
+        ListPopupImpl configurationPickerPopup = new ListPopupImpl(
+          new BaseListPopupStep<AndroidRunConfiguration>("Pick configuration to launch", suitableRunConfigurations) {
+            @NotNull
+            @Override
+            public String getTextFor(AndroidRunConfiguration runConfiguration) {
+              return runConfiguration.getName();
+            }
+
+            @Override
+            public PopupStep onChosen(AndroidRunConfiguration runConfiguration, boolean finalChoice) {
+              launchTestRecorder(event, runConfiguration);
+              return PopupStep.FINAL_CHOICE;
+            }
+          });
+
+        configurationPickerPopup.showCenteredInCurrentWindow(myProject);
+      }
+    }
+  }
+
+  private void launchTestRecorder(AnActionEvent event, AndroidRunConfiguration runConfiguration) {
+    AndroidRunConfiguration testRecorderConfiguration = (AndroidRunConfiguration) runConfiguration.clone();
     ExecutionEnvironmentBuilder builder = ExecutionEnvironmentBuilder.createOrNull(
       testRecorderConfiguration.getProject(), DefaultDebugExecutor.getDebugExecutorInstance(), testRecorderConfiguration);
 
     if (builder == null) {
-      return;
-    }
-
-    final LaunchOptionState launchOptionState = testRecorderConfiguration.getLaunchOptionState(testRecorderConfiguration.MODE);
-
-    if (!(launchOptionState instanceof DefaultActivityLaunch.State) && !(launchOptionState instanceof SpecificActivityLaunch.State)) {
-      return; // Should never happen, but check just in case.
+      throw new RuntimeException("Could not create execution environment builder!");
     }
 
     Module module = testRecorderConfiguration.getConfigurationModule().getModule();
-    if (module == null) {
-      return; // Should never happen, but check just in case.
+    AndroidFacet facet = AndroidFacet.getInstance(module);
+
+    if (facet == null) {
+      throw new RuntimeException("Could not obtain Android facet for module: " + module.getName());
     }
 
-    myFacet = AndroidFacet.getInstance(module);
+    LaunchOptionState launchOptionState = runConfiguration.getLaunchOptionState(runConfiguration.MODE);
 
-    // TODO: Disable Test Recorder launch button when enabling it back after the Test Recorder session is implemented.
-    //isTestRecorderRunning = true;
-
-    final ExecutionEnvironment environment = builder.activeTarget().dataContext(event.getDataContext()).build();
+    ExecutionEnvironment environment = builder.activeTarget().dataContext(event.getDataContext()).build();
 
     try {
       environment.getRunner().execute(environment, new ProgramRunner.Callback() {
         @Override
         public void processStarted(RunContentDescriptor descriptor) {
           ApplicationManager.getApplication().executeOnPooledThread(
-            new SessionInitializer(myFacet, environment, launchOptionState, testRecorderConfiguration.getUniqueID())); }
+            new SessionInitializer(facet, environment, launchOptionState, testRecorderConfiguration.getUniqueID()));
+        }
       });
     } catch (ExecutionException e) {
       throw new RuntimeException("Could not start debugging of the app: ", e);
     }
   }
+
+  private List<AndroidRunConfiguration> getSuitableRunConfigurations() {
+    List<AndroidRunConfiguration> suitableRunConfigurations = Lists.newLinkedList();
+
+    for (RunConfiguration runConfiguration : RunManagerEx.getInstanceEx(myProject).getAllConfigurationsList()) {
+      // Should be an Android Application configuration.
+      if (runConfiguration != null && runConfiguration.getType() instanceof AndroidRunConfigurationType) {
+        AndroidRunConfiguration androidRunConfiguration = (AndroidRunConfiguration) runConfiguration;
+        // Should have a selected module.
+        if (androidRunConfiguration.getConfigurationModule().getModule() != null) {
+          LaunchOptionState launchOptionState = androidRunConfiguration.getLaunchOptionState(androidRunConfiguration.MODE);
+
+          // The launch activity should be either Default or Specified.
+          if (launchOptionState instanceof DefaultActivityLaunch.State || launchOptionState instanceof SpecificActivityLaunch.State) {
+            suitableRunConfigurations.add(androidRunConfiguration);
+          }
+        }
+      }
+    }
+
+    return suitableRunConfigurations;
+  }
+
 
 }
