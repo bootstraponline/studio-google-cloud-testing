@@ -133,27 +133,28 @@ public class TestRecorderAction extends AnAction {
       return;
     }
 
-    RunnerAndConfigurationSettings configuration = RunManagerEx.getInstanceEx(myProject).getSelectedConfiguration();
-    ExecutionEnvironmentBuilder builder =
-      configuration == null ? null : ExecutionEnvironmentBuilder.createOrNull(DefaultDebugExecutor.getDebugExecutorInstance(), configuration);
+    RunnerAndConfigurationSettings configurationSettings = RunManagerEx.getInstanceEx(myProject).getSelectedConfiguration();
+
+    if (configurationSettings == null || configurationSettings.getConfiguration() == null
+        || !(configurationSettings.getConfiguration().getType() instanceof AndroidRunConfigurationType)) {
+      return; // Should never happen, but check just in case.
+    }
+
+    AndroidRunConfiguration testRecorderConfiguration = (AndroidRunConfiguration) configurationSettings.getConfiguration().clone();
+    ExecutionEnvironmentBuilder builder = ExecutionEnvironmentBuilder.createOrNull(
+      testRecorderConfiguration.getProject(), DefaultDebugExecutor.getDebugExecutorInstance(), testRecorderConfiguration);
 
     if (builder == null) {
       return;
     }
 
-    if (configuration.getConfiguration() == null || !(configuration.getConfiguration().getType() instanceof AndroidRunConfigurationType)) {
-      return; // Should never happen, but check just in case.
-    }
-
-    AndroidRunConfiguration runConfiguration = (AndroidRunConfiguration)configuration.getConfiguration();
-
-    final LaunchOptionState launchOptionState = runConfiguration.getLaunchOptionState(runConfiguration.MODE);
+    final LaunchOptionState launchOptionState = testRecorderConfiguration.getLaunchOptionState(testRecorderConfiguration.MODE);
 
     if (!(launchOptionState instanceof DefaultActivityLaunch.State) && !(launchOptionState instanceof SpecificActivityLaunch.State)) {
       return; // Should never happen, but check just in case.
     }
 
-    Module module = runConfiguration.getConfigurationModule().getModule();
+    Module module = testRecorderConfiguration.getConfigurationModule().getModule();
     if (module == null) {
       return; // Should never happen, but check just in case.
     }
@@ -169,8 +170,8 @@ public class TestRecorderAction extends AnAction {
       environment.getRunner().execute(environment, new ProgramRunner.Callback() {
         @Override
         public void processStarted(RunContentDescriptor descriptor) {
-          ApplicationManager.getApplication().executeOnPooledThread(new SessionInitializer(myFacet, environment, launchOptionState));
-        }
+          ApplicationManager.getApplication().executeOnPooledThread(
+            new SessionInitializer(myFacet, environment, launchOptionState, testRecorderConfiguration.getUniqueID())); }
       });
     } catch (ExecutionException e) {
       throw new RuntimeException("Could not start debugging of the app: ", e);
