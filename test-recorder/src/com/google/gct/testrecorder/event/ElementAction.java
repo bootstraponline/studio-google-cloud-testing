@@ -34,6 +34,11 @@ public abstract class ElementAction {
    */
   private final List<ElementDescriptor> elementDescriptors = Lists.newLinkedList();
 
+  /**
+   * Whether the element can be scrolled to (e.g., when it is inside a ScrollView).
+   */
+  private boolean canScrollTo;
+
   public ElementDescriptor getElementDescriptor(int index) {
     return elementDescriptors.get(index);
   }
@@ -48,6 +53,14 @@ public abstract class ElementAction {
 
   public void addElementDescriptor(ElementDescriptor descriptor) {
     elementDescriptors.add(descriptor);
+  }
+
+  public boolean canScrollTo() {
+    return canScrollTo;
+  }
+
+  public void setCanScrollTo(boolean canScrollTo) {
+    this.canScrollTo = canScrollTo;
   }
 
   /**
