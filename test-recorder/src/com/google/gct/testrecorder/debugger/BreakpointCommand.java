@@ -205,7 +205,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   private String getReceiverReference(EvaluationContextImpl evalContext, NodeManagerImpl nodeManager) {
     if (myBreakpointDescriptor.eventType.equals(VIEW_CLICK) || myBreakpointDescriptor.eventType.equals(TEXT_CHANGE)) {
       return "this.this$0";
-    } else if (myBreakpointDescriptor.eventType.equals(MENU_ITEM_CLICK)) {
+    } else if (myBreakpointDescriptor.eventType.equals(LIST_ITEM_CLICK)) {
       String titleViewReference = "view.mTitleView";
       Value titleView = evaluateExpression(titleViewReference, evalContext, nodeManager);
 
@@ -258,7 +258,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
         //Value positionIndex = evaluateExpression(parentReference + ".getChildAdapterPosition(" + objectReference + ")", evalContext, nodeManager);
         Value positionIndex = evaluateExpression(objectReference + ".getLayoutParams().mViewHolder.getAdapterPosition()", evalContext, nodeManager);
         if (positionIndex != null) {
-          event.setPositionIndex(Integer.parseInt(getStringValue(positionIndex)));
+          event.setRecyclerViewPosition(Integer.parseInt(getStringValue(positionIndex)));
           objectReference = parentReference; // Skip the adapter's child as it will be identified through position index.
         }
       }
@@ -285,7 +285,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       Value className = evaluateExpression(objectReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
 
       // An empty element descriptor for the non-identifiable element.
-      event.addElementDescriptor(new ElementDescriptor(className == null ? "" : getStringValue(className), "", "", ""));
+      event.addElementDescriptor(new ElementDescriptor(className == null ? "" : getStringValue(className), -1, "", "", ""));
 
       // In case there is no text-identifiable child, use the parent node as the means of identification.
       populateElementDescriptors(event, evalContext, nodeManager, objectReference + PARENT_NODE_CALL, level + 1);
@@ -305,14 +305,19 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       return false;
     }
 
+    Value childPosition = evaluateExpression(objectReference + ".getParent().getPositionForView(" + objectReference + ")",
+                                             evalContext, nodeManager);
+
     Value resourceId = evaluateExpression(objectReference + ".getResources().getResourceName(" + objectReference + ".getId())",
                                           evalContext, nodeManager);
+
     Value contentDescription = evaluateExpression(objectReference + ".getContentDescription()", evalContext, nodeManager);
 
-    if (resourceId != null || contentDescription != null || text != null) {
+    if (childPosition != null || resourceId != null || contentDescription != null || text != null) {
       Value className = evaluateExpression(objectReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
 
       event.addElementDescriptor(new ElementDescriptor(className == null ? "" : getStringValue(className),
+                                                       childPosition == null ? -1 : Integer.parseInt(getStringValue(childPosition)),
                                                        resourceId == null ? "" : getStringValue(resourceId),
                                                        contentDescription == null ? "" : getStringValue(contentDescription),
                                                        text == null ? "" : getStringValue(text)));

@@ -116,6 +116,16 @@ public abstract class ElementAction {
   }
 
   /**
+   * Returns top-level element child position.
+   */
+  public int getElementChildPosition() {
+    if (!elementDescriptors.isEmpty()) {
+      return elementDescriptors.get(0).getChildPosition();
+    }
+    return -1;
+  }
+
+  /**
    * Returns top-level element resource id, if present. Otherwise, returns an empty string.
    */
   public String getElementResourceId() {
