@@ -21,14 +21,20 @@ public class ElementDescriptor {
   // Fully qualified class name of the element.
   private final String className;
 
-  // Attribute fields.
+
+  // Attribute fields:
+
+  // Position of this element among the children of its parent.
+  // The value of -1 signifies that the child position is absent.
+  private final int childPosition;
   private final String resourceId;
   private final String contentDescription;
   private final String text;
 
 
-  public ElementDescriptor(String className, String resourceId, String contentDescription, String text) {
+  public ElementDescriptor(String className, int childPosition, String resourceId, String contentDescription, String text) {
     this.className = className;
+    this.childPosition = childPosition;
     this.resourceId = resourceId;
     this.contentDescription = contentDescription;
     this.text = text;
@@ -36,6 +42,10 @@ public class ElementDescriptor {
 
   public String getClassName() {
     return className;
+  }
+
+  public int getChildPosition() {
+    return childPosition;
   }
 
   public String getResourceId() {
@@ -51,10 +61,16 @@ public class ElementDescriptor {
   }
 
   /**
-   * Returns {@code true} iff all attribute fields are empty.
+   * Returns {@code true} iff all attribute fields are absent.
    */
   public boolean isEmpty() {
-    return isNullOrEmpty(resourceId) && isNullOrEmpty(text) && isNullOrEmpty(contentDescription);
+    return childPosition == -1 && isEmptyIgnoringChildPosition();
   }
 
+  /**
+   * Returns {@code true} iff all attribute fields not considering {@code childPosition} are absent.
+   */
+  public boolean isEmptyIgnoringChildPosition() {
+    return isNullOrEmpty(resourceId) && isNullOrEmpty(text) && isNullOrEmpty(contentDescription);
+  }
 }

@@ -180,7 +180,6 @@ public class TestCodeGenerator {
     velocityContext.put("ClassName", myTestClass.getName());
     velocityContext.put("TestMethodName", lowerCaseFirstCharacter(myTestClass.getName()));
     velocityContext.put("PackageName", computePackageName(myFacet.getModule(), testCodeVirtualFile));
-
     velocityContext.put("EspressoPackageName", myHasCustomEspressoDependency ? ESPRESSO_CUSTOM_PACKAGE : ESPRESSO_STANDARD_PACKAGE);
 
     String resourcePackageName = myFacet.getManifest().getPackage().getStringValue();
@@ -203,13 +202,14 @@ public class TestCodeGenerator {
       testCodeLines.add("");
     }
 
+    velocityContext.put("AddChildAtPositionMethod", codeMapper.isChildAtPositionAdded());
+    velocityContext.put("TestCode", testCodeLines);
+
     UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.GENERATE_TEST_CLASS_EVENTS,
                                           TestRecorderTracking.SESSION_LABEL, eventCount);
 
     UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.GENERATE_TEST_CLASS_ASSERTIONS,
                                           TestRecorderTracking.SESSION_LABEL, assertionCount);
-
-    velocityContext.put("TestCode", testCodeLines);
 
     return velocityContext;
   }

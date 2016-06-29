@@ -467,7 +467,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   private boolean needsEspressoContribDependency() {
     for (int i = 0; i < myEventListModel.size(); i++) {
       Object event = myEventListModel.get(i);
-      if (event instanceof TestRecorderEvent && ((TestRecorderEvent)event).getPositionIndex() != -1) {
+      if (event instanceof TestRecorderEvent && ((TestRecorderEvent)event).getRecyclerViewPosition() != -1) {
         return true;
       }
     }
@@ -592,7 +592,8 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     String contentDescription = node.getAttribute("content-desc");
 
     if (!resourceId.isEmpty() || !text.isEmpty() || !contentDescription.isEmpty()) {
-      assertion.addElementDescriptor(new ElementDescriptor(className, resourceId, contentDescription, text));
+      // TODO: Should we figure out child position for assertions?
+      assertion.addElementDescriptor(new ElementDescriptor(className, -1, resourceId, contentDescription, text));
       addElementDescriptors(assertion, (UiNode)node.getParent());
     }
   }

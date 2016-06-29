@@ -45,6 +45,7 @@ public class TestCodeMapper {
   private final boolean myIsUsingCustomEspresso;
   private final Project myProject;
   @Nullable private final AndroidTargetData myAndroidTargetData;
+  private boolean myIsChildAtPositionAdded;
 
   /**
    * Map of variable_name -> first_unused_index. This map is used to ensure that variable names are unique.
@@ -74,8 +75,8 @@ public class TestCodeMapper {
       // TODO: If this is the same element that was just edited, consider reusing the same view interaction (i.e., variable name).
       testCodeLines.add(createActionStatement(variableName, "pressImeActionButton()", false));
     } else if (event.isClickEvent()) {
-      if (event.getPositionIndex() != -1) {
-        testCodeLines.add(createActionStatement(variableName, "actionOnItemAtPosition(" + event.getPositionIndex() + ", click())", false));
+      if (event.getRecyclerViewPosition() != -1) {
+        testCodeLines.add(createActionStatement(variableName, "actionOnItemAtPosition(" + event.getRecyclerViewPosition() + ", click())", false));
       } else {
         testCodeLines.add(createActionStatement(variableName, "click()", event.canScrollTo()));
       }
@@ -155,14 +156,20 @@ public class TestCodeMapper {
     return generateElementHierarchyConditionsRecursively(!action.canScrollTo(), elementDescriptors, 0);
   }
 
-  private String generateElementHierarchyConditionsRecursively(
-    boolean checkIsDisplayed, List<ElementDescriptor> elementDescriptors, int index) {
+  private String generateElementHierarchyConditionsRecursively(boolean checkIsDisplayed, List<ElementDescriptor> elementDescriptors,
+                                                               int index) {
+    // Add isDisplayed() only to the innermost element.
+    boolean addIsDisplayed = checkIsDisplayed && index == 0;
 
     ElementDescriptor elementDescriptor = elementDescriptors.get(index);
     MatcherBuilder matcherBuilder = new MatcherBuilder(myProject);
 
-    // Only the first descriptor could be empty, but check the index anyway.
-    if (index == 0 && (elementDescriptor.isEmpty() || isLoginRadioButton(elementDescriptors))) {
+    int lastIndex = elementDescriptors.size() - 1;
+
+    if (elementDescriptor.isEmpty()
+        // Cannot use child position for the last element, since no parent descriptor available.
+        || index == lastIndex && elementDescriptor.isEmptyIgnoringChildPosition()
+        || isLoginRadioButton(elementDescriptors)) {
       matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true);
     } else {
       // Do not use android framework ids that are not visible to the compiler.
@@ -180,17 +187,22 @@ public class TestCodeMapper {
     // TODO: Consider minimizing the generated statement to improve test's readability and maintainability (e.g., by capping parent hierarchy).
 
     // The last element has no parent.
-    if (index == elementDescriptors.size() - 1) {
-      if (matcherBuilder.getMatcherCount() > 1 || checkIsDisplayed && index == 0) {
-        return "allOf(" + matcherBuilder.getMatchers() + (checkIsDisplayed && index == 0 ? ", isDisplayed()" : "") + ")";
+    if (index == lastIndex) {
+      if (matcherBuilder.getMatcherCount() > 1 || addIsDisplayed) {
+        return "allOf(" + matcherBuilder.getMatchers() + (addIsDisplayed ? ", isDisplayed()" : "") + ")";
       }
       return matcherBuilder.getMatchers();
     }
 
-    // Add isDisplayed() only to the innermost element.
-    return "allOf(" + matcherBuilder.getMatchers() + ",\nwithParent("
+    boolean addAllOf = matcherBuilder.getMatcherCount() > 0 || addIsDisplayed;
+    int childPosition = elementDescriptor.getChildPosition();
+    myIsChildAtPositionAdded = myIsChildAtPositionAdded || childPosition != -1;
+
+    return (addAllOf ? "allOf(" : "") + matcherBuilder.getMatchers() + (matcherBuilder.getMatcherCount() > 0 ? ",\n" : "")
+           + (childPosition != -1 ? "childAtPosition(" : "withParent(")
            + generateElementHierarchyConditionsRecursively(checkIsDisplayed, elementDescriptors, index + 1)
-           + ")" + (checkIsDisplayed && index == 0 ? ",\nisDisplayed()" : "") + ")";
+           + (childPosition != -1 ? ", " + childPosition : "") + ")"
+           + (addIsDisplayed ? ",\nisDisplayed()" : "") + (addAllOf ? ")" : "");
   }
 
   private boolean isAndroidFrameworkPrivateId(String resourceId) {
@@ -230,4 +242,7 @@ public class TestCodeMapper {
     return testCodeId;
   }
 
+  public boolean isChildAtPositionAdded() {
+    return myIsChildAtPositionAdded;
+  }
 }

@@ -93,7 +93,7 @@ public class SessionInitializer implements Runnable {
     // TODO: Although more robust than android.view.View#performClick() breakpoint, this might miss "contrived" clicks,
     // originating from the View object itself (e.g., as a result of processing a touch event).
     myBreakpointDescriptors.add(new BreakpointDescriptor(VIEW_CLICK, "android.view.View$PerformClick", "run", false));
-    myBreakpointDescriptors.add(new BreakpointDescriptor(MENU_ITEM_CLICK, "android.widget.AbsListView", "performItemClick", false));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(LIST_ITEM_CLICK, "android.widget.AbsListView", "performItemClick", false));
     myBreakpointDescriptors.add(new BreakpointDescriptor(TEXT_CHANGE, "android.widget.TextView$ChangeWatcher", "beforeTextChanged", true));
     myBreakpointDescriptors.add(new BreakpointDescriptor(TEXT_CHANGE, "android.widget.TextView$ChangeWatcher", "onTextChanged", false));
 
