@@ -109,8 +109,12 @@ public class TestRecorderAction extends AnAction {
 
             @Override
             public PopupStep onChosen(AndroidRunConfiguration runConfiguration, boolean finalChoice) {
-              launchTestRecorder(event, runConfiguration);
-              return PopupStep.FINAL_CHOICE;
+              return doFinalStep(new Runnable() {
+                @Override
+                public void run() {
+                  launchTestRecorder(event, runConfiguration);
+                }
+              });
             }
           });
 
