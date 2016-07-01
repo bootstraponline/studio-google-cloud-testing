@@ -169,7 +169,7 @@ public class TestCodeMapper {
     if (elementDescriptor.isEmpty()
         // Cannot use child position for the last element, since no parent descriptor available.
         || index == lastIndex && elementDescriptor.isEmptyIgnoringChildPosition()
-        || isLoginRadioButton(elementDescriptors)) {
+        || index == 0 && isLoginRadioButton(elementDescriptors)) {
       matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true);
     } else {
       // Do not use android framework ids that are not visible to the compiler.
