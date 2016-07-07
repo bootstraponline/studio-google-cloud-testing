@@ -18,10 +18,10 @@ package com.google.gct.testing;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
 import com.android.ddmlib.IDevice;
+import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.gradle.AndroidGradleModel;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.android.tools.idea.sdk.IdeSdks;
-import com.android.tools.idea.stats.UsageTracker;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
@@ -46,10 +46,12 @@ import com.google.gct.testing.results.GoogleCloudTestConsoleProperties;
 import com.google.gct.testing.results.GoogleCloudTestListener;
 import com.google.gct.testing.results.GoogleCloudTestResultsConnectionUtil;
 import com.google.gct.testing.results.GoogleCloudTestingResultParser;
-import com.google.gct.testing.util.CloudTestingTracking;
 import com.google.gct.testing.vnc.BlankVncViewer;
 import com.google.gct.testing.vnc.BlankVncViewerCallback;
 import com.google.gct.testing.vnc.VncKeepAliveThreadImpl;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
 import com.intellij.execution.DefaultExecutionResult;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;
@@ -330,8 +332,9 @@ public final class CloudConfigurationHelper {
   }
 
   public static void launchCloudDevice(int selectedConfigurationId, @NotNull String cloudProjectId, @NotNull AndroidFacet facet) {
-    UsageTracker.getInstance()
-      .trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.LAUNCH_CLOUD_DEVICE, CloudTestingTracking.SESSION_LABEL, null);
+    UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                     .setCategory(EventCategory.CLOUD_TESTING)
+                                     .setKind(EventKind.CLOUD_TESTING_LAUNCH_CLOUD_DEVICE));
 
     CloudConfigurationImpl cloudConfiguration = CloudTestingUtils.getConfigurationById(selectedConfigurationId, facet);
 
@@ -549,9 +552,9 @@ public final class CloudConfigurationHelper {
   public static ExecutionResult executeCloudMatrixTests(
     int selectedConfigurationId, String cloudProjectId, CloudMatrixTestRunningState runningState, Executor executor)
     throws ExecutionException {
-
-    UsageTracker.getInstance()
-      .trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.RUN_TEST_MATRIX, CloudTestingTracking.SESSION_LABEL, null);
+    UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                     .setCategory(EventCategory.CLOUD_TESTING)
+                                     .setKind(EventKind.CLOUD_TESTING_RUN_TEST_MATRIX));
 
     Project project = runningState.getFacet().getModule().getProject();
 

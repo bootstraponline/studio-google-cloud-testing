@@ -17,14 +17,16 @@ package com.google.gct.testing;
 
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
+import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.editor.DeployTargetProvider;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
-import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testing.android.CloudDebuggingTargetProvider;
 import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
 import com.google.gct.testing.results.GoogleCloudTestingResultsForm;
-import com.google.gct.testing.util.CloudTestingTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.RunnerRegistry;
 import com.intellij.execution.configurations.RunProfile;
@@ -88,8 +90,10 @@ public class DebugConfigurationAction extends AnAction {
 
     assert !isRootNode(selectedNode); // The action should have been disabled for the root node.
 
-    UsageTracker.getInstance().trackEvent(
-      CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.DEBUG_FROM_RESULTS, CloudTestingTracking.SESSION_LABEL, null);
+    UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                     .setCategory(EventCategory.CLOUD_TESTING)
+                                     .setKind(EventKind.CLOUD_TESTING_DEBUG_FROM_RESULTS));
+
 
     String configurationName;
     String className = null;

@@ -55,5 +55,7 @@
     </orderEntry>
     <orderEntry type="library" name="swingx" level="project" />
     <orderEntry type="module" module-name="execution-openapi" />
+    <orderEntry type="module" module-name="analytics-tracker" />
+    <orderEntry type="module" module-name="analytics-protos" />
   </component>
 </module>

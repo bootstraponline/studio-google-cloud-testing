@@ -15,7 +15,7 @@
  */
 package com.google.gct.testing;
 
-import com.android.tools.idea.stats.UsageTracker;
+import com.android.tools.analytics.UsageTracker;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Ordering;
@@ -23,7 +23,9 @@ import com.google.gct.testing.ui.AddCompareScreenshotPanel;
 import com.google.gct.testing.ui.AddScreenshotListener;
 import com.google.gct.testing.ui.WipePanel;
 import com.google.gct.testing.ui.WipePanelCallback;
-import com.google.gct.testing.util.CloudTestingTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
 import com.intellij.execution.testframework.AbstractTestProxy;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -154,8 +156,10 @@ public class ScreenshotComparisonDialog {
     updateScreenshotName();
     builder.show();
 
-    UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.COMPARE_SCREENSHOTS_OPENED,
-                                          CloudTestingTracking.SESSION_LABEL, loadedScreenshotsCount);
+    UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                     .setCategory(EventCategory.CLOUD_TESTING)
+                                     .setKind(EventKind.CLOUD_TESTING_COMPARE_SCREENSHOTS_OPENED)
+                                     .setCloudTestingLoadedScreenshotsCount(loadedScreenshotsCount));
   }
 
   public Window getWindow() {

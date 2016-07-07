@@ -15,10 +15,10 @@
  */
 package com.google.gct.testing;
 
+import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
-import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testing.android.CloudConfiguration;
-import com.google.gct.testing.util.CloudTestingTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats;
 import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
@@ -157,8 +157,10 @@ public class CloudTestingUtils {
                                     + ">Report this issue</a> (please copy/paste the text below into the form)<br><br>"
                                     + getDetailedErrorMessage(errorMessage.substring(newLineIndex + 1)) + "</html>"
                                   : "No details...";
-    UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.BACKEND_ERROR,
-                                          CloudTestingTracking.SESSION_LABEL + "|" + userErrorMessage, null);
+    UsageTracker.getInstance().log(AndroidStudioStats.AndroidStudioEvent.newBuilder()
+                                   .setCategory(AndroidStudioStats.AndroidStudioEvent.EventCategory.CLOUD_TESTING)
+                                   .setKind(AndroidStudioStats.AndroidStudioEvent.EventKind.CLOUD_TESTING_BACKEND_ERROR)
+                                   .setCloudTestingErrorMessage(userErrorMessage));
     showCascadingErrorMessages(project, errorDialogTitle, userErrorMessage, detailedErrorMessage);
   }
 

@@ -15,9 +15,11 @@
  */
 package com.google.gct.testrecorder.ui;
 
-import com.android.tools.idea.stats.UsageTracker;
+import com.android.tools.analytics.UsageTracker;
 import com.google.common.collect.Lists;
-import com.google.gct.testrecorder.util.TestRecorderTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
 import com.intellij.ide.fileTemplates.JavaTemplateUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.StdFileTypes;
@@ -109,8 +111,9 @@ public class TestClassNameInputDialog extends DialogWrapper {
   private VirtualFile detectOrCreateTestSourceDirectory() {
     List<VirtualFile> instrumentationTestSourceRoots = getInstrumentationTestSourceRoots();
     if (instrumentationTestSourceRoots.isEmpty()) {
-      UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.MISSING_INSTRUMENTATION_TEST_FOLDER,
-                                            TestRecorderTracking.SESSION_LABEL, null);
+      UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                     .setCategory(EventCategory.TEST_RECORDER)
+                                     .setKind(EventKind.TEST_RECORDER_MISSING_INSTRUMENTATION_TEST_FOLDER));
 
       // Create a test source root following naming convention (i.e., $MODULE_DIR$/src/androidTest/java).
       // TODO: If there are examples when naming convention fails, consider updating .iml as well,

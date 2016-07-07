@@ -15,15 +15,17 @@
  */
 package com.google.gct.testrecorder.ui;
 
+import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.AndroidRunConfiguration;
 import com.android.tools.idea.run.AndroidRunConfigurationType;
 import com.android.tools.idea.run.editor.DefaultActivityLaunch;
 import com.android.tools.idea.run.editor.LaunchOptionState;
 import com.android.tools.idea.run.editor.SpecificActivityLaunch;
-import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.collect.Lists;
 import com.google.gct.testrecorder.debugger.SessionInitializer;
-import com.google.gct.testrecorder.util.TestRecorderTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.RunnerAndConfigurationSettings;
@@ -74,8 +76,9 @@ public class TestRecorderAction extends AnAction {
 
   @Override
   public void actionPerformed(AnActionEvent event) {
-    UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.LAUNCH_TEST_RECORDER,
-                                          TestRecorderTracking.SESSION_LABEL, null);
+    UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                   .setCategory(EventCategory.TEST_RECORDER)
+                                   .setKind(EventKind.TEST_RECORDER_LAUNCH));
 
     myProject = event.getProject();
     if (myProject == null || myProject.isDisposed()) {

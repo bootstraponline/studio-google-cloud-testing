@@ -16,14 +16,16 @@
 package com.google.gct.testing;
 
 import com.android.annotations.Nullable;
-import com.android.tools.idea.stats.UsageTracker;
+import com.android.tools.analytics.UsageTracker;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.gct.testing.android.CloudConfiguration;
 import com.google.gct.testing.dimension.ConfigurationChangeEvent;
 import com.google.gct.testing.dimension.ConfigurationChangeListener;
-import com.google.gct.testing.util.CloudTestingTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
 import com.intellij.execution.ExecutionBundle;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -111,12 +113,16 @@ public class CloudConfigurationChooserDialog extends DialogWrapper implements Co
 
     if (configurationKind == CloudConfiguration.Kind.SINGLE_DEVICE) {
       setTitle("Single Device Configurations");
-      UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.CONFIGURE_CLOUD_DEVICE,
-                                            CloudTestingTracking.SESSION_LABEL, null);
+
+      UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                     .setCategory(EventCategory.CLOUD_TESTING)
+                                     .setKind(EventKind.CLOUD_TESTING_CONFIGURE_CLOUD_DEVICE));
+
     } else {
       setTitle("Matrix Configurations");
-      UsageTracker.getInstance().trackEvent(CloudTestingTracking.CLOUD_TESTING, CloudTestingTracking.CONFIGURE_MATRIX,
-                                            CloudTestingTracking.SESSION_LABEL, null);
+      UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                       .setCategory(EventCategory.CLOUD_TESTING)
+                                       .setKind(EventKind.CLOUD_TESTING_CONFIGURE_MATRIX));
     }
 
     getOKAction().setEnabled(true);

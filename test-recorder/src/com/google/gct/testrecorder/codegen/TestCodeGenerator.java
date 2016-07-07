@@ -15,13 +15,16 @@
  */
 package com.google.gct.testrecorder.codegen;
 
+import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.ApkProviderUtil;
-import com.android.tools.idea.stats.UsageTracker;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.ui.RecordingDialog;
 import com.google.gct.testrecorder.util.ResourceHelper;
-import com.google.gct.testrecorder.util.TestRecorderTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.TestRecorderDetails;
 import com.intellij.codeInsight.actions.OptimizeImportsProcessor;
 import com.intellij.codeInsight.actions.ReformatCodeProcessor;
 import com.intellij.concurrency.JobScheduler;
@@ -205,12 +208,12 @@ public class TestCodeGenerator {
     velocityContext.put("AddChildAtPositionMethod", codeMapper.isChildAtPositionAdded());
     velocityContext.put("TestCode", testCodeLines);
 
-    UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.GENERATE_TEST_CLASS_EVENTS,
-                                          TestRecorderTracking.SESSION_LABEL, eventCount);
-
-    UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.GENERATE_TEST_CLASS_ASSERTIONS,
-                                          TestRecorderTracking.SESSION_LABEL, assertionCount);
-
+    UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                   .setCategory(EventCategory.TEST_RECORDER)
+                                   .setKind(EventKind.TEST_RECORDER_GENERATE_TEST_CLASS)
+                                   .setTestRecorderDetails(TestRecorderDetails.newBuilder()
+                                                           .setAssertionCount(assertionCount)
+                                                           .setEventCount(eventCount)));
     return velocityContext;
   }
 

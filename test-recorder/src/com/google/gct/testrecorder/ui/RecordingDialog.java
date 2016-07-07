@@ -16,10 +16,10 @@
 package com.google.gct.testrecorder.ui;
 
 import com.android.ddmlib.IDevice;
+import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.gradle.dsl.model.GradleBuildModel;
 import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencyModel;
 import com.android.tools.idea.gradle.project.GradleProjectImporter;
-import com.android.tools.idea.stats.UsageTracker;
 import com.android.uiautomator.UiAutomatorModel;
 import com.android.uiautomator.tree.BasicTreeNode;
 import com.android.uiautomator.tree.UiNode;
@@ -29,7 +29,9 @@ import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.event.TestRecorderEventListener;
 import com.google.gct.testrecorder.util.ElementLevelMapCreator;
-import com.google.gct.testrecorder.util.TestRecorderTracking;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -280,8 +282,9 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
       @Override
       public void actionPerformed(ActionEvent e) {
         if (!hasAllRequiredEspressoDependencies()) {
-          UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.MISSING_ESPRESSO_DEPENDENCIES,
-                                                TestRecorderTracking.SESSION_LABEL, null);
+          UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                         .setCategory(EventCategory.TEST_RECORDER)
+                                         .setKind(EventKind.TEST_RECORDER_MISSING_ESPRESSO_DEPENDENCIES));
 
           if (Messages.showDialog(myProject,
                                   "This app is missing some dependencies for running Espresso tests.\n" +
