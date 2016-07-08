@@ -15,6 +15,9 @@
  */
 package com.google.gct.testrecorder.ui;
 
+import com.android.builder.model.SourceProvider;
+import com.android.tools.idea.gradle.AndroidGradleModel;
+import com.android.tools.idea.gradle.testing.TestArtifactSearchScopes;
 import com.android.tools.idea.stats.UsageTracker;
 import com.google.common.collect.Lists;
 import com.google.gct.testrecorder.util.TestRecorderTracking;
@@ -37,7 +40,11 @@ import org.jetbrains.jps.model.java.JavaSourceRootType;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+
+import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 public class TestClassNameInputDialog extends DialogWrapper {
   private final AndroidFacet myFacet;
@@ -107,26 +114,70 @@ public class TestClassNameInputDialog extends DialogWrapper {
   }
 
   private VirtualFile detectOrCreateTestSourceDirectory() {
-    List<VirtualFile> instrumentationTestSourceRoots = getInstrumentationTestSourceRoots();
-    if (instrumentationTestSourceRoots.isEmpty()) {
+    VirtualFile launchedActivitySourceRoot = getContainingSourceRoot(appendJavaExtension(myLaunchedActivityName.replace('.', '/')));
+
+    List<VirtualFile> existingAndroidTestSourceRoots = getExistingAndroidTestSourceRoots();
+    if (existingAndroidTestSourceRoots.isEmpty()) {
       UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.MISSING_INSTRUMENTATION_TEST_FOLDER,
                                             TestRecorderTracking.SESSION_LABEL, null);
 
-      // Create a test source root following naming convention (i.e., $MODULE_DIR$/src/androidTest/java).
-      // TODO: If there are examples when naming convention fails, consider updating .iml as well,
-      // e.g., using contentEntry.addSourceFolder(VfsUtilCore.pathToUrl(parentSourceRoot.getCanonicalPath() + "/androidTest/java"), true);
 
       final VirtualFile moduleFile = myFacet.getModule().getModuleFile();
       if (moduleFile == null) {
         throw new RuntimeException("Could not find module file for module " + myFacet.getModule().getName());
       }
+      VirtualFile moduleDirectory = moduleFile.getParent();
 
-      return getOrCreateSubdirectory(moduleFile.getParent(), new String[] {"src", "androidTest", "java"}, true);
+      List<String> androidTestSourceRoots = getAndroidTestSourceRoots();
+
+      if (androidTestSourceRoots.isEmpty()) {
+        // This is not expected to ever happen in a properly set up project, but if it does,
+        // create a test source root following naming convention, i.e., $MODULE_DIR$/src/androidTest/java.
+        // TODO: If there are examples when naming convention fails, consider updating .iml as well,
+        // e.g., using contentEntry.addSourceFolder(VfsUtilCore.pathToUrl(parentSourceRoot.getCanonicalPath() + "/androidTest/java"), true);
+        return getOrCreateSubdirectory(moduleDirectory, new String[]{"src", "androidTest", "java"}, true);
+      } else {
+        String closestAndroidTestSourcePath =
+          androidTestSourceRoots.get(findClosestAndroidTestSourceRootIndex(launchedActivitySourceRoot, androidTestSourceRoots));
+        String moduleDirectoryCanonicalPath = moduleDirectory.getCanonicalPath();
+        if (!closestAndroidTestSourcePath.startsWith(moduleDirectoryCanonicalPath)) {
+          // Why this should ever be the case?
+          throw new RuntimeException("Android test source path is not inside the module: " + closestAndroidTestSourcePath);
+        }
+        return getOrCreateSubdirectory(
+          moduleDirectory, closestAndroidTestSourcePath.substring(moduleDirectoryCanonicalPath.length() + 1).split("/"), true);
+      }
     } else {
-      String launchedActivityFileRelativePath = appendJavaExtension(myLaunchedActivityName.replace('.', '/'));
-      return findClosestInstrumentationTestSourceRoot(
-        getContainingSourceRoot(launchedActivityFileRelativePath), instrumentationTestSourceRoots);
+      return existingAndroidTestSourceRoots.get(
+        findClosestAndroidTestSourceRootIndex(launchedActivitySourceRoot, getCanonicalPaths(existingAndroidTestSourceRoots)));
     }
+  }
+
+  private List<String> getAndroidTestSourceRoots() {
+    List<String> androidTestSourceRoots = Lists.newArrayList();
+
+    AndroidGradleModel androidModel = AndroidGradleModel.get(myFacet.getModule());
+    if (androidModel != null) {
+      for (SourceProvider sourceProvider : androidModel.getTestSourceProviders(ARTIFACT_ANDROID_TEST)) {
+        for (File javaDirectory : sourceProvider.getJavaDirectories()) {
+          try {
+            androidTestSourceRoots.add(javaDirectory.getCanonicalPath());
+          } catch (IOException e) {
+            // ignore
+          }
+        }
+      }
+    }
+
+    return androidTestSourceRoots;
+  }
+
+  private List<String> getCanonicalPaths(List<VirtualFile> virtualFiles) {
+    List<String> canonicalPaths = Lists.newArrayList();
+    for (VirtualFile virtualFile : virtualFiles) {
+      canonicalPaths.add(virtualFile.getCanonicalPath());
+    }
+    return canonicalPaths;
   }
 
   private VirtualFile getOrCreateSubdirectory(final VirtualFile parentDirectory, final String[] subdirectoriesPath,
@@ -154,28 +205,28 @@ public class TestClassNameInputDialog extends DialogWrapper {
     });
   }
 
-  @NotNull
-  private VirtualFile findClosestInstrumentationTestSourceRoot(@Nullable VirtualFile sourceRoot,
-                                                               List<VirtualFile> instrumentationTestSourceRoots) {
-
-    // instrumentationTestSourceRoots should never be empty in this method.
-    VirtualFile closestInstrumentationTestSourceRoot = instrumentationTestSourceRoots.get(0);
-
+  private int findClosestAndroidTestSourceRootIndex(@Nullable VirtualFile sourceRoot, List<String> androidTestSourceRootPaths) {
     if (sourceRoot == null) {
-      return closestInstrumentationTestSourceRoot;
+      return 0;
     }
 
-    int maxOverlapSize = computeOverlapSize(sourceRoot.getCanonicalPath(), closestInstrumentationTestSourceRoot.getCanonicalPath());
-    for (int i = 1; i < instrumentationTestSourceRoots.size(); i++) {
-      VirtualFile instrumentationTestSourceRoot = instrumentationTestSourceRoots.get(i);
-      int overlapSize = computeOverlapSize(sourceRoot.getCanonicalPath(), instrumentationTestSourceRoot.getCanonicalPath());
+    String sourceRootCanonicalPath = sourceRoot.getCanonicalPath();
+
+    int closestAndroidTestSourceIndex = 0;
+    // androidTestSourceRootPaths should never be empty in this method.
+    String closestAndroidTestSourceRootPath = androidTestSourceRootPaths.get(closestAndroidTestSourceIndex);
+
+
+    int maxOverlapSize = computeOverlapSize(sourceRootCanonicalPath, closestAndroidTestSourceRootPath);
+    for (int i = 1; i < androidTestSourceRootPaths.size(); i++) {
+      int overlapSize = computeOverlapSize(sourceRootCanonicalPath, androidTestSourceRootPaths.get(i));
       if (overlapSize > maxOverlapSize) {
         maxOverlapSize = overlapSize;
-        closestInstrumentationTestSourceRoot = instrumentationTestSourceRoot;
+        closestAndroidTestSourceIndex = i;
       }
     }
 
-    return closestInstrumentationTestSourceRoot;
+    return closestAndroidTestSourceIndex;
   }
 
   private int computeOverlapSize(String path1, String path2) {
@@ -203,15 +254,15 @@ public class TestClassNameInputDialog extends DialogWrapper {
     return null;
   }
 
-  private List<VirtualFile> getInstrumentationTestSourceRoots() {
-    List<VirtualFile> instrumentationTestSourceRoots = Lists.newLinkedList();
+  private List<VirtualFile> getExistingAndroidTestSourceRoots() {
+    List<VirtualFile> existingAndroidTestSourceRoots = Lists.newArrayList();
     for (VirtualFile testSourceRoot : ModuleRootManager.getInstance(myFacet.getModule()).getSourceRoots(JavaSourceRootType.TEST_SOURCE)) {
       if (!GeneratedSourcesFilter.isGeneratedSourceByAnyFilter(testSourceRoot, myProject)
-          && testSourceRoot.getCanonicalPath().endsWith("/androidTest/java")) {
-        instrumentationTestSourceRoots.add(testSourceRoot);
+          && TestArtifactSearchScopes.get(myFacet.getModule()).isAndroidTestSource(testSourceRoot)) {
+        existingAndroidTestSourceRoots.add(testSourceRoot);
       }
     }
-    return instrumentationTestSourceRoots;
+    return existingAndroidTestSourceRoots;
   }
 
   @Nullable
