@@ -34,6 +34,7 @@ import com.intellij.ide.actions.OpenFileAction;
 import com.intellij.ide.actions.SelectInContextImpl;
 import com.intellij.ide.projectView.ProjectView;
 import com.intellij.ide.projectView.impl.ProjectViewImpl;
+import com.intellij.ide.projectView.impl.ProjectViewPane;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -132,8 +133,9 @@ public class TestCodeGenerator {
 
         // Select the generated test class in the project view hierarchy tree.
         ProjectView projectView = ProjectViewImpl.getInstance(myProject);
+        String currentViewId = projectView.getCurrentViewId() == null ? ProjectViewPane.ID : projectView.getCurrentViewId();
         for (SelectInTarget target : projectView.getSelectInTargets()) {
-          if (projectView.getCurrentViewId().equals(target.getMinorViewId())) {
+          if (currentViewId.equals(target.getMinorViewId())) {
             target.selectIn(new SelectInContextImpl(testPsiFile) {
               @Nullable
               @Override
