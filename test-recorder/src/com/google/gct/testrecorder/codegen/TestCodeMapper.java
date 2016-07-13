@@ -46,6 +46,7 @@ public class TestCodeMapper {
   private final Project myProject;
   @Nullable private final AndroidTargetData myAndroidTargetData;
   private boolean myIsChildAtPositionAdded;
+  private boolean myIsRecyclerViewActionAdded;
 
   /**
    * Map of variable_name -> first_unused_index. This map is used to ensure that variable names are unique.
@@ -76,6 +77,7 @@ public class TestCodeMapper {
       testCodeLines.add(createActionStatement(variableName, "pressImeActionButton()", false));
     } else if (event.isClickEvent()) {
       if (event.getRecyclerViewPosition() != -1) {
+        myIsRecyclerViewActionAdded = true;
         testCodeLines.add(createActionStatement(variableName, "actionOnItemAtPosition(" + event.getRecyclerViewPosition() + ", click())", false));
       } else {
         testCodeLines.add(createActionStatement(variableName, "click()", event.canScrollTo()));
@@ -244,5 +246,9 @@ public class TestCodeMapper {
 
   public boolean isChildAtPositionAdded() {
     return myIsChildAtPositionAdded;
+  }
+
+  public boolean isRecyclerViewActionAdded() {
+    return myIsRecyclerViewActionAdded;
   }
 }
