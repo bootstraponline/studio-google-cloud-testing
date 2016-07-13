@@ -15,6 +15,7 @@
  */
 package com.google.gct.testrecorder.codegen;
 
+import com.android.SdkConstants;
 import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.ApkProviderUtil;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
@@ -52,9 +53,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -101,9 +102,10 @@ public class TestCodeGenerator {
     }
 
     // Write code to the test class file.
-    BufferedWriter writer = null;
+    Writer writer = null;
     try {
-      writer = new BufferedWriter(new FileWriter(testFilePath));
+      writer = new PrintWriter(testFilePath, SdkConstants.UTF_8);
+
       VelocityEngine velocityEngine = new VelocityEngine();
       // Suppress creation of velocity.log file.
       velocityEngine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.NullLogChute");
