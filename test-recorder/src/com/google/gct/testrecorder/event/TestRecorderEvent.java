@@ -25,13 +25,14 @@ import static com.google.gct.testrecorder.util.StringHelper.getClassName;
 
 public class TestRecorderEvent extends ElementAction {
   public static final String VIEW_CLICK = "VIEW_CLICKED";
+  public static final String VIEW_LONG_CLICK = "VIEW_LONG_CLICKED";
   public static final String LIST_ITEM_CLICK = "LIST_ITEM_CLICKED";
   public static final String TEXT_CHANGE = "VIEW_TEXT_CHANGED";
   public static final String PRESS_BACK = "PRESSED_BACK";
   public static final String PRESS_EDITOR_ACTION = "PRESSED_EDITOR_ACTION"; // RETURN key on the soft keyboard.
 
   public static final HashSet<String> SUPPORTED_EVENTS =
-    Sets.newHashSet(VIEW_CLICK, LIST_ITEM_CLICK, TEXT_CHANGE, PRESS_BACK, PRESS_EDITOR_ACTION);
+    Sets.newHashSet(VIEW_CLICK, VIEW_LONG_CLICK, LIST_ITEM_CLICK, TEXT_CHANGE, PRESS_BACK, PRESS_EDITOR_ACTION);
 
   /**
    * View click, menu item click, text change, etc.
@@ -115,12 +116,16 @@ public class TestRecorderEvent extends ElementAction {
     return VIEW_CLICK.equals(eventType);
   }
 
+  public boolean isViewLongClick() {
+    return VIEW_LONG_CLICK.equals(eventType);
+  }
+
   public boolean isListItemClick() {
     return LIST_ITEM_CLICK.equals(eventType);
   }
 
   public boolean isClickEvent() {
-    return isViewClick() || isListItemClick();
+    return isViewClick() || isViewLongClick() || isListItemClick();
   }
 
   public boolean isTextChange() {
