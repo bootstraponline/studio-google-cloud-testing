@@ -78,7 +78,7 @@ public class TestCodeMapper {
       if (event.getRecyclerViewPosition() != -1) {
         testCodeLines.add(createActionStatement(variableName, "actionOnItemAtPosition(" + event.getRecyclerViewPosition() + ", click())", false));
       } else {
-        testCodeLines.add(createActionStatement(variableName, "click()", event.canScrollTo()));
+        testCodeLines.add(createActionStatement(variableName, event.isViewLongClick() ? "longClick()" : "click()", event.canScrollTo()));
       }
     } else if (event.isTextChange()) {
       if (myIsUsingCustomEspresso) {
