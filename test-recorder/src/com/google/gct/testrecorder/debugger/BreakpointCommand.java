@@ -308,8 +308,12 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     Value childPosition = evaluateExpression(objectReference + ".getParent().getPositionForView(" + objectReference + ")",
                                              evalContext, nodeManager);
 
-    Value resourceId = evaluateExpression(objectReference + ".getResources().getResourceName(" + objectReference + ".getId())",
-                                          evalContext, nodeManager);
+    Value resourceNumberIdValue = evaluateExpression(objectReference + ".getId()", evalContext, nodeManager);
+
+    int resourceNumberId = resourceNumberIdValue == null ? -1 : Integer.parseInt(getStringValue(resourceNumberIdValue));
+
+    Value resourceId = resourceNumberId == -1 ? null : evaluateExpression(objectReference + ".getResources().getResourceName("
+                                                                          + resourceNumberId + ")", evalContext, nodeManager);
 
     Value contentDescription = evaluateExpression(objectReference + ".getContentDescription()", evalContext, nodeManager);
 
