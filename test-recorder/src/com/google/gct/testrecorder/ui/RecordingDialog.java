@@ -281,6 +281,11 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myCompleteRecordingButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
+        // Show the test class name input dialog before (potentially) setting up Espresso dependencies,
+        // which might confuse Gradle about the location of android tests.
+        TestClassNameInputDialog chooser = new TestClassNameInputDialog(myFacet, launchedActivityName);
+        chooser.show();
+
         if (!hasAllRequiredEspressoDependencies()) {
           UsageTracker.getInstance().trackEvent(TestRecorderTracking.TEST_RECORDER, TestRecorderTracking.MISSING_ESPRESSO_DEPENDENCIES,
                                                 TestRecorderTracking.SESSION_LABEL, null);
@@ -302,9 +307,6 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
         for (int i = 0; i < myEventListModel.size(); i++) {
           events.add(myEventListModel.get(i));
         }
-
-        TestClassNameInputDialog chooser = new TestClassNameInputDialog(myFacet, launchedActivityName);
-        chooser.show();
 
         PsiClass testClass = chooser.getTestClass();
 
