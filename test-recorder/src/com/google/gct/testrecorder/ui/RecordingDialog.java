@@ -41,6 +41,8 @@ import com.intellij.psi.PsiClass;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.JBDimension;
+import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.android.facet.AndroidFacet;
@@ -451,8 +453,9 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   @Nullable
   @Override
   protected JComponent createCenterPanel() {
-    myRootPanel.setPreferredSize(new Dimension(450, 600));
-    myRecordingPanel.setMinimumSize(new Dimension(450, 600));
+    JBDimension initialSize = JBUI.size(450, 600);
+    myRootPanel.setPreferredSize(initialSize);
+    myRecordingPanel.setMinimumSize(initialSize);
     return myRootPanel;
   }
 
