@@ -30,6 +30,7 @@ public class TestRecorderListRenderer extends DefaultListCellRenderer {
 
   private static final String TEXT_CHANGE_EVENT_FORMAT = "<html><div " + OUTER_DIV_STYLE + ">Type %s <div " + INNER_DIV_STYLE + ">%s</div></div></html>";
   private static final String CLICK_EVENT_FORMAT = "<html><div " + OUTER_DIV_STYLE + ">Tap %s</div></html>";
+  private static final String LONG_CLICK_EVENT_FORMAT = "<html><div " + OUTER_DIV_STYLE + ">Long Tap %s</div></html>";
   private static final String PRESS_EVENT_FORMAT = "<html><div " + OUTER_DIV_STYLE + ">Press %s</div></html>";
   private static final String ASSERTION_FORMAT_ONE_LINE = "<html><div " + OUTER_DIV_STYLE + ">Assert %s %s" + "</div></html>";
   private static final String ASSERTION_FORMAT_MULTI_LINE = "<html><div " + OUTER_DIV_STYLE + ">Assert %s %s<div " + INNER_DIV_STYLE + ">%s</div></div></html>";
@@ -47,6 +48,8 @@ public class TestRecorderListRenderer extends DefaultListCellRenderer {
                                      StringEscapeUtils.escapeJava(event.getReplacementText()));
       } else if (event.isPressEvent()) {
         renderString = String.format(PRESS_EVENT_FORMAT, outerDivTextColor, event.getRendererString());
+      } else if (event.isViewLongClick()) {
+        renderString = String.format(LONG_CLICK_EVENT_FORMAT, outerDivTextColor, event.getRendererString());
       } else {
         // Click event.
         renderString = String.format(CLICK_EVENT_FORMAT, outerDivTextColor, event.getRendererString());
