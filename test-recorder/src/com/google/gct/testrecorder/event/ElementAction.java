@@ -66,7 +66,34 @@ public abstract class ElementAction {
   /**
    * Returns the string that represents this element action in the recording dialog.
    */
-  public abstract String getRendererString();
+  public String getRendererString() {
+    String displayText = getDisplayText();
+    if (!displayText.isEmpty()) {
+      return getRendererString(displayText);
+    }
+
+    String displayContentDescription = getDisplayContentDescription();
+    if (!displayContentDescription.isEmpty()) {
+      return getRendererString(displayContentDescription);
+    }
+
+    String displayResourceId = getDisplayResourceId();
+    if (!displayResourceId.isEmpty()) {
+      return getRendererString(displayResourceId);
+    }
+
+    int childPosition = getElementChildPosition();
+    if (childPosition != -1) {
+      return getRendererString(getIdAttributeDisplayPresentation("child position", String.valueOf(childPosition)));
+    }
+
+    String className = getElementClassName();
+    if (!isNullOrEmpty(className)) {
+      return getClassName(className);
+    }
+
+    return "unidentified element";
+  }
 
   protected String getDisplayResourceId() {
     String resourceId = getElementResourceId();

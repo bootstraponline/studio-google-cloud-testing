@@ -28,7 +28,6 @@ import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.event.TestRecorderEventListener;
-import com.google.gct.testrecorder.util.ElementLevelMapCreator;
 import com.google.gct.testrecorder.util.TestRecorderTracking;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
@@ -64,6 +63,7 @@ import java.util.LinkedHashMap;
 import static com.android.tools.idea.gradle.dsl.model.dependencies.CommonConfigurationNames.COMPILE;
 import static com.google.gct.testrecorder.event.TestRecorderAssertion.*;
 import static com.google.gct.testrecorder.event.TestRecorderEvent.SUPPORTED_EVENTS;
+import static com.google.gct.testrecorder.util.UiAutomatorNodeHelper.*;
 
 public class RecordingDialog extends DialogWrapper implements TestRecorderEventListener {
   private static final long ANIMATION_INTERVAL = 400; // milliseconds.
@@ -85,7 +85,6 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
   private static final String RECORDING_DIALOG_TITLE = "Record Your Test";
   private static final String DEFAULT_MESSAGE = "Select an element from screenshot";
-  private static final String ERROR_MESSAGE = "Invalid element: no id found";
 
   private Project myProject;
   private AndroidFacet myFacet;
@@ -154,7 +153,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
             myScreenshotPanel.updateScreenShot(image, model);
             // Populate drop down menu
             BasicTreeNode root = myScreenshotPanel.getModel().getXmlRootNode();
-            myNodeIndentMap = ElementLevelMapCreator.createElementLevelMap(root);
+            myNodeIndentMap = createElementLevelMap(root);
             myElementComboBoxModel = new DefaultComboBoxModel(myNodeIndentMap.keySet().toArray());
             // Add a default element for drop down menu
             myElementComboBoxModel.insertElementAt(DEFAULT_MESSAGE, 0);
@@ -219,10 +218,9 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
           myScreenshotPanel.setSelectedNodeAndRepaint(node);
           // Update edit assertion panel
           if (isTextView(node)) {
-            String text = ((UiNode) node).getAttribute("text");
             CardLayout cardLayout = (CardLayout) myTextFieldWrapper.getLayout();
             cardLayout.show(myTextFieldWrapper, "myAssertionTextField");
-            myAssertionTextField.setText(text);
+            myAssertionTextField.setText(getText(node));
             myAssertionRuleComboBox.setModel(new DefaultComboBoxModel(ASSERTION_RULES_WITH_TEXT));
           } else {
             CardLayout cardLayout = (CardLayout) myTextFieldWrapper.getLayout();
@@ -244,17 +242,17 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
       @Override
       public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         if (value instanceof BasicTreeNode) {
-          // UI element
           BasicTreeNode node = (BasicTreeNode) value;
-          // Add indent
+          // Add indent.
           int indent = myNodeIndentMap.get(node);
           String prefix = StringUtils.repeat("  ", indent);
-          // No indent for selected element
+          // No indent for selected element.
           if (index == -1) {
             prefix = "";
           }
-          String id = ((UiNode) node).getAttribute("resource-id");
-          return super.getListCellRendererComponent(list, prefix + id, index, isSelected, cellHasFocus);
+          String resourceId = getResourceId(node);
+          String nodeString = resourceId.isEmpty() ? getClassName(node) : resourceId;
+          return super.getListCellRendererComponent(list, prefix + nodeString, index, isSelected, cellHasFocus);
         } else {
           // non UI element
           return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -587,33 +585,32 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   }
 
   private void addElementDescriptors(TestRecorderAssertion assertion, UiNode node) {
-    if (node == null) {
+    if (node == null || assertion.getElementDescriptorsCount() >= MAX_PARENT_HIERARCHY_ASSERTION_DEPTH) {
       return;
     }
 
-    String className = node.getAttribute("class");
-    String resourceId = node.getAttribute("resource-id");
-    String text = node.getAttribute("text");
-    String contentDescription = node.getAttribute("content-desc");
+    String className = getClassName(node);
+    String resourceId = getResourceId(node);
+    // Use text identification only for text views.
+    String text = isTextView(node) ? getText(node) : "";
+    String contentDescription = getContentDescription(node);
+    int childPosition = getChildPosition(node);
 
-    if (!resourceId.isEmpty() || !text.isEmpty() || !contentDescription.isEmpty()) {
-      // TODO: Should we figure out child position for assertions?
-      assertion.addElementDescriptor(new ElementDescriptor(className, -1, resourceId, contentDescription, text));
+    if (!className.isEmpty() || !resourceId.isEmpty() || !text.isEmpty() || !contentDescription.isEmpty() || childPosition != -1) {
+      assertion.addElementDescriptor(new ElementDescriptor(className, childPosition, resourceId, contentDescription, text));
       addElementDescriptors(assertion, (UiNode)node.getParent());
     }
   }
 
-  // Set up assertion panel with no element selected
+  // Set up assertion panel with no element selected.
   protected void setUpEmptyAssertionPanel() {
-    // Set up UI element combo box
     myAssertionElementComboBox.setModel(myElementComboBoxModel);
     myAssertionElementComboBox.setSelectedIndex(0);
     myAssertionElementComboBox.setForeground(JBColor.BLACK);
 
-    // Set up assertion rule combo box
     myAssertionRuleComboBox.setModel(new DefaultComboBoxModel());
 
-    // Hide assertion text field
+    // Hide assertion text field.
     CardLayout cardLayout = (CardLayout) myTextFieldWrapper.getLayout();
     cardLayout.show(myTextFieldWrapper, "myPlaceHolder");
 
@@ -622,68 +619,23 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     mySaveAssertionAndAddAnotherButton.setEnabled(false);
   }
 
-  // Set
-  protected void setUpErrorAssertionPanel() {
-    // Set up UI element combo box
-    DefaultComboBoxModel modelForElement = new DefaultComboBoxModel(new String[] {ERROR_MESSAGE});
-    myAssertionElementComboBox.setModel(modelForElement);
-    myAssertionElementComboBox.setForeground(JBColor.RED);
-
-    // Set up assertion rule combo box
-    myAssertionRuleComboBox.setModel(new DefaultComboBoxModel());
-
-    // Hide assertion text field
-    CardLayout cardLayout = (CardLayout) myTextFieldWrapper.getLayout();
-    cardLayout.show(myTextFieldWrapper, "myPlaceHolder");
-
-    // Disable save assertion buttons.
-    mySaveAssertionButton.setEnabled(false);
-    mySaveAssertionAndAddAnotherButton.setEnabled(false);
-  }
-
-  protected void setUpAssertionPanelWithText(BasicTreeNode node, String text) {
+  protected void setUpAssertionPanel(BasicTreeNode node) {
     myAssertionElementComboBox.setModel(myElementComboBoxModel);
     myAssertionElementComboBox.setSelectedItem(node);
     myAssertionElementComboBox.setForeground(JBColor.BLACK);
 
-    CardLayout cardLayout = (CardLayout) myTextFieldWrapper.getLayout();
-    cardLayout.show(myTextFieldWrapper, "myAssertionTextField");
-    myAssertionTextField.setText(text);
-    myAssertionRuleComboBox.setModel(new DefaultComboBoxModel(ASSERTION_RULES_WITH_TEXT));
     mySaveAssertionButton.setEnabled(true);
     mySaveAssertionAndAddAnotherButton.setEnabled(true);
-  }
-
-  protected void setUpAssertionPanelWithoutText(BasicTreeNode node) {
-    myAssertionElementComboBox.setModel(myElementComboBoxModel);
-    myAssertionElementComboBox.setSelectedItem(node);
-    myAssertionElementComboBox.setForeground(JBColor.BLACK);
 
     CardLayout cardLayout = (CardLayout) myTextFieldWrapper.getLayout();
-    cardLayout.show(myTextFieldWrapper, "myPlaceHolder");
-    myAssertionRuleComboBox.setModel(new DefaultComboBoxModel(ASSERTION_RULES_WITHOUT_TEXT));
-    mySaveAssertionButton.setEnabled(true);
-    mySaveAssertionAndAddAnotherButton.setEnabled(true);
-  }
-
-  protected void updateAssertionPanelOnSelectionChange(BasicTreeNode node) {
-    String id = ((UiNode) node).getAttribute("resource-id");
-    if (id.equals("")) {
-      setUpErrorAssertionPanel();
+    if (isTextView(node)) {
+      cardLayout.show(myTextFieldWrapper, "myAssertionTextField");
+      myAssertionTextField.setText(getText(node));
+      myAssertionRuleComboBox.setModel(new DefaultComboBoxModel(ASSERTION_RULES_WITH_TEXT));
     } else {
-      String text = ((UiNode) node).getAttribute("text");
-      if (isTextView(node)) {
-        setUpAssertionPanelWithText(node, text);
-      } else {
-        setUpAssertionPanelWithoutText(node);
-      }
+      cardLayout.show(myTextFieldWrapper, "myPlaceHolder");
+      myAssertionRuleComboBox.setModel(new DefaultComboBoxModel(ASSERTION_RULES_WITHOUT_TEXT));
     }
-  }
-
-  private boolean isTextView(BasicTreeNode node) {
-    String elementClass = ((UiNode) node).getAttribute("class");
-    return elementClass.equals("android.widget.TextView")
-           || elementClass.equals("android.widget.EditText");
   }
 
   public boolean isAssertionMode() {

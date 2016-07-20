@@ -155,11 +155,12 @@ public class TestCodeMapper {
     if (elementDescriptors.isEmpty()) {
       return "UNKNOWN";
     }
-    return generateElementHierarchyConditionsRecursively(!action.canScrollTo(), elementDescriptors, 0);
+    return generateElementHierarchyConditionsRecursively(action instanceof TestRecorderAssertion, !action.canScrollTo(),
+                                                         elementDescriptors, 0);
   }
 
-  private String generateElementHierarchyConditionsRecursively(boolean checkIsDisplayed, List<ElementDescriptor> elementDescriptors,
-                                                               int index) {
+  private String generateElementHierarchyConditionsRecursively(boolean isAssertionConditions, boolean checkIsDisplayed,
+                                                               List<ElementDescriptor> elementDescriptors, int index) {
     // Add isDisplayed() only to the innermost element.
     boolean addIsDisplayed = checkIsDisplayed && index == 0;
 
@@ -172,18 +173,18 @@ public class TestCodeMapper {
         // Cannot use child position for the last element, since no parent descriptor available.
         || index == lastIndex && elementDescriptor.isEmptyIgnoringChildPosition()
         || index == 0 && isLoginRadioButton(elementDescriptors)) {
-      matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true);
+      matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true, isAssertionConditions);
     } else {
       // Do not use android framework ids that are not visible to the compiler.
       String resourceId = elementDescriptor.getResourceId();
       if (isAndroidFrameworkPrivateId(resourceId)) {
-        matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true);
+        matcherBuilder.addMatcher(ClassName, elementDescriptor.getClassName(), true, isAssertionConditions);
       } else {
-        matcherBuilder.addMatcher(Id, convertIdToTestCodeFormat(resourceId), false);
+        matcherBuilder.addMatcher(Id, convertIdToTestCodeFormat(resourceId), false, isAssertionConditions);
       }
 
-      matcherBuilder.addMatcher(Text, elementDescriptor.getText(), true);
-      matcherBuilder.addMatcher(ContentDescription, elementDescriptor.getContentDescription(), true);
+      matcherBuilder.addMatcher(Text, elementDescriptor.getText(), true, isAssertionConditions);
+      matcherBuilder.addMatcher(ContentDescription, elementDescriptor.getContentDescription(), true, isAssertionConditions);
     }
 
     // TODO: Consider minimizing the generated statement to improve test's readability and maintainability (e.g., by capping parent hierarchy).
@@ -201,9 +202,9 @@ public class TestCodeMapper {
     myIsChildAtPositionAdded = myIsChildAtPositionAdded || childPosition != -1;
 
     return (addAllOf ? "allOf(" : "") + matcherBuilder.getMatchers() + (matcherBuilder.getMatcherCount() > 0 ? ",\n" : "")
-           + (childPosition != -1 ? "childAtPosition(" : "withParent(")
-           + generateElementHierarchyConditionsRecursively(checkIsDisplayed, elementDescriptors, index + 1)
-           + (childPosition != -1 ? ", " + childPosition : "") + ")"
+           + (childPosition != -1 ? "childAtPosition(\n" : "withParent(")
+           + generateElementHierarchyConditionsRecursively(isAssertionConditions, checkIsDisplayed, elementDescriptors, index + 1)
+           + (childPosition != -1 ? ",\n" + childPosition : "") + ")"
            + (addIsDisplayed ? ",\nisDisplayed()" : "") + (addAllOf ? ")" : "");
   }
 

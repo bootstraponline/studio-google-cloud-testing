@@ -20,9 +20,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
-import static com.google.gct.testrecorder.util.StringHelper.getClassName;
-
 public class TestRecorderEvent extends ElementAction {
   public static final String VIEW_CLICK = "VIEW_CLICKED";
   public static final String VIEW_LONG_CLICK = "VIEW_LONG_CLICKED";
@@ -154,32 +151,7 @@ public class TestRecorderEvent extends ElementAction {
       return getRendererString(getIdAttributeDisplayPresentation("element position", String.valueOf(recyclerViewPosition)));
     }
 
-    String displayText = getDisplayText();
-    if (!displayText.isEmpty()) {
-      return getRendererString(displayText);
-    }
-
-    String displayContentDescription = getDisplayContentDescription();
-    if (!displayContentDescription.isEmpty()) {
-      return getRendererString(displayContentDescription);
-    }
-
-    String displayResourceId = getDisplayResourceId();
-    if (!displayResourceId.isEmpty()) {
-      return getRendererString(displayResourceId);
-    }
-
-    int childPosition = getElementChildPosition();
-    if (childPosition != -1) {
-      return getRendererString(getIdAttributeDisplayPresentation("child position", String.valueOf(childPosition)));
-    }
-
-    String className = getElementClassName();
-    if (!isNullOrEmpty(className)) {
-      return getClassName(className);
-    }
-
-    return "unknown source";
+    return super.getRendererString();
   }
 
   private String getRendererActionCode() {

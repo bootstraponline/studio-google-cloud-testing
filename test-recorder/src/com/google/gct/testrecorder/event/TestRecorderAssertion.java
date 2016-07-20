@@ -51,15 +51,4 @@ public class TestRecorderAssertion extends ElementAction {
     this.text = text;
   }
 
-  @Override
-  public String getRendererString() {
-    // TODO: Currently, Test Recorder supports assertions only of elements with resource ids.
-    String displayResourceId = getDisplayResourceId();
-    if (!displayResourceId.isEmpty()) {
-      return getRendererString(displayResourceId);
-    }
-
-    return "unidentified element";
-  }
-
 }

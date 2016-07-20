@@ -37,9 +37,9 @@ public class MatcherBuilder {
     myProject = project;
   }
 
-  public void addMatcher(Kind kind, String matchedString, boolean shouldBox) {
+  public void addMatcher(Kind kind, String matchedString, boolean shouldBox, boolean isAssertionMatcher) {
     if (!isNullOrEmpty(matchedString)) {
-      if (kind == ClassName) {
+      if (kind == ClassName && !isAssertionMatcher) {
         matchedString = getInternalName(matchedString);
       }
 
@@ -47,8 +47,12 @@ public class MatcherBuilder {
         matchers.append(", ");
       }
 
-      matchers.append("with").append(kind.name()).append(kind == ClassName ? "(is(" : "(")
-        .append(shouldBox ? boxString(matchedString) : matchedString).append(kind == ClassName ? "))" : ")");
+      if (kind == ClassName && isAssertionMatcher) {
+       matchers.append("IsInstanceOf.<View>instanceOf(" + matchedString + ".class)");
+      } else {
+        matchers.append("with").append(kind.name()).append(kind == ClassName ? "(is(" : "(")
+          .append(shouldBox ? boxString(matchedString) : matchedString).append(kind == ClassName ? "))" : ")");
+      }
 
       matcherCount++;
     }
