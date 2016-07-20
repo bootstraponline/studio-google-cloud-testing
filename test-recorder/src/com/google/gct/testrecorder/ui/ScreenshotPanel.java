@@ -69,7 +69,7 @@ public class ScreenshotPanel extends JPanel {
         // And update screenshot panel and assertion panel.
         if (mySelectedNode == null) {
           mySelectedNode = node;
-          myParent.updateAssertionPanelOnSelectionChange(node);
+          myParent.setUpAssertionPanel(node);
           repaint();
         } else {
           // Else if already made a selection, cancel that selection.
