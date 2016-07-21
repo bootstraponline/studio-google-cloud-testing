@@ -11,8 +11,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 
+import static ${EspressoPackageName}.InstrumentationRegistry.getInstrumentation;
 import static ${EspressoPackageName}.espresso.Espresso.onView;
 import static ${EspressoPackageName}.espresso.Espresso.pressBack;
+import static ${EspressoPackageName}.espresso.Espresso.openActionBarOverflowOrOptionsMenu;
 #if (${AddContribImport})
 import static ${EspressoPackageName}.espresso.contrib.RecyclerViewActions.actionOnItemAtPosition;
 #end
