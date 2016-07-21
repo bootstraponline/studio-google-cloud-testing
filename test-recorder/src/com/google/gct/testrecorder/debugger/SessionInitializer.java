@@ -84,6 +84,7 @@ public class SessionInitializer implements Runnable {
   private volatile DebuggerSession myDebuggerSession;
   private volatile DebuggerManagerListener myDebuggerManagerListener;
   private volatile RecordingDialog myRecordingDialog;
+  private volatile boolean myFailedToStart;
 
   public SessionInitializer(AndroidFacet facet, ExecutionEnvironment environment, LaunchOptionState launchOptionState, int configurationId) {
     myFacet = facet;
@@ -129,14 +130,14 @@ public class SessionInitializer implements Runnable {
     try {
       assignDeviceAndClearAppData();
     } catch (final Exception e) {
+      myFailedToStart = true;
       ApplicationManager.getApplication().invokeLater(new Runnable() {
         @Override
         public void run() {
           Messages.showErrorDialog(myProject, e.getMessage(), "Test Recorder startup failure");
         }
       });
-      // TODO: Note that if the problem happened before the debugger was available,
-      // it might still get eventually started even after Test Recorder shut down, which is undesired behavior.
+
       stopDebugger();
     }
   }
@@ -146,6 +147,15 @@ public class SessionInitializer implements Runnable {
     return new DebugProcessAdapter() {
       @Override
       public void processAttached(DebugProcess process) {
+        if (myFailedToStart) {
+          DebuggerManagerEx.getInstanceEx(myProject).removeDebuggerManagerListener(myDebuggerManagerListener);
+          XDebugSession xDebugSession = myDebuggerSession.getXDebugSession();
+          if (xDebugSession != null) {
+            xDebugSession.stop();
+          }
+          return;
+        }
+
         AndroidSessionInfo sessionInfo = process.getProcessHandler().getUserData(AndroidSessionInfo.KEY);
         if (sessionInfo != null && sessionInfo.getRunConfigurationId() != myConfigurationId) {
           // Not my debugger session (probably, my session failed midway) => stop listening.
@@ -367,6 +377,10 @@ public class SessionInitializer implements Runnable {
       myDevice = listenableFutures.get(0).get();
     } catch (Exception e) {
       throw new RuntimeException("Exception while waiting for the device to become ready ", e);
+    }
+
+    if (myDevice.getVersion().getApiLevel() < 19) {
+      throw new RuntimeException("Test Recorder supports devices and emulators running Android API level 19 (Android 4.4 Kit Kat) and higher.");
     }
 
     try {
