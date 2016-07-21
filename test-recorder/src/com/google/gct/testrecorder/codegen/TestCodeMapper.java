@@ -71,6 +71,11 @@ public class TestCodeMapper {
       return testCodeLines;
     }
 
+    if (event.isViewClick() && "android.widget.ActionMenuPresenter.OverflowMenuButton".equals(event.getElementClassName())) {
+      testCodeLines.add("openActionBarOverflowOrOptionsMenu(getInstrumentation().getTargetContext());");
+      return testCodeLines;
+    }
+
     String variableName = addViewPickingStatement(event, testCodeLines);
     if (event.isPressEditorAction()) {
       // TODO: If this is the same element that was just edited, consider reusing the same view interaction (i.e., variable name).
