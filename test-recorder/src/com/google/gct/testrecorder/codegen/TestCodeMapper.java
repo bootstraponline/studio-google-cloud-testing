@@ -25,6 +25,7 @@ import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.openapi.project.Project;
 import com.intellij.pom.java.LanguageLevel;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.android.sdk.AndroidTargetData;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,7 +72,7 @@ public class TestCodeMapper {
       return testCodeLines;
     }
 
-    if (event.isViewClick() && "android.widget.ActionMenuPresenter.OverflowMenuButton".equals(event.getElementClassName())) {
+    if (event.isViewClick() && isOverflowMenuButton(event.getElementClassName())) {
       testCodeLines.add("openActionBarOverflowOrOptionsMenu(getInstrumentation().getTargetContext());");
       return testCodeLines;
     }
@@ -99,6 +100,13 @@ public class TestCodeMapper {
     }
 
     return testCodeLines;
+  }
+
+  private boolean isOverflowMenuButton(String className) {
+    if (StringUtils.isEmpty(className)) {
+      return false;
+    }
+    return className.startsWith("android.") && className.endsWith(".widget.ActionMenuPresenter.OverflowMenuButton");
   }
 
   private String createActionStatement(String variableName, String action, boolean addScrollTo) {
