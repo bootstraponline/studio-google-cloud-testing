@@ -216,7 +216,7 @@ public class DebugConfigurationAction extends AnAction {
       for (DeployTargetProvider deployTargetProvider : DeployTargetProvider.getProviders()) {
         if (deployTargetProvider.getId().equals(CloudDebuggingTargetProvider.ID)) {
           ((CloudDebuggingTargetProvider)deployTargetProvider).setCloudDeviceSerialNumber(deviceSerialNumber);
-          runConfiguration.setTargetSelectionMode(deployTargetProvider);
+          runConfiguration.getDeployTargetContext().setTargetSelectionMode(deployTargetProvider);
           if (className != null) {
             runConfiguration.CLASS_NAME = className;
             if (methodName != null) {
