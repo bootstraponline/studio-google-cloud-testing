@@ -16,13 +16,16 @@
 package com.google.gct.testrecorder.ui;
 
 import com.android.ddmlib.IDevice;
+import com.android.tools.idea.gradle.AndroidGradleModel;
 import com.android.tools.idea.gradle.dsl.model.GradleBuildModel;
-import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencyModel;
+import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencySpec;
 import com.android.tools.idea.gradle.project.GradleProjectImporter;
 import com.android.tools.idea.stats.UsageTracker;
+import com.android.tools.idea.gradle.util.GradleUtil;
 import com.android.uiautomator.UiAutomatorModel;
 import com.android.uiautomator.tree.BasicTreeNode;
 import com.android.uiautomator.tree.UiNode;
+import com.google.common.collect.ImmutableList;
 import com.google.gct.testrecorder.codegen.TestCodeGenerator;
 import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
@@ -60,7 +63,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
-import static com.android.tools.idea.gradle.dsl.model.dependencies.CommonConfigurationNames.COMPILE;
+import static com.android.tools.idea.gradle.dsl.model.dependencies.CommonConfigurationNames.ANDROID_TEST_COMPILE;
+import static com.android.tools.idea.templates.SupportLibrary.*;
 import static com.google.gct.testrecorder.event.TestRecorderAssertion.*;
 import static com.google.gct.testrecorder.event.TestRecorderEvent.SUPPORTED_EVENTS;
 import static com.google.gct.testrecorder.util.UiAutomatorNodeHelper.*;
@@ -70,18 +74,24 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   private static final int ANIMATION_TIMER_INTERVAL = 10; // milliseconds.
 
   private static final String ESPRESSO_CORE_CUSTOM_ARTIFACT_NAME = "espresso";
-  private static final String ESPRESSO_CORE_ARTIFACT_NAME = "espresso-core";
-  private static final String ESPRESSO_CUSTOM_GROUP_NAME = "com.jakewharton.espresso";
-  private static final String ESPRESSO_GROUP_NAME = "com.android.support.test.espresso";
-  private static final String TEST_RUNNER_ARTIFACT_NAME = "runner";
-  private static final String TEST_RUNNER_GROUP_NAME = "com.android.support.test";
-  private static final String ESPRESSO_CONTRIB_ARTIFACT_NAME = "espresso-contrib";
+  private static final String ESPRESSO_CORE_CUSTOM_GROUP_NAME = "com.jakewharton.espresso";
 
-  // TODO: How to autodetect the latest versions to use?
-  public static final String TEST_RUNNER_DEPENDENCY = "com.android.support.test:runner:0.5";
-  public static final String ESPRESSO_CORE_DEPENDENCY = "com.android.support.test.espresso:espresso-core:2.2.2";
-  public static final String ESPRESSO_CONTRIB_DEPENDENCY = "com.android.support.test.espresso:espresso-contrib:2.2.2";
   public static final String TEST_INSTRUMENTATION_RUNNER = "android.support.test.runner.AndroidJUnitRunner";
+
+  /**
+   * Version of Espresso added to build.gradle files if we need to add it there. This needs to be kept in sync with the excludes lists
+   * below.
+   */
+  public static final String ESPRESSO_VERSION = "2.2.2";
+
+  public static final ImmutableList<ArtifactDependencySpec> ESPRESSO_EXCLUDES =
+    ImmutableList.of(new ArtifactDependencySpec(SUPPORT_ANNOTATIONS.getArtifactId(), SUPPORT_ANNOTATIONS.getGroupId(), null));
+
+  public static final ImmutableList<ArtifactDependencySpec> ESPRESSO_CONTRIB_EXCLUDES =
+    ImmutableList.of(new ArtifactDependencySpec(SUPPORT_ANNOTATIONS.getArtifactId(), SUPPORT_ANNOTATIONS.getGroupId(), null),
+                     new ArtifactDependencySpec(SUPPORT_V4.getArtifactId(), SUPPORT_V4.getGroupId(), null),
+                     new ArtifactDependencySpec(DESIGN.getArtifactId(), DESIGN.getGroupId(), null),
+                     new ArtifactDependencySpec(RECYCLERVIEW_V7.getArtifactId(), RECYCLERVIEW_V7.getGroupId(), null));
 
   private static final String RECORDING_DIALOG_TITLE = "Record Your Test";
   private static final String DEFAULT_MESSAGE = "Select an element from screenshot";
@@ -91,6 +101,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   private IDevice myDevice;
   private String myPackageName;
   private final GradleBuildModel myGradleBuildModel;
+  private final AndroidGradleModel myAndroidGradleModel;
 
   private boolean myAssertionMode;
   private int myAssertionIndex;
@@ -127,6 +138,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myPackageName = packageName;
     myAssertionMode = false;
     myGradleBuildModel = GradleBuildModel.get(myFacet.getModule());
+    myAndroidGradleModel = AndroidGradleModel.get(myFacet);
 
     init();
 
@@ -461,8 +473,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
   private boolean hasAllRequiredEspressoDependencies() {
     // TODO: To improve performance, consider doing these checks in a single pass.
-    return hasEspressoCoreDependency()
-           && (hasCustomEspressoDependency() || hasTestRunnerDependency())
+    return (hasEspressoCoreDependency() || hasCustomEspressoDependency())
            && (!needsEspressoContribDependency() || hasEspressoContribDependency())
            && hasSetInstrumentationRunner();
   }
@@ -478,45 +489,18 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   }
 
   private boolean hasCustomEspressoDependency() {
-    for (ArtifactDependencyModel artifact : myGradleBuildModel.dependencies().artifacts()) {
-      if (ESPRESSO_CORE_CUSTOM_ARTIFACT_NAME.equalsIgnoreCase(artifact.name().value())
-          && ESPRESSO_CUSTOM_GROUP_NAME.equalsIgnoreCase(artifact.group().value())) {
-        return true;
-      }
-    }
-    return false;
+    String artifact = ESPRESSO_CORE_CUSTOM_GROUP_NAME + ":" + ESPRESSO_CORE_CUSTOM_ARTIFACT_NAME;
+    return GradleUtil.dependsOnAndroidTest(myAndroidGradleModel, artifact) || GradleUtil.dependsOn(myAndroidGradleModel, artifact);
   }
 
   private boolean hasEspressoCoreDependency() {
-    for (ArtifactDependencyModel artifact : myGradleBuildModel.dependencies().artifacts()) {
-      if (ESPRESSO_CORE_CUSTOM_ARTIFACT_NAME.equalsIgnoreCase(artifact.name().value())
-          && ESPRESSO_CUSTOM_GROUP_NAME.equalsIgnoreCase(artifact.group().value())
-          || ESPRESSO_CORE_ARTIFACT_NAME.equalsIgnoreCase(artifact.name().value())
-             && ESPRESSO_GROUP_NAME.equalsIgnoreCase(artifact.group().value())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private boolean hasTestRunnerDependency() {
-    for (ArtifactDependencyModel artifact : myGradleBuildModel.dependencies().artifacts()) {
-      if (TEST_RUNNER_ARTIFACT_NAME.equalsIgnoreCase(artifact.name().value())
-          && TEST_RUNNER_GROUP_NAME.equalsIgnoreCase(artifact.group().value())) {
-        return true;
-      }
-    }
-    return false;
+    String artifact = ESPRESSO_CORE.getGroupId() + ":" + ESPRESSO_CORE.getArtifactId();
+    return GradleUtil.dependsOnAndroidTest(myAndroidGradleModel, artifact) || GradleUtil.dependsOn(myAndroidGradleModel, artifact);
   }
 
   private boolean hasEspressoContribDependency() {
-    for (ArtifactDependencyModel artifact : myGradleBuildModel.dependencies().artifacts()) {
-      if (ESPRESSO_CONTRIB_ARTIFACT_NAME.equalsIgnoreCase(artifact.name().value())
-          && ESPRESSO_GROUP_NAME.equalsIgnoreCase(artifact.group().value())) {
-        return true;
-      }
-    }
-    return false;
+    String artifact = ESPRESSO_CONTRIB.getGroupId() + ":" + ESPRESSO_CONTRIB.getArtifactId();
+    return GradleUtil.dependsOnAndroidTest(myAndroidGradleModel, artifact) || GradleUtil.dependsOn(myAndroidGradleModel, artifact);
   }
 
   private boolean hasSetInstrumentationRunner() {
@@ -539,32 +523,30 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
           //  ignore
         }
 
-        WriteCommandAction.runWriteCommandAction(myProject, new Runnable() {
-          @Override
-          public void run() {
-            // Do not use ANDROID_TEST_COMPILE to avoid version conflicts between app and test APKs.
-
-            if (!hasEspressoCoreDependency()) {
-              myGradleBuildModel.dependencies().addArtifact(COMPILE, ESPRESSO_CORE_DEPENDENCY);
-            }
-
-            // Custom Espresso dependency subsumes a separate test runner dependency.
-            if (!hasCustomEspressoDependency() && !hasTestRunnerDependency()) {
-              myGradleBuildModel.dependencies().addArtifact(COMPILE, TEST_RUNNER_DEPENDENCY);
-            }
-
-            if (needsEspressoContribDependency() && !hasEspressoContribDependency()) {
-              myGradleBuildModel.dependencies().addArtifact(COMPILE, ESPRESSO_CONTRIB_DEPENDENCY);
-            }
-
-            if (!hasSetInstrumentationRunner()) {
-              myGradleBuildModel.android().defaultConfig().setTestInstrumentationRunner(TEST_INSTRUMENTATION_RUNNER);
-            }
-
-            myGradleBuildModel.applyChanges();
-
-            GradleProjectImporter.getInstance().requestProjectSync(myProject, null);
+        WriteCommandAction.runWriteCommandAction(myProject, () -> {
+          if (!hasEspressoCoreDependency() && !hasCustomEspressoDependency()) {
+            myGradleBuildModel.dependencies().addArtifact(ANDROID_TEST_COMPILE,
+                                                          new ArtifactDependencySpec(ESPRESSO_CORE.getArtifactId(),
+                                                                                     ESPRESSO_CORE.getGroupId(),
+                                                                                     ESPRESSO_VERSION),
+                                                          ESPRESSO_EXCLUDES);
           }
+
+          if (needsEspressoContribDependency() && !hasEspressoContribDependency()) {
+            myGradleBuildModel.dependencies().addArtifact(ANDROID_TEST_COMPILE,
+                                                          new ArtifactDependencySpec(ESPRESSO_CONTRIB.getArtifactId(),
+                                                                                     ESPRESSO_CONTRIB.getGroupId(),
+                                                                                     ESPRESSO_VERSION),
+                                                          ESPRESSO_CONTRIB_EXCLUDES);
+          }
+
+          if (!hasSetInstrumentationRunner()) {
+            myGradleBuildModel.android().defaultConfig().setTestInstrumentationRunner(TEST_INSTRUMENTATION_RUNNER);
+          }
+
+          myGradleBuildModel.applyChanges();
+
+          GradleProjectImporter.getInstance().requestProjectSync(myProject, null);
         });
       }
     }.queue();
