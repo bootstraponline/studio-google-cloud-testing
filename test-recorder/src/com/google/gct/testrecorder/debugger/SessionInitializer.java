@@ -96,18 +96,22 @@ public class SessionInitializer implements Runnable {
     myConfigurationId = configurationId;
     // TODO: Although more robust than android.view.View#performClick() breakpoint, this might miss "contrived" clicks,
     // originating from the View object itself (e.g., as a result of processing a touch event).
-    myBreakpointDescriptors.add(new BreakpointDescriptor(VIEW_CLICK, "android.view.View$PerformClick", "run", false));
-    myBreakpointDescriptors.add(new BreakpointDescriptor(VIEW_LONG_CLICK, SdkConstants.CLASS_VIEW, "performLongClick", false));
-    myBreakpointDescriptors.add(new BreakpointDescriptor(LIST_ITEM_CLICK, "android.widget.AbsListView", "performItemClick", false));
-    myBreakpointDescriptors.add(new BreakpointDescriptor(TEXT_CHANGE, "android.widget.TextView$ChangeWatcher", "beforeTextChanged", true));
-    myBreakpointDescriptors.add(new BreakpointDescriptor(TEXT_CHANGE, "android.widget.TextView$ChangeWatcher", "onTextChanged", false));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(VIEW_CLICK, "android.view.View$PerformClick", "run", "()V", false));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(VIEW_LONG_CLICK, SdkConstants.CLASS_VIEW, "performLongClick", "()Z", false));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(LIST_ITEM_CLICK, "android.widget.AbsListView", "performItemClick",
+                                                         "(Landroid/view/View;IJ)Z", false));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(TEXT_CHANGE, "android.widget.TextView$ChangeWatcher", "beforeTextChanged",
+                                                         "(Ljava/lang/CharSequence;III)V", true));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(TEXT_CHANGE, "android.widget.TextView$ChangeWatcher", "onTextChanged",
+                                                         "(Ljava/lang/CharSequence;III)V", false));
 
     // TODO: This breakpoint is for a finished input event rather than just press back,
     // so some filtering is required when the breakpoint is hit.
     myBreakpointDescriptors.add(new BreakpointDescriptor(PRESS_BACK, "android.view.inputmethod.InputMethodManager",
-                                                         "invokeFinishedInputEventCallback", false));
+                                                         "invokeFinishedInputEventCallback",
+                                                         "(Landroid/view/inputmethod/InputMethodManager$PendingEvent;Z)V", false));
 
-    myBreakpointDescriptors.add(new BreakpointDescriptor(PRESS_EDITOR_ACTION, "android.widget.TextView", "onEditorAction", false));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(PRESS_EDITOR_ACTION, "android.widget.TextView", "onEditorAction", "(I)V", false));
   }
 
   @Override
