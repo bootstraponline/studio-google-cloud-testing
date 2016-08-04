@@ -15,11 +15,13 @@
  */
 package com.google.gct.testrecorder.debugger;
 
+import org.jetbrains.annotations.NotNull;
+
 public class BreakpointDescriptor {
   public final String eventType; // e.g., VIEW_CLICKED
   public final String className; // Fully qualified class name to set breakpoint in.
-  // TODO: If the need arises, identify methods by signature, not just by name.
   public final String methodName; // The name of the method, whose first location is used to place the breakpoint.
+  public final String methodSignature; // The signature of the method, whose first location is used to place the breakpoint.
 
   // A breakpoint is preparatory if it does not immediately result in a Test Recorder event, but instead, is used to collect
   // some information to combine with the subsequent breakpoint's information for a single Test Recorder event for both breakpoints.
@@ -27,10 +29,13 @@ public class BreakpointDescriptor {
   public final boolean isPreparatory;
 
 
-  public BreakpointDescriptor(String eventType, String className, String methodName, boolean isPreparatory) {
+  public BreakpointDescriptor(@NotNull String eventType, @NotNull String className, @NotNull String methodName,
+                              @NotNull String methodSignature, boolean isPreparatory) {
+
     this.eventType = eventType;
     this.className = className;
     this.methodName = methodName;
+    this.methodSignature = methodSignature;
     this.isPreparatory = isPreparatory;
   }
 }

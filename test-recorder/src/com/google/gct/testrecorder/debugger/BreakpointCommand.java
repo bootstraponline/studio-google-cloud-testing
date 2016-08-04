@@ -147,16 +147,16 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       throw new RuntimeException("Found more than one copy of class " + myBreakpointDescriptor.className);
     }
 
-    List<Method> methods = referenceTypes.get(0).methodsByName(myBreakpointDescriptor.methodName);
+    List<Method> methods = referenceTypes.get(0).methodsByName(myBreakpointDescriptor.methodName, myBreakpointDescriptor.methodSignature);
 
     if (methods.isEmpty()) {
-      throw new RuntimeException("Could not find method " + myBreakpointDescriptor.methodName + " in class "
-                                 + myBreakpointDescriptor.className);
+      throw new RuntimeException("Could not find method " + myBreakpointDescriptor.methodName
+                                 + myBreakpointDescriptor.methodSignature + " in class " + myBreakpointDescriptor.className);
     }
 
     if (methods.size() > 1) {
-      throw new RuntimeException("Found more than one copy of method " + myBreakpointDescriptor.methodName + " in class "
-                                 + myBreakpointDescriptor.className);
+      throw new RuntimeException("Found more than one copy of method " + myBreakpointDescriptor.methodName
+                                 + myBreakpointDescriptor.methodSignature + " in class " + myBreakpointDescriptor.className);
     }
 
     return methods.get(0).location();
