@@ -28,6 +28,7 @@ import com.android.tools.idea.run.editor.LaunchOptionState;
 import com.android.tools.idea.run.editor.SpecificActivityLaunch;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.gct.testrecorder.settings.TestRecorderSettings;
 import com.google.gct.testrecorder.ui.RecordingDialog;
 import com.intellij.debugger.DebuggerManagerEx;
 import com.intellij.debugger.DefaultDebugEnvironment;
@@ -73,6 +74,7 @@ public class SessionInitializer implements Runnable {
   private static final Logger LOGGER = Logger.getInstance(SessionInitializer.class);
 
   private final Set<BreakpointDescriptor> myBreakpointDescriptors = Sets.newHashSet();
+  private final Set<BreakpointCommand> myBreakpointCommands = Sets.newHashSet();
 
   private final AndroidFacet myFacet;
   private final Project myProject;
@@ -138,7 +140,7 @@ public class SessionInitializer implements Runnable {
         }
       });
 
-      stopDebugger();
+      stopTestRecorder();
     }
   }
 
@@ -148,11 +150,7 @@ public class SessionInitializer implements Runnable {
       @Override
       public void processAttached(DebugProcess process) {
         if (myFailedToStart) {
-          DebuggerManagerEx.getInstanceEx(myProject).removeDebuggerManagerListener(myDebuggerManagerListener);
-          XDebugSession xDebugSession = myDebuggerSession.getXDebugSession();
-          if (xDebugSession != null) {
-            xDebugSession.stop();
-          }
+          stopDebugger();
           return;
         }
 
@@ -177,7 +175,7 @@ public class SessionInitializer implements Runnable {
           });
         }
 
-        final Set<BreakpointCommand> breakpointCommands = scheduleBreakpointCommands();
+        scheduleBreakpointCommands();
         if (myRecordingDialog == null) { // The initial debug process, open Test Recorder dialog.
           // Detect the launched activity name outside the dispatch thread to avoid pausing it until dumb mode is over.
           String launchedActivityName = detectLaunchedActivityName();
@@ -189,16 +187,16 @@ public class SessionInitializer implements Runnable {
             public void run() {
               //Show Test Recorder dialog after adding and enabling breakpoints.
               myRecordingDialog = new RecordingDialog(myFacet, myDevice, myPackageName, launchedActivityName);
-              for (BreakpointCommand breakpointCommand : breakpointCommands) {
+              for (BreakpointCommand breakpointCommand : myBreakpointCommands) {
                 breakpointCommand.setEventListener(myRecordingDialog);
               }
               myRecordingDialog.show();
-              stopDebugger();
+              stopTestRecorder();
             }
           });
         } else {
           // The restarted debug process, reuse the already shown Test Recorder dialog.
-          for (BreakpointCommand breakpointCommand : breakpointCommands) {
+          for (BreakpointCommand breakpointCommand : myBreakpointCommands) {
             breakpointCommand.setEventListener(myRecordingDialog);
           }
         }
@@ -337,30 +335,42 @@ public class SessionInitializer implements Runnable {
     processHandler.startNotify();
   }
 
-  private Set<BreakpointCommand> scheduleBreakpointCommands() {
-    Set<BreakpointCommand> breakpointCommands = Sets.newHashSet();
+  private void scheduleBreakpointCommands() {
+    myBreakpointCommands.clear();
     DebugProcessImpl debugProcess = myDebuggerSession.getProcess();
     for (BreakpointDescriptor breakpointDescriptor : myBreakpointDescriptors) {
       BreakpointCommand breakpointCommand = new BreakpointCommand(debugProcess, breakpointDescriptor);
-      breakpointCommands.add(breakpointCommand);
+      myBreakpointCommands.add(breakpointCommand);
       debugProcess.getManagerThread().schedule(breakpointCommand);
     }
-    return breakpointCommands;
   }
 
-  private void stopDebugger() {
-    if (myDebuggerSession != null) {
-      XDebugSession xDebugSession = myDebuggerSession.getXDebugSession();
-      if (xDebugSession != null) {
-        xDebugSession.stop();
-      }
-    }
-    if (myDevice != null) {
+  private void stopTestRecorder() {
+    stopDebugger();
+    if (myDevice != null && TestRecorderSettings.getInstance().CLEAN_AFTER_FINISH) {
       try {
         // Clear app data such that there is no stale state => the generated test can run (pass) immediately.
         myDevice.executeShellCommand("pm clear " + myPackageName, new CollectingOutputReceiver(), 5, TimeUnit.SECONDS);
       } catch (Exception e) {
         LOGGER.warn("Exception stopping the app", e);
+      }
+    }
+  }
+
+  private void stopDebugger() {
+    DebuggerManagerEx.getInstanceEx(myProject).removeDebuggerManagerListener(myDebuggerManagerListener);
+
+    if (TestRecorderSettings.getInstance().STOP_APP_AFTER_RECORDING) {
+      if (myDebuggerSession != null) {
+        XDebugSession xDebugSession = myDebuggerSession.getXDebugSession();
+        if (xDebugSession != null) {
+          xDebugSession.stop();
+        }
+      }
+    } else {
+      // Keep the process running, but disable breakpoints such that it is not slowed down.
+      for (BreakpointCommand breakpointCommand : myBreakpointCommands) {
+        breakpointCommand.disable();
       }
     }
   }
@@ -389,12 +399,15 @@ public class SessionInitializer implements Runnable {
       throw new RuntimeException("Could not compute package name!");
     }
 
-    try {
-      // Clear app data such that the test recording starts from the initial app state.
-      myDevice.executeShellCommand("pm clear " + myPackageName, new CollectingOutputReceiver(), 5, TimeUnit.SECONDS);
-    } catch (Exception e) {
-      // It is unfortunate that the command to clear app data might have failed, but it is not a blocker, so proceed.
-      LOGGER.warn("Exception clearing app data", e);
+    if (TestRecorderSettings.getInstance().CLEAN_BEFORE_START) {
+      try {
+        // Clear app data such that the test recording starts from the initial app state.
+        myDevice.executeShellCommand("pm clear " + myPackageName, new CollectingOutputReceiver(), 5, TimeUnit.SECONDS);
+      }
+      catch (Exception e) {
+        // It is unfortunate that the command to clear app data might have failed, but it is not a blocker, so proceed.
+        LOGGER.warn("Exception clearing app data", e);
+      }
     }
   }
 

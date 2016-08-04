@@ -28,6 +28,7 @@ import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.event.TestRecorderEventListener;
+import com.google.gct.testrecorder.settings.TestRecorderSettings;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
@@ -588,7 +589,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   }
 
   private void addElementDescriptors(TestRecorderAssertion assertion, UiNode node) {
-    if (node == null || assertion.getElementDescriptorsCount() >= MAX_PARENT_HIERARCHY_ASSERTION_DEPTH) {
+    if (node == null || assertion.getElementDescriptorsCount() >= TestRecorderSettings.getInstance().ASSERTION_DEPTH) {
       return;
     }
 

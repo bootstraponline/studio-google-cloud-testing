@@ -18,6 +18,7 @@ package com.google.gct.testrecorder.debugger;
 import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.event.TestRecorderEventListener;
+import com.google.gct.testrecorder.settings.TestRecorderSettings;
 import com.intellij.debugger.InstanceFilter;
 import com.intellij.debugger.engine.DebugProcessImpl;
 import com.intellij.debugger.engine.JavaStackFrame;
@@ -49,21 +50,12 @@ import static com.google.gct.testrecorder.event.TestRecorderEvent.*;
 public class BreakpointCommand extends DebuggerCommandImpl {
   private static final Logger LOGGER = Logger.getInstance(BreakpointCommand.class);
 
-  /**
-   * The number of UI hierarchy nodes, including the immediately affected one, used to identify the affected element.
-   */
-  private static final int MAX_PARENT_HIERARCHY_EVALUATION_DEPTH = 3;
-
-  /**
-   * The number of UI hierarchy nodes, including the immediately affected one, that are checked for being a scroll view.
-   */
-  private static final int MAX_PARENT_HIERARCHY_SCROLL_EVALUATION_DEPTH = 5;
-
   private final static String PARENT_NODE_CALL = ".getParent()";
 
   private final DebugProcessImpl myDebugProcess;
   private final BreakpointDescriptor myBreakpointDescriptor;
   private volatile TestRecorderEventListener myEventListener;
+  private volatile BreakpointRequest myRequest;
 
   private static TestRecorderEvent preparatoryTextChangeEvent;
 
@@ -73,11 +65,17 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     myBreakpointDescriptor = breakpointDescriptor;
   }
 
+  public void disable() {
+    if (myRequest != null) {
+      myRequest.disable();
+    }
+  }
+
   @Override
   protected void action() throws Exception {
     final Location location = getBreakpointLocation();
 
-    final BreakpointRequest request = myDebugProcess.getRequestsManager().createBreakpointRequest(new FilteredRequestorAdapter() {
+    myRequest = myDebugProcess.getRequestsManager().createBreakpointRequest(new FilteredRequestorAdapter() {
       @Override
       public boolean processLocatableEvent(SuspendContextCommandImpl action, LocatableEvent event) throws EventProcessingException {
         try {
@@ -117,7 +115,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       }
     }, location);
 
-    myDebugProcess.getRequestsManager().enableRequest(request);
+    myDebugProcess.getRequestsManager().enableRequest(myRequest);
   }
 
   private void notifyEventListener(TestRecorderEvent event) {
@@ -223,7 +221,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   private void setScrollableState(TestRecorderEvent event, EvaluationContextImpl evalContext, NodeManagerImpl nodeManager,
                                   String objectReference, int level) {
 
-    if (level > MAX_PARENT_HIERARCHY_SCROLL_EVALUATION_DEPTH) {
+    if (level > TestRecorderSettings.getInstance().SCROLL_DEPTH) {
       return;
     }
 
@@ -245,7 +243,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   private void populateElementDescriptors(TestRecorderEvent event, EvaluationContextImpl evalContext, NodeManagerImpl nodeManager,
                                           String objectReference, int level) {
 
-    if (level > MAX_PARENT_HIERARCHY_EVALUATION_DEPTH) {
+    if ( level > TestRecorderSettings.getInstance().EVALUATION_DEPTH) {
       return;
     }
 
@@ -317,7 +315,8 @@ public class BreakpointCommand extends DebuggerCommandImpl {
 
     Value contentDescription = evaluateExpression(objectReference + ".getContentDescription()", evalContext, nodeManager);
 
-    if (childPosition != null || resourceId != null || contentDescription != null || text != null) {
+    if (!TestRecorderSettings.getInstance().CAP_AT_NON_IDENTIFIABLE_ELEMENTS
+        || childPosition != null || resourceId != null || contentDescription != null || text != null) {
       Value className = evaluateExpression(objectReference + ".getClass().getCanonicalName()", evalContext, nodeManager);
 
       event.addElementDescriptor(new ElementDescriptor(className == null ? "" : getStringValue(className),

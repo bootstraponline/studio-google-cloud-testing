@@ -25,12 +25,6 @@ import java.util.Map;
 
 public class UiAutomatorNodeHelper {
 
-  /**
-   * The number of UI hierarchy nodes, including the immediately affected one, used to identify the asserted element.
-   */
-  public static final int MAX_PARENT_HIERARCHY_ASSERTION_DEPTH = 3;
-
-
   public static LinkedHashMap<BasicTreeNode, Integer> createElementLevelMap(BasicTreeNode root) {
     // Map of tree node -> nesting level in the UI hierarchy.
     LinkedHashMap<BasicTreeNode, Integer> elementLevels = Maps.newLinkedHashMap();

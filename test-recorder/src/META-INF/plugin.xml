@@ -31,6 +31,7 @@
   <project-components>
   </project-components>
 
+
   <actions>
     <action id="GoogleCloudTesting.TestRecorder" class="com.google.gct.testrecorder.ui.TestRecorderAction" text="Record Espresso Test" description="Record Espresso test for selected configuration">
       <add-to-group group-id="RunMenu" anchor="after" relative-to-action="ChooseDebugConfiguration"/>
@@ -38,6 +39,11 @@
   </actions>
 
   <extensions defaultExtensionNs="com.intellij">
+    <projectConfigurable groupId="build" instance="com.google.gct.testrecorder.settings.TestRecorderSettingsConfigurable"
+                         id ="test.recorder" displayName="Espresso Test Recorder"/>
+    <applicationService serviceInterface="com.google.gct.testrecorder.settings.TestRecorderSettings"
+                        serviceImplementation="com.google.gct.testrecorder.settings.TestRecorderSettings"/>
+
   </extensions>
 
 </idea-plugin>
