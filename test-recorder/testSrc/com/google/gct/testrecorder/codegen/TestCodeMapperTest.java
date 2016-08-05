@@ -15,6 +15,8 @@
  */
 package com.google.gct.testrecorder.codegen;
 
+import com.google.gct.testrecorder.event.ElementDescriptor;
+import com.google.gct.testrecorder.event.TestRecorderEvent;
 import org.jetbrains.android.AndroidTestCase;
 
 public class TestCodeMapperTest extends AndroidTestCase {
@@ -23,6 +25,18 @@ public class TestCodeMapperTest extends AndroidTestCase {
     TestCodeMapper testCodeMapper = new TestCodeMapper("12345", false, myModule.getProject(), null);
     assertTrue(testCodeMapper.isOverflowMenuButton("android.widget.ActionMenuPresenter.OverflowMenuButton"));
     assertTrue(testCodeMapper.isOverflowMenuButton("android.support.v7.widget.ActionMenuPresenter.OverflowMenuButton"));
+  }
+
+  public void testCloseSoftKeyboardAfterTextEdit() {
+    TestCodeMapper testCodeMapper = new TestCodeMapper("12345", false, myModule.getProject(), null);
+
+    TestRecorderEvent textChangeEvent = new TestRecorderEvent(TestRecorderEvent.TEXT_CHANGE, System.currentTimeMillis());
+    textChangeEvent.addElementDescriptor(new ElementDescriptor("SomeClass", -1, "", "content description", ""));
+    textChangeEvent.setReplacementText("my text");
+
+    String espressoActionStatement = testCodeMapper.getTestCodeLinesForEvent(textChangeEvent).get(1);
+    assertTrue(espressoActionStatement.contains("replaceText(\"my text\")"));
+    assertTrue(espressoActionStatement.contains("closeSoftKeyboard()"));
   }
 
 }
