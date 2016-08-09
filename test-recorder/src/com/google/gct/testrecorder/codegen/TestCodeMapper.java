@@ -92,9 +92,11 @@ public class TestCodeMapper {
     } else if (event.isTextChange()) {
       if (myIsUsingCustomEspresso) {
         testCodeLines.add(createActionStatement(variableName, "clearText()", event.canScrollTo()));
-        testCodeLines.add(createActionStatement(variableName, "typeText(\"" + event.getReplacementText() + "\")", false));
+        testCodeLines.add(createActionStatement(
+          variableName, "typeText(\"" + event.getReplacementText() + "\"), closeSoftKeyboard()", false));
       } else {
-        testCodeLines.add(createActionStatement(variableName, "replaceText(\"" + event.getReplacementText() + "\")", event.canScrollTo()));
+        testCodeLines.add(createActionStatement(
+          variableName, "replaceText(\"" + event.getReplacementText() + "\"), closeSoftKeyboard()", event.canScrollTo()));
       }
     } else {
       throw new RuntimeException("Unsupported event type: " + event.getEventType());
