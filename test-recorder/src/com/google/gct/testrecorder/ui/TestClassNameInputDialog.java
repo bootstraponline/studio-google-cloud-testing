@@ -29,6 +29,7 @@ import com.intellij.openapi.roots.GeneratedSourcesFilter;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.ui.JBColor;
@@ -161,7 +162,7 @@ public class TestClassNameInputDialog extends DialogWrapper {
       for (SourceProvider sourceProvider : androidModel.getTestSourceProviders(ARTIFACT_ANDROID_TEST)) {
         for (File javaDirectory : sourceProvider.getJavaDirectories()) {
           try {
-            androidTestSourceRoots.add(javaDirectory.getCanonicalPath());
+            androidTestSourceRoots.add(FileUtil.toSystemIndependentName(javaDirectory.getCanonicalPath()));
           } catch (IOException e) {
             // ignore
           }
