@@ -18,6 +18,7 @@ package com.google.gct.testrecorder.ui;
 import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.AndroidRunConfiguration;
 import com.android.tools.idea.run.AndroidRunConfigurationType;
+import com.android.tools.idea.run.AndroidSessionInfo;
 import com.android.tools.idea.run.editor.DefaultActivityLaunch;
 import com.android.tools.idea.run.editor.LaunchOptionState;
 import com.android.tools.idea.run.editor.SpecificActivityLaunch;
@@ -145,6 +146,13 @@ public class TestRecorderAction extends AnAction {
     LaunchOptionState launchOptionState = runConfiguration.getLaunchOptionState(runConfiguration.MODE);
 
     ExecutionEnvironment environment = builder.activeTarget().dataContext(event.getDataContext()).build();
+
+    // Terminate any active Run or Debug session of the to-be-recorded run configuration.
+    // Even if it is a Run session, it still needs to be terminated, since the app will have to be restarted in debug mode.
+    AndroidSessionInfo oldSessionInfo = AndroidSessionInfo.findOldSession(module.getProject(), null, runConfiguration.getUniqueID());
+    if (oldSessionInfo != null) {
+      oldSessionInfo.getProcessHandler().detachProcess();
+    }
 
     try {
       environment.getRunner().execute(environment, new ProgramRunner.Callback() {
