@@ -135,8 +135,8 @@ public class CloudTestMatrixTargetConfigurable implements DeployTargetConfigurab
 
   @Override
   public void applyTo(@NotNull CloudTestMatrixTargetProvider.State state, int configurationId) {
-    // Store the state only if there is some, i.e., the user is logged in.
-    if (isUserLoggedIn()) {
+    // Store the state only if there is some, i.e., the user is logged in and a proper configuration is selected.
+    if (isUserLoggedIn() && myCloudConfigurationComboBox.getComboBox().getSelectedItem() instanceof CloudConfiguration) {
       CloudConfiguration selectedConfiguration = (CloudConfiguration)myCloudConfigurationComboBox.getComboBox().getSelectedItem();
       state.SELECTED_CLOUD_MATRIX_CONFIGURATION_ID = selectedConfiguration == null ? -1 : selectedConfiguration.getId();
       state.SELECTED_CLOUD_MATRIX_PROJECT_ID = myCloudProjectIdLabel.getProjectId();

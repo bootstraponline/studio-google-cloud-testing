@@ -15,9 +15,11 @@
  */
 package com.google.gct.testing.android;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.gct.testing.CloudConfigurationHelper;
 import com.google.gct.testing.android.CloudConfiguration.Kind;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.util.Pair;
 import com.intellij.ui.ColoredListCellRenderer;
@@ -45,11 +47,13 @@ import java.util.Map;
  * change is also propagated to other instances of this class via the {@link CloudConfigurationCoordinator}.
  */
 public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
+  private final static List<String> LOADING_CONFIGURATIONS = ImmutableList.of("Loading configurations...");
+
   private final Kind myConfigurationKind;
   private int myCurrentAndroidConfigurationId = -1;
   private Module myCurrentModule;
   private AndroidFacet myCurrentFacet;
-  private List<? extends CloudConfiguration> myTestingConfigurations;
+  private volatile List<? extends CloudConfiguration> myTestingConfigurations;
   private ActionListener myActionListener;
 
   // Used to keep track of user choices when run config and/or module are not available.
@@ -97,10 +101,12 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
 
     myCurrentFacet = facet;
     myCurrentModule = myCurrentFacet.getModule();
-    myTestingConfigurations = CloudConfigurationHelper.getCloudConfigurations(myCurrentFacet, myConfigurationKind);
 
     // Since setFacet can be called multiple times, make sure to remove any previously registered listeners.
     removeActionListener(myActionListener);
+
+    getComboBox().setModel(new ListComboBoxModel(LOADING_CONFIGURATIONS));
+    setEnabled(false);
 
     myActionListener = new ActionListener() {
       @Override
@@ -119,9 +125,23 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
         getComboBox().updateUI();
       }
     };
+
     addActionListener(myActionListener);
 
-    updateContent();
+    // Do not block the UI thread while getting cloud configurations (which might require network communication).
+    ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+      @Override
+      public void run() {
+        myTestingConfigurations = CloudConfigurationHelper.getCloudConfigurations(myCurrentFacet, myConfigurationKind);
+        SwingUtilities.invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            updateContent();
+            setEnabled(true);
+          }
+        });
+      }
+    });
   }
 
   public void setRunConfigurationId(int configurationId) {
@@ -192,6 +212,8 @@ public class CloudConfigurationComboBox extends ComboboxWithBrowseButton {
         append(config.getDisplayName(),
                config.getDeviceConfigurationCount() < 1 ? SimpleTextAttributes.ERROR_ATTRIBUTES : SimpleTextAttributes.REGULAR_ATTRIBUTES);
         setIcon(config.getIcon());
+      } else {
+        append(String.valueOf(value));
       }
     }
   }
