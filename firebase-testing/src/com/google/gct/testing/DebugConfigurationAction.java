@@ -17,6 +17,7 @@ package com.google.gct.testing;
 
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
+import com.android.tools.idea.run.TargetSelectionMode;
 import com.android.tools.idea.run.editor.DeployTargetProvider;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.android.tools.idea.stats.UsageTracker;
@@ -210,7 +211,7 @@ public class DebugConfigurationAction extends AnAction {
       // Clone the run configuration such that we do not need to reuse and restore the original one.
       final AndroidTestRunConfiguration runConfiguration = (AndroidTestRunConfiguration) ((AndroidTestRunConfiguration)runProfile).clone();
       for (DeployTargetProvider deployTargetProvider : DeployTargetProvider.getProviders()) {
-        if (deployTargetProvider.getId().equals(CloudDebuggingTargetProvider.ID)) {
+        if (deployTargetProvider.getId().equals(TargetSelectionMode.FIREBASE_DEVICE_DEBUGGING.name())) {
           ((CloudDebuggingTargetProvider)deployTargetProvider).setCloudDeviceSerialNumber(deviceSerialNumber);
           runConfiguration.setTargetSelectionMode(deployTargetProvider);
           if (className != null) {

@@ -32,9 +32,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class CloudDebuggingTargetProvider extends DeployTargetProvider {
-
-  public static final String ID = "FIREBASE_DEVICE_DEBUGGING";
-
   private String myCloudDeviceSerialNumber;
 
 
@@ -50,7 +47,7 @@ public class CloudDebuggingTargetProvider extends DeployTargetProvider {
   @NotNull
   @Override
   public String getId() {
-    return ID;
+    return TargetSelectionMode.FIREBASE_DEVICE_DEBUGGING.name();
   }
 
   @NotNull
