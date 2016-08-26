@@ -425,7 +425,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myScreenshotPanel.setVisible(false);
 
     myDisclaimerPane = new JEditorPane(
-      UIUtil.HTML_MIME, "<html><a href='https://developer.android.com/r/studio-ui/test-recorder.html'>Espresso Test Recorder</a> is currently experimental. "
+      UIUtil.HTML_MIME, "<html><a href='https://developer.android.com/r/studio-ui/test-recorder.html'>Espresso Test Recorder</a> is currently in beta. "
                         + "Please <a href='https://code.google.com/p/android/issues/entry?template=Espresso%20Test%20Recorder%20Bug'>report any issues</a>.</html>");
 
     myDisclaimerPane.setFont(myDisclaimerPane.getFont().deriveFont(12f));
