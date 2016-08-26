@@ -15,10 +15,7 @@
  */
 package com.google.gct.testing.android;
 
-import com.android.tools.idea.run.DeviceCount;
-import com.android.tools.idea.run.DeviceFutures;
-import com.android.tools.idea.run.LaunchCompatibilityCheckerImpl;
-import com.android.tools.idea.run.ValidationError;
+import com.android.tools.idea.run.*;
 import com.android.tools.idea.run.editor.*;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.google.api.client.util.Maps;
@@ -54,7 +51,7 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
   @NotNull
   @Override
   public String getId() {
-    return "FIREBASE_DEVICE_MATRIX";
+    return TargetSelectionMode.FIREBASE_DEVICE_MATRIX.name();
   }
 
   @NotNull
