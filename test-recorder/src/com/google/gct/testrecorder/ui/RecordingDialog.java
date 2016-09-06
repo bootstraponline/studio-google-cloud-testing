@@ -19,9 +19,9 @@ import com.android.ddmlib.IDevice;
 import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.gradle.AndroidGradleModel;
 import com.android.tools.idea.gradle.dsl.model.GradleBuildModel;
-import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencySpec;
 import com.android.tools.idea.gradle.dsl.model.android.AndroidModel;
-import com.android.tools.idea.gradle.project.GradleProjectImporter;
+import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencySpec;
+import com.android.tools.idea.gradle.project.sync.GradleSyncInvoker;
 import com.android.tools.idea.gradle.util.GradleUtil;
 import com.android.uiautomator.UiAutomatorModel;
 import com.android.uiautomator.tree.BasicTreeNode;
@@ -557,7 +557,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
           myGradleBuildModel.applyChanges();
 
-          GradleProjectImporter.getInstance().requestProjectSync(myProject, null);
+          GradleSyncInvoker.getInstance().requestProjectSyncAndSourceGeneration(myProject, null);
         });
       }
     }.queue();
