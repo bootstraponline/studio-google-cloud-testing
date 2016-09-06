@@ -410,7 +410,9 @@ public final class CloudConfigurationHelper {
     final long POLLING_INTERVAL = 10 * 1000; // 10 seconds
     final long INITIAL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
     long stopTime = System.currentTimeMillis() + INITIAL_TIMEOUT;
-    String sdkPath = IdeSdks.getAndroidSdkPath().getAbsolutePath() + "/platform-tools";
+    File androidSdkPath = IdeSdks.getInstance().getAndroidSdkPath();
+    assert androidSdkPath != null;
+    String sdkPath = androidSdkPath.getAbsolutePath() + "/platform-tools";
     File workingDir = new File(sdkPath);
     try {
       while (System.currentTimeMillis() < stopTime) {
