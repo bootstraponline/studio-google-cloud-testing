@@ -54,6 +54,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.util.List;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 public class TestRecorderAction extends AnAction {
   public static final Icon TEST_RECORDER_ICON = IconLoader.getIcon("circle_small.png", TestRecorderAction.class);
 
@@ -163,7 +165,8 @@ public class TestRecorderAction extends AnAction {
         }
       });
     } catch (ExecutionException e) {
-      throw new RuntimeException("Could not start debugging of the app: ", e);
+      String message = isEmpty(e.getMessage()) ? "Unknown error" : e.getMessage();
+      Messages.showDialog(myProject, message, "Could not start debugging of the app", new String[]{"OK"}, 0, null);
     }
   }
 
