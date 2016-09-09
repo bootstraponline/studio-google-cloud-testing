@@ -25,6 +25,14 @@ import java.util.Map;
 
 public class UiAutomatorNodeHelper {
 
+  public static int getRotation(BasicTreeNode root) {
+    if (!(root instanceof RootWindowNode)) {
+      return 0; // Standard portrait is the default mode.
+    }
+
+    return ((RootWindowNode)root).getRotation();
+  }
+
   public static LinkedHashMap<BasicTreeNode, Integer> createElementLevelMap(BasicTreeNode root) {
     // Map of tree node -> nesting level in the UI hierarchy.
     LinkedHashMap<BasicTreeNode, Integer> elementLevels = Maps.newLinkedHashMap();

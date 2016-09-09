@@ -71,6 +71,7 @@ import static com.android.tools.idea.gradle.dsl.model.dependencies.CommonConfigu
 import static com.android.tools.idea.templates.SupportLibrary.*;
 import static com.google.gct.testrecorder.event.TestRecorderAssertion.*;
 import static com.google.gct.testrecorder.event.TestRecorderEvent.SUPPORTED_EVENTS;
+import static com.google.gct.testrecorder.util.ImageHelper.rotateImage;
 import static com.google.gct.testrecorder.util.UiAutomatorNodeHelper.*;
 
 public class RecordingDialog extends DialogWrapper implements TestRecorderEventListener {
@@ -163,12 +164,13 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
       public void actionPerformed(ActionEvent actionEvent) {
         new TestRecorderScreenshotTask(myProject, myDevice, myPackageName, new ScreenshotCallback() {
           @Override
-          public void onSuccess(BufferedImage image, UiAutomatorModel model) {
+          public void onSuccess(BufferedImage initialImage, UiAutomatorModel model) {
             myAssertionMode = true;
             getRootPane().setDefaultButton(mySaveAssertionButton);
-            myScreenshotPanel.updateScreenShot(image, model);
+            BasicTreeNode root = model.getXmlRootNode();
+            BufferedImage preparedImage = rotateImage(initialImage, getRotation(root));
+            myScreenshotPanel.updateScreenShot(preparedImage, model);
             // Populate drop down menu
-            BasicTreeNode root = myScreenshotPanel.getModel().getXmlRootNode();
             myNodeIndentMap = createElementLevelMap(root);
             myElementComboBoxModel = new DefaultComboBoxModel(myNodeIndentMap.keySet().toArray());
             // Add a default element for drop down menu
@@ -181,7 +183,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
             // Remember the index of to-be-added assertion.
             myAssertionIndex = myEventListModel.size();
 
-            revealScreenshotPanel(image.getWidth(), image.getHeight());
+            revealScreenshotPanel(preparedImage.getWidth(), preparedImage.getHeight());
           }
         }).queue();
       }
@@ -365,9 +367,12 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myScreenshotPanel.setVisible(true);
 
     final int screenshotPanelTotalHeight = myRootPanel.getHeight();
-    final int screenshotPanelTotalWidth = imageHeight <= screenshotPanelTotalHeight
-                                          ? imageWidth
-                                          : (int) ((double) (imageWidth * screenshotPanelTotalHeight) / imageHeight);
+    int scaledImageWidth = imageHeight <= screenshotPanelTotalHeight
+                           ? imageWidth
+                           : (int) ((double) (imageWidth * screenshotPanelTotalHeight) / imageHeight);
+
+    // Cap panel width to not be greater than panel height.
+    final int screenshotPanelTotalWidth = scaledImageWidth > screenshotPanelTotalHeight ? screenshotPanelTotalHeight : scaledImageWidth;
 
     final Timer t = new Timer(ANIMATION_TIMER_INTERVAL, null);
     final long start = System.currentTimeMillis();
