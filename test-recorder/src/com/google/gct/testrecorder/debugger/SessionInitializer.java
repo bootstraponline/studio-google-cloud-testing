@@ -112,6 +112,7 @@ public class SessionInitializer implements Runnable {
                                                          "(Landroid/view/inputmethod/InputMethodManager$PendingEvent;Z)V", false));
 
     myBreakpointDescriptors.add(new BreakpointDescriptor(PRESS_EDITOR_ACTION, "android.widget.TextView", "onEditorAction", "(I)V", false));
+    myBreakpointDescriptors.add(new BreakpointDescriptor(VIEW_SWIPE, "android.support.v4.view.ViewPager", "smoothScrollTo", "(III)V", false));
   }
 
   @Override

@@ -19,6 +19,8 @@ import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import org.jetbrains.android.AndroidTestCase;
 
+import static com.google.gct.testrecorder.event.TestRecorderEvent.SwipeDirection.Right;
+
 public class TestCodeMapperTest extends AndroidTestCase {
 
   public void testIsOverflowMenuButton() throws Exception {
@@ -39,4 +41,14 @@ public class TestCodeMapperTest extends AndroidTestCase {
     assertTrue(espressoActionStatement.contains("closeSoftKeyboard()"));
   }
 
+  public void testSwipeAction() {
+    TestCodeMapper testCodeMapper = new TestCodeMapper("12345", false, myModule.getProject(), null);
+
+    TestRecorderEvent textChangeEvent = new TestRecorderEvent(TestRecorderEvent.VIEW_SWIPE, System.currentTimeMillis());
+    textChangeEvent.addElementDescriptor(new ElementDescriptor("SomeClass", -1, "", "content description", ""));
+    textChangeEvent.setSwipeDirection(Right);
+
+    String espressoActionStatement = testCodeMapper.getTestCodeLinesForEvent(textChangeEvent).get(1);
+    assertTrue(espressoActionStatement.equals("someClass.perform(swipeRight());"));
+  }
 }

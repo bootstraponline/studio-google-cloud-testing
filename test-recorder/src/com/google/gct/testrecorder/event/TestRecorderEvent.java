@@ -21,15 +21,18 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 
 public class TestRecorderEvent extends ElementAction {
+  public enum SwipeDirection {Left, Right, Up, Down}
+
   public static final String VIEW_CLICK = "VIEW_CLICKED";
   public static final String VIEW_LONG_CLICK = "VIEW_LONG_CLICKED";
   public static final String LIST_ITEM_CLICK = "LIST_ITEM_CLICKED";
   public static final String TEXT_CHANGE = "VIEW_TEXT_CHANGED";
   public static final String PRESS_BACK = "PRESSED_BACK";
   public static final String PRESS_EDITOR_ACTION = "PRESSED_EDITOR_ACTION"; // RETURN key on the soft keyboard.
+  public static final String VIEW_SWIPE = "VIEW_SWIPED";
 
   public static final HashSet<String> SUPPORTED_EVENTS =
-    Sets.newHashSet(VIEW_CLICK, VIEW_LONG_CLICK, LIST_ITEM_CLICK, TEXT_CHANGE, PRESS_BACK, PRESS_EDITOR_ACTION);
+    Sets.newHashSet(VIEW_CLICK, VIEW_LONG_CLICK, LIST_ITEM_CLICK, TEXT_CHANGE, PRESS_BACK, PRESS_EDITOR_ACTION, VIEW_SWIPE);
 
   /**
    * View click, menu item click, text change, etc.
@@ -62,6 +65,10 @@ public class TestRecorderEvent extends ElementAction {
    */
   private int actionCode = -1;
 
+  /**
+   * Represents the direction of swipe performed by the user, if any.
+   */
+  private SwipeDirection swipeDirection = null;
 
 
   public TestRecorderEvent(String eventType, long timestamp) {
@@ -93,6 +100,10 @@ public class TestRecorderEvent extends ElementAction {
     return actionCode;
   }
 
+  public SwipeDirection getSwipeDirection() {
+    return swipeDirection;
+  }
+
   public void setChecked(boolean checked) {
     isChecked = checked;
   }
@@ -107,6 +118,10 @@ public class TestRecorderEvent extends ElementAction {
 
   public void setActionCode(int actionCode) {
     this.actionCode = actionCode;
+  }
+
+  public void setSwipeDirection(SwipeDirection swipeDirection) {
+    this.swipeDirection = swipeDirection;
   }
 
   public boolean isViewClick() {
@@ -141,8 +156,16 @@ public class TestRecorderEvent extends ElementAction {
     return isPressBack() || isPressEditorAction();
   }
 
+  public boolean isSwipe() {
+    return VIEW_SWIPE.equals(eventType);
+  }
+
   @Override
   public String getRendererString() {
+    if (isSwipe()) {
+      return getIdAttributeDisplayPresentation("", getSwipeDirection().name());
+    }
+
     if (isPressEvent()) {
       return getIdAttributeDisplayPresentation("", isPressBack() ? "Back" : getRendererActionCode());
     }

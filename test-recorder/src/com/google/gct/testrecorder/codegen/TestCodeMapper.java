@@ -15,6 +15,7 @@
  */
 package com.google.gct.testrecorder.codegen;
 
+import com.android.SdkConstants;
 import com.android.annotations.VisibleForTesting;
 import com.android.resources.ResourceType;
 import com.android.utils.Pair;
@@ -79,7 +80,9 @@ public class TestCodeMapper {
     }
 
     String variableName = addViewPickingStatement(event, testCodeLines);
-    if (event.isPressEditorAction()) {
+    if (event.isSwipe()) {
+      testCodeLines.add(createActionStatement(variableName, "swipe" + event.getSwipeDirection().name() + "()", false));
+    } else if (event.isPressEditorAction()) {
       // TODO: If this is the same element that was just edited, consider reusing the same view interaction (i.e., variable name).
       testCodeLines.add(createActionStatement(variableName, "pressImeActionButton()", false));
     } else if (event.isClickEvent()) {
@@ -216,6 +219,12 @@ public class TestCodeMapper {
 
     boolean addAllOf = matcherBuilder.getMatcherCount() > 0 || addIsDisplayed;
     int childPosition = elementDescriptor.getChildPosition();
+
+    // Do not use child position for ViewPager children as it changes dynamically and non-deterministically.
+    if (SdkConstants.CLASS_VIEW_PAGER.equals(elementDescriptors.get(index + 1).getClassName())) {
+      childPosition = -1;
+    }
+
     myIsChildAtPositionAdded = myIsChildAtPositionAdded || childPosition != -1;
 
     return (addAllOf ? "allOf(" : "") + matcherBuilder.getMatchers() + (matcherBuilder.getMatcherCount() > 0 ? ",\n" : "")

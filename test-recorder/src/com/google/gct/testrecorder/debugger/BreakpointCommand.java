@@ -75,6 +75,11 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   protected void action() throws Exception {
     final Location location = getBreakpointLocation();
 
+    if (location == null) {
+      // No valid location => nothing to do.
+      return;
+    }
+
     myRequest = myDebugProcess.getRequestsManager().createBreakpointRequest(new FilteredRequestorAdapter() {
       @Override
       public boolean processLocatableEvent(SuspendContextCommandImpl action, LocatableEvent event) throws EventProcessingException {
@@ -134,11 +139,29 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     myEventListener = listener;
   }
 
-  private Location getBreakpointLocation() {
+  private @Nullable Location getBreakpointLocation() {
     List<ReferenceType> referenceTypes = myDebugProcess.getVirtualMachineProxy().classesByName(myBreakpointDescriptor.className);
 
+    // Some classes are loaded lazily, e.g., those that come from libraries like android.support.v4.view.ViewPager, so try several
+    // times before giving up on finding them (10 seconds).
+    // TODO: Find a way to detect that the app is fully launched rather than estimating that it should start running in at most 10 seconds.
+    final int maxAttempts = 20;
+    int attempt = 0;
+    while (referenceTypes.isEmpty() && attempt < maxAttempts) {
+      attempt++;
+      try {
+        Thread.sleep(500); // Sleep for a half a second.
+      } catch (InterruptedException e) {
+        //ignore
+      }
+
+      referenceTypes = myDebugProcess.getVirtualMachineProxy().classesByName(myBreakpointDescriptor.className);
+    }
+
     if (referenceTypes.isEmpty()) {
-      throw new RuntimeException("Could not find class " + myBreakpointDescriptor.className);
+      // Do not throw here, as some library classes might be missing, e.g., android.support.v4.view.ViewPager.
+      LOGGER.warn("Could not find class " + myBreakpointDescriptor.className);
+      return null;
     }
 
     if (referenceTypes.size() > 1) {
@@ -190,11 +213,39 @@ public class BreakpointCommand extends DebuggerCommandImpl {
 
     populateElementDescriptors(event, evalContext, nodeManager, receiverReference, 1);
 
+    if (event.isSwipe()) {
+      // TODO: Is it always the case that detecting the need to scroll is not required for swipe actions?
+      return completeSwipeEvent(event, evalContext, nodeManager);
+    }
+
     if (event.getElementDescriptorsCount() > 0) {
       event.setReplacementText(event.getElementDescriptor(0).getText());
     }
 
     setScrollableState(event, evalContext, nodeManager, receiverReference + PARENT_NODE_CALL, 2);
+
+    return event;
+  }
+
+  @Nullable
+  private TestRecorderEvent completeSwipeEvent(TestRecorderEvent event, EvaluationContextImpl evalContext, NodeManagerImpl nodeManager) {
+    // TODO: These values might not match those computed by Android framework if the widget was already scrolling.
+    Value dxValue = evaluateExpression("x - getScrollX()", evalContext, nodeManager);
+    Value dyValue = evaluateExpression("y - getScrollY()", evalContext, nodeManager);
+
+    int dx = dxValue == null ? 0 : Integer.parseInt(getStringValue(dxValue));
+    int dy = dyValue == null ? 0 : Integer.parseInt(getStringValue(dyValue));
+
+    if (dx == 0 && dy == 0) {
+      // No swipe detected.
+      return null;
+    }
+
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      event.setSwipeDirection(dx < 0 ? SwipeDirection.Right : SwipeDirection.Left);
+    } else {
+      event.setSwipeDirection(dy < 0 ? SwipeDirection.Down : SwipeDirection.Up);
+    }
 
     return event;
   }
