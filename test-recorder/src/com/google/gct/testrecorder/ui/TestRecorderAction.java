@@ -24,10 +24,10 @@ import com.android.tools.idea.run.editor.LaunchOptionState;
 import com.android.tools.idea.run.editor.SpecificActivityLaunch;
 import com.google.common.collect.Lists;
 import com.google.gct.testrecorder.debugger.SessionInitializer;
+import com.google.gct.testrecorder.run.TestRecorderAndroidRunConfiguration;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
 import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
-import com.intellij.execution.ExecutionException;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.configurations.RunConfiguration;
@@ -130,7 +130,7 @@ public class TestRecorderAction extends AnAction {
   }
 
   private void launchTestRecorder(AnActionEvent event, AndroidRunConfiguration runConfiguration) {
-    AndroidRunConfiguration testRecorderConfiguration = (AndroidRunConfiguration) runConfiguration.clone();
+    TestRecorderAndroidRunConfiguration testRecorderConfiguration = new TestRecorderAndroidRunConfiguration(runConfiguration);
     ExecutionEnvironmentBuilder builder = ExecutionEnvironmentBuilder.createOrNull(
       testRecorderConfiguration.getProject(), DefaultDebugExecutor.getDebugExecutorInstance(), testRecorderConfiguration);
 
@@ -164,7 +164,7 @@ public class TestRecorderAction extends AnAction {
             new SessionInitializer(facet, environment, launchOptionState, testRecorderConfiguration.getUniqueID()));
         }
       });
-    } catch (ExecutionException e) {
+    } catch (Exception e) {
       String message = isEmpty(e.getMessage()) ? "Unknown error" : e.getMessage();
       Messages.showDialog(myProject, message, "Could not start debugging of the app", new String[]{"OK"}, 0, null);
     }
