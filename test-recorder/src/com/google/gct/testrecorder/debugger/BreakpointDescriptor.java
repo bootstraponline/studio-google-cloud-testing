@@ -38,4 +38,9 @@ public class BreakpointDescriptor {
     this.methodSignature = methodSignature;
     this.isPreparatory = isPreparatory;
   }
+
+  @Override
+  public String toString() {
+    return "BreakpointDescriptor[" + eventType + ", " + className + ", " + methodName + ", " + methodSignature + ", " + isPreparatory + "]";
+  }
 }

@@ -19,6 +19,7 @@ import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import com.google.gct.testrecorder.event.TestRecorderEventListener;
 import com.google.gct.testrecorder.settings.TestRecorderSettings;
+import com.intellij.concurrency.JobScheduler;
 import com.intellij.debugger.InstanceFilter;
 import com.intellij.debugger.engine.DebugProcessImpl;
 import com.intellij.debugger.engine.JavaStackFrame;
@@ -44,6 +45,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.google.gct.testrecorder.event.TestRecorderEvent.*;
 
@@ -52,10 +54,18 @@ public class BreakpointCommand extends DebuggerCommandImpl {
 
   private final static String PARENT_NODE_CALL = ".getParent()";
 
+  // Some classes are loaded lazily, e.g., those that come from libraries like android.support.v4.view.ViewPager, so try several
+  // times before giving up on scheduling a breakpoint in them (10 seconds).
+  // TODO: Find a way to detect that the app is fully launched rather than estimating that it should start running in at most 10 seconds.
+  private final static int MAX_SCHEDULE_ATTEMPTS = 20;
+  private final static long INTER_ATTEMPTS_WAIT = 500; // milliseconds
+
   private final DebugProcessImpl myDebugProcess;
   private final BreakpointDescriptor myBreakpointDescriptor;
   private volatile TestRecorderEventListener myEventListener;
   private volatile BreakpointRequest myRequest;
+  private int myCurrentScheduleAttempt = 0;
+  private volatile boolean myIsDisabled = false;
 
   private static TestRecorderEvent preparatoryTextChangeEvent;
 
@@ -66,6 +76,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   }
 
   public void disable() {
+    myIsDisabled = true;
     if (myRequest != null) {
       myRequest.disable();
     }
@@ -73,10 +84,25 @@ public class BreakpointCommand extends DebuggerCommandImpl {
 
   @Override
   protected void action() throws Exception {
+    if (myIsDisabled) {
+      return;
+    }
+
     final Location location = getBreakpointLocation();
 
     if (location == null) {
-      // No valid location => nothing to do.
+      if (myCurrentScheduleAttempt < MAX_SCHEDULE_ATTEMPTS) {
+        myCurrentScheduleAttempt++;
+        final BreakpointCommand thisCommand = this;
+        JobScheduler.getScheduler().schedule(new Runnable() {
+          @Override
+          public void run() {
+            myDebugProcess.getManagerThread().schedule(thisCommand);
+          }
+        }, INTER_ATTEMPTS_WAIT, TimeUnit.MILLISECONDS);
+      } else {
+        LOGGER.warn("Could not set breakpoint " + myBreakpointDescriptor);
+      }
       return;
     }
 
@@ -142,25 +168,7 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   private @Nullable Location getBreakpointLocation() {
     List<ReferenceType> referenceTypes = myDebugProcess.getVirtualMachineProxy().classesByName(myBreakpointDescriptor.className);
 
-    // Some classes are loaded lazily, e.g., those that come from libraries like android.support.v4.view.ViewPager, so try several
-    // times before giving up on finding them (10 seconds).
-    // TODO: Find a way to detect that the app is fully launched rather than estimating that it should start running in at most 10 seconds.
-    final int maxAttempts = 20;
-    int attempt = 0;
-    while (referenceTypes.isEmpty() && attempt < maxAttempts) {
-      attempt++;
-      try {
-        Thread.sleep(500); // Sleep for a half a second.
-      } catch (InterruptedException e) {
-        //ignore
-      }
-
-      referenceTypes = myDebugProcess.getVirtualMachineProxy().classesByName(myBreakpointDescriptor.className);
-    }
-
     if (referenceTypes.isEmpty()) {
-      // Do not throw here, as some library classes might be missing, e.g., android.support.v4.view.ViewPager.
-      LOGGER.warn("Could not find class " + myBreakpointDescriptor.className);
       return null;
     }
 
