@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 public class SetActiveCloudMatrixEvent extends TreeNodeEvent {
 
   public SetActiveCloudMatrixEvent() {
-    super("", -1);
+    super("", null);
   }
 
   @Override

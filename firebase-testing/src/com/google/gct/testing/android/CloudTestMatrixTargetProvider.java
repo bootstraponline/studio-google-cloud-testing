@@ -67,7 +67,7 @@ public class CloudTestMatrixTargetProvider extends DeployTargetProvider {
   }
 
   @Override
-  public DeployTargetConfigurable createConfigurable(@NotNull Project project, Disposable parentDisposable,
+  public DeployTargetConfigurable createConfigurable(@NotNull Project project, @NotNull Disposable parentDisposable,
                                                      @NotNull DeployTargetConfigurableContext context) {
     return new CloudTestMatrixTargetConfigurable(project, parentDisposable, context);
   }
