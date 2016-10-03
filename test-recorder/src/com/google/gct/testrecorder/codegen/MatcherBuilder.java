@@ -15,11 +15,11 @@
  */
 package com.google.gct.testrecorder.codegen;
 
+import com.android.tools.idea.lint.LintIdeUtils;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.search.GlobalSearchScope;
-import org.jetbrains.android.inspections.lint.IntellijLintUtils;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.gct.testrecorder.codegen.MatcherBuilder.Kind.ClassName;
@@ -65,7 +65,7 @@ public class MatcherBuilder {
   private String getInternalName(String className) {
     PsiClass psiClass = JavaPsiFacade.getInstance(myProject).findClass(className, GlobalSearchScope.allScope(myProject));
     if (psiClass != null) {
-      String intellijInternalName = IntellijLintUtils.getInternalName(psiClass);
+      String intellijInternalName = LintIdeUtils.getInternalName(psiClass);
       if (intellijInternalName != null) {
         return intellijInternalName.replace('/', '.');
       }
