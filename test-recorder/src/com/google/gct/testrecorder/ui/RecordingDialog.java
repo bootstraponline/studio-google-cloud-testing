@@ -307,6 +307,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
         // androidModel will be null when the Gradle experimental plugin is used and it's not possible to update the instrumentation runner.
         // TODO: Provide an appropriate error message or some alternative way to update instrumentation runner when the Gradle experimental
         // plugin is used.
+        boolean hasAddedEspressoDependencies = false;
         if (androidModel != null && !hasAllRequiredEspressoDependencies(androidModel)) {
           UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
                                          .setCategory(EventCategory.TEST_RECORDER)
@@ -319,7 +320,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
                                   "Please click on the corresponding link(s) to install them.",
                                   "Missing Espresso dependencies",
                                   new String[]{Messages.NO_BUTTON, Messages.YES_BUTTON}, 1, null) != 0) {
-
+            hasAddedEspressoDependencies = true;
             setupEspresso();
           }
         }
@@ -334,7 +335,8 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
         if (testClass != null) {
           doOKAction();
-          new TestCodeGenerator(myFacet, testClass, events, launchedActivityName, hasCustomEspressoDependency()).generate();
+          new TestCodeGenerator(
+            myFacet, testClass, events, launchedActivityName, hasCustomEspressoDependency(), hasAddedEspressoDependencies).generate();
         }
       }
     });
