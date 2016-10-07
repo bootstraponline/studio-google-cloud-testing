@@ -80,16 +80,18 @@ public class TestCodeGenerator {
   private final Project myProject;
   private final String myLaunchedActivityName;
   private final boolean myHasCustomEspressoDependency;
+  private final boolean myHasAddedEspressoDependencies;
 
 
   public TestCodeGenerator(AndroidFacet facet, PsiClass testClass, List<Object> events, String launchedActivityName,
-                           boolean hasCustomEspressoDependency) {
+                           boolean hasCustomEspressoDependency, boolean hasAddedEspressoDependencies) {
     myFacet = facet;
     myTestClass = testClass;
     myEvents = events;
     myProject = myFacet.getModule().getProject();
     myLaunchedActivityName = launchedActivityName;
     myHasCustomEspressoDependency = hasCustomEspressoDependency;
+    myHasAddedEspressoDependencies = hasAddedEspressoDependencies;
   }
 
   public void generate() {
@@ -149,24 +151,28 @@ public class TestCodeGenerator {
           }
         }
 
-        new OptimizeImportsProcessor(myProject, testPsiFile).run();
-        new ReformatCodeProcessor(myProject, testPsiFile, null, false).run();
+        if (myHasAddedEspressoDependencies) {
+          // If the test class is generated after some Espresso dependencies were just added (and even after Gradle sync finished),
+          // the initial imports optimization attempt might not do its job properly (including dropping some needed dependencies
+          // like org.hamcrest.Matchers.allOf), so invoke it after some time (hopefully, after the indexing of the newly generated file
+          // has finished).
+          // TODO: Find a better solution that would not depend on time.
+          JobScheduler.getScheduler().schedule(new Runnable() {
+            @Override
+            public void run() {
+              SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                  new OptimizeImportsProcessor(myProject, testPsiFile).run();
+                }
+              });
+            }
+          }, 10, TimeUnit.SECONDS);
+        } else {
+          new OptimizeImportsProcessor(myProject, testPsiFile).run();
+        }
 
-        // If the test class is generated after some Espresso dependencies were just added (and even after Gradle sync finished),
-        // the initial imports optimization attempt might not do its job properly, so try again after some time
-        // (hopefully, after the indexing of the newly generated file has finished).
-        // TODO: Find a better solution that would not depend on time.
-        JobScheduler.getScheduler().schedule(new Runnable() {
-          @Override
-          public void run() {
-            SwingUtilities.invokeLater(new Runnable() {
-              @Override
-              public void run() {
-                new OptimizeImportsProcessor(myProject, testPsiFile).run();
-              }
-            });
-          }
-        }, 10, TimeUnit.SECONDS);
+        new ReformatCodeProcessor(myProject, testPsiFile, null, false).run();
       }
     });
   }
