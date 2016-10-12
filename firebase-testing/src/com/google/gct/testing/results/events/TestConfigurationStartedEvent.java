@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 public class TestConfigurationStartedEvent extends BaseStartedNodeEvent {
 
   public TestConfigurationStartedEvent(@NotNull String configurationName) {
-    super(configurationName, -1, -1, null, null, null, true);
+    super(configurationName, null, null, null, null, null, true);
   }
 
 }

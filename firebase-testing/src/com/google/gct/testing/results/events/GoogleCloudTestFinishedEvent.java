@@ -33,7 +33,7 @@ public class GoogleCloudTestFinishedEvent extends TestFinishedEvent {
   }
 
   public GoogleCloudTestFinishedEvent(@Nullable String name,
-                                      int id,
+                                      @Nullable String id,
                                       long duration,
                                       @NotNull String configuration,
                                       @NotNull String className) {
@@ -43,7 +43,7 @@ public class GoogleCloudTestFinishedEvent extends TestFinishedEvent {
   }
 
   public GoogleCloudTestFinishedEvent(@NotNull String name, int duration, @NotNull String configuration, @NotNull String className) {
-    this(name, -1, duration, configuration, className);
+    this(name, null, duration, configuration, className);
   }
 
   @Override

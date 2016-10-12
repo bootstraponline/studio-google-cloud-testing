@@ -16,7 +16,6 @@
 package com.google.gct.testing.results;
 
 import com.intellij.execution.testframework.sm.SMTestsRunnerBundle;
-import com.intellij.execution.testframework.sm.runner.ui.statistics.ColoredRenderer;
 import com.intellij.ui.ColoredTableCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +52,7 @@ public class GoogleCloudTestingColumnTest extends GoogleCloudTestingBaseColumn i
     return new TestsCellRenderer();
   }
 
-  public static class TestsCellRenderer extends ColoredTableCellRenderer implements ColoredRenderer {
+  public static class TestsCellRenderer extends ColoredTableCellRenderer {
     @Override
     public void customizeCellRenderer(final JTable table,
                                          final Object value,

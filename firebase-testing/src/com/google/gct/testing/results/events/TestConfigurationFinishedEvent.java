@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 public class TestConfigurationFinishedEvent extends TreeNodeEvent {
 
   public TestConfigurationFinishedEvent(@NotNull String configurationName) {
-    super(configurationName, -1);
+    super(configurationName, null);
   }
 
   @Override

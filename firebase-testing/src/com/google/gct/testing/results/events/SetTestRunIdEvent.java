@@ -23,7 +23,7 @@ public class SetTestRunIdEvent extends TreeNodeEvent {
   private final String testRunId;
 
   public SetTestRunIdEvent(String testRunId) {
-    super("", -1);
+    super("", null);
     this.testRunId = testRunId;
   }
 

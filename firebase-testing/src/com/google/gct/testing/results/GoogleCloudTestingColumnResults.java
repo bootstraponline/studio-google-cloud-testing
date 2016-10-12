@@ -17,7 +17,6 @@ package com.google.gct.testing.results;
 
 import com.intellij.execution.testframework.sm.SMTestsRunnerBundle;
 import com.intellij.execution.testframework.sm.runner.ProxyFilters;
-import com.intellij.execution.testframework.sm.runner.ui.statistics.ColoredRenderer;
 import com.intellij.ui.ColoredTableCellRenderer;
 import org.jetbrains.annotations.NonNls;
 
@@ -123,7 +122,7 @@ public class GoogleCloudTestingColumnResults extends GoogleCloudTestingBaseColum
     return new ResultsCellRenderer(proxy);
   }
 
-  public static class ResultsCellRenderer extends ColoredTableCellRenderer implements ColoredRenderer {
+  public static class ResultsCellRenderer extends ColoredTableCellRenderer {
     private final GoogleCloudTestProxy myProxy;
 
     public ResultsCellRenderer(final GoogleCloudTestProxy proxy) {

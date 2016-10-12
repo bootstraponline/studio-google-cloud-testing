@@ -43,7 +43,7 @@ public class GoogleCloudTestStartedEvent extends BaseStartedNodeEvent {
                                      @Nullable String locationUrl,
                                      @NotNull String configuration,
                                      @NotNull String className) {
-    super(name, -1, -1, locationUrl, null, null, true);
+    super(name, null, null, locationUrl, null, null, true);
     this.configuration = configuration;
     this.className = className;
   }

@@ -23,7 +23,7 @@ public class TestConfigurationProgressEvent extends TreeNodeEvent {
   private final String text;
 
   public TestConfigurationProgressEvent(@NotNull String configurationName, @NotNull String text) {
-    super(configurationName, -1);
+    super(configurationName, null);
     this.text = text;
   }
 

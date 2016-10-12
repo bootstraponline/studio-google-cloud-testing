@@ -26,7 +26,7 @@ public class TestConfigurationStoppedEvent extends TreeNodeEvent {
   private final long testDuration;
 
   public TestConfigurationStoppedEvent(@NotNull String configurationName, @NotNull ConfigurationStopReason stopReason, long testDuration) {
-    super(configurationName, -1);
+    super(configurationName, null);
     this.stopReason = stopReason;
     this.testDuration = testDuration;
   }

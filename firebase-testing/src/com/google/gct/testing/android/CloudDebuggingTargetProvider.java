@@ -63,7 +63,7 @@ public class CloudDebuggingTargetProvider extends DeployTargetProvider {
   }
 
   @Override
-  public DeployTargetConfigurable createConfigurable(@NotNull Project project, Disposable parentDisposable,
+  public DeployTargetConfigurable createConfigurable(@NotNull Project project, @NotNull Disposable parentDisposable,
                                                      @NotNull DeployTargetConfigurableContext context) {
     return new CloudDebuggingTargetConfigurable();
   }

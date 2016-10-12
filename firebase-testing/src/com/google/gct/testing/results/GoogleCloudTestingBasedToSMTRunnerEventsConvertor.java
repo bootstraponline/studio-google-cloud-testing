@@ -30,6 +30,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Key;
 import com.intellij.util.containers.ContainerUtil;
+import com.intellij.util.containers.hash.HashMap;
 import gnu.trove.TIntObjectHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +41,7 @@ import java.util.Set;
 public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleCloudTestEventsProcessor {
   private static final Logger LOG = Logger.getInstance(GoogleCloudTestingBasedToSMTRunnerEventsConvertor.class.getName());
 
-  private final TIntObjectHashMap<Node> myNodeByIdMap = new TIntObjectHashMap<Node>();
+  private final HashMap<String, Node> myNodeByIdMap = new HashMap<>();
   private final Set<Node> myRunningTestNodes = ContainerUtil.newHashSet();
   private final List<GoogleCloudTestEventsListener> myEventsListeners = ContainerUtil.createLockFreeCopyOnWriteList();
   private final GoogleCloudTestProxy.GoogleCloudRootTestProxy myTestsRootProxy;
@@ -53,7 +54,7 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
   public GoogleCloudTestingBasedToSMTRunnerEventsConvertor(@NotNull GoogleCloudTestProxy.GoogleCloudRootTestProxy testsRootProxy,
                                                            @NotNull String testFrameworkName) {
     myTestsRootProxy = testsRootProxy;
-    myTestsRootNode = new Node(0, null, testsRootProxy);
+    myTestsRootNode = new Node(TreeNodeEvent.ROOT_NODE_ID, null, testsRootProxy);
     myTestFrameworkName = testFrameworkName;
     myNodeByIdMap.put(myTestsRootNode.getId(), myTestsRootNode);
   }
@@ -204,12 +205,12 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
 
   @Nullable
   private Node findValidParentNode(@NotNull BaseStartedNodeEvent startedNodeEvent) {
-    int parentId = startedNodeEvent.getParentId();
-    if (parentId < 0) {
+    String parentId = startedNodeEvent.getParentId();
+    if (parentId == null) {
       logProblem("Parent node id should be non-negative: " + startedNodeEvent + ".", true);
       return null;
     }
-    Node parentNode = myNodeByIdMap.get(startedNodeEvent.getParentId());
+    Node parentNode = myNodeByIdMap.get(parentId);
     if (parentNode == null) {
       logProblem("Parent node is undefined for " + startedNodeEvent + ".", true);
       return null;
@@ -448,9 +449,9 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
   }
 
   private boolean validateNodeId(@NotNull TreeNodeEvent treeNodeEvent) {
-    int nodeId = treeNodeEvent.getId();
-    if (nodeId <= 0) {
-      logProblem("Node id should be positive: " + treeNodeEvent + ".", true);
+    String nodeId = treeNodeEvent.getId();
+    if (nodeId == null || nodeId.equals(TreeNodeEvent.ROOT_NODE_ID)) {
+      logProblem("Node id should be initialized: " + treeNodeEvent + ".", true);
       return false;
     }
     return true;
@@ -609,19 +610,19 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
   }
 
   private static class Node {
-    private final int myId;
+    private final String myId;
     private final Node myParentNode;
     private final GoogleCloudTestProxy myProxy;
     private State myState;
 
-    Node(int id, @Nullable Node parentNode, @NotNull GoogleCloudTestProxy proxy) {
+    Node(@Nullable String id, @Nullable Node parentNode, @NotNull GoogleCloudTestProxy proxy) {
       myId = id;
       myParentNode = parentNode;
       myProxy = proxy;
       myState = State.NOT_RUNNING;
     }
 
-    public int getId() {
+    public String getId() {
       return myId;
     }
 
@@ -663,7 +664,7 @@ public class GoogleCloudTestingBasedToSMTRunnerEventsConvertor extends GoogleClo
 
     @Override
     public int hashCode() {
-      return myId;
+      return myId != null ? myId.hashCode() : -1;
     }
 
     @Override
