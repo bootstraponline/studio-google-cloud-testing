@@ -23,9 +23,9 @@ import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestPr
 import com.google.gct.testing.results.GoogleCloudTestResultsViewer;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
 import com.google.gct.testing.results.GoogleCloudTestingResultsForm;
-import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent;
-import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventCategory;
-import com.google.wireless.android.sdk.stats.AndroidStudioStats.AndroidStudioEvent.EventKind;
+import com.google.wireless.android.sdk.stats.AndroidStudioEvent;
+import com.google.wireless.android.sdk.stats.AndroidStudioEvent.EventCategory;
+import com.google.wireless.android.sdk.stats.AndroidStudioEvent.EventKind;
 import com.intellij.execution.testframework.AbstractTestProxy;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
