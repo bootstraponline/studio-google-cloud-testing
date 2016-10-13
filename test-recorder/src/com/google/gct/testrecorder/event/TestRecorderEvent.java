@@ -30,9 +30,11 @@ public class TestRecorderEvent extends ElementAction {
   public static final String PRESS_BACK = "PRESSED_BACK";
   public static final String PRESS_EDITOR_ACTION = "PRESSED_EDITOR_ACTION"; // RETURN key on the soft keyboard.
   public static final String VIEW_SWIPE = "VIEW_SWIPED";
+  public static final String DELAYED_MESSAGE_POST = "DELAYED_MESSAGE_POSTED";
 
   public static final HashSet<String> SUPPORTED_EVENTS =
-    Sets.newHashSet(VIEW_CLICK, VIEW_LONG_CLICK, LIST_ITEM_CLICK, TEXT_CHANGE, PRESS_BACK, PRESS_EDITOR_ACTION, VIEW_SWIPE);
+    Sets.newHashSet(VIEW_CLICK, VIEW_LONG_CLICK, LIST_ITEM_CLICK, TEXT_CHANGE, PRESS_BACK, PRESS_EDITOR_ACTION, VIEW_SWIPE,
+                    DELAYED_MESSAGE_POST);
 
   /**
    * View click, menu item click, text change, etc.
@@ -70,6 +72,11 @@ public class TestRecorderEvent extends ElementAction {
    */
   private SwipeDirection swipeDirection = null;
 
+  /**
+   * Represents the delay time (in milliseconds) of posted delayed messages.
+   */
+  private long delayTime;
+
 
   public TestRecorderEvent(String eventType, long timestamp) {
     this.eventType = eventType;
@@ -104,6 +111,10 @@ public class TestRecorderEvent extends ElementAction {
     return swipeDirection;
   }
 
+  public long getDelayTime() {
+    return delayTime;
+  }
+
   public void setChecked(boolean checked) {
     isChecked = checked;
   }
@@ -122,6 +133,10 @@ public class TestRecorderEvent extends ElementAction {
 
   public void setSwipeDirection(SwipeDirection swipeDirection) {
     this.swipeDirection = swipeDirection;
+  }
+
+  public void setDelayTime(long delayTime) {
+    this.delayTime = delayTime;
   }
 
   public boolean isViewClick() {
@@ -160,8 +175,16 @@ public class TestRecorderEvent extends ElementAction {
     return VIEW_SWIPE.equals(eventType);
   }
 
+  public boolean isDelayedMessagePost() {
+    return DELAYED_MESSAGE_POST.equals(eventType);
+  }
+
   @Override
   public String getRendererString() {
+    if (isDelayedMessagePost()) {
+      return getIdAttributeDisplayPresentation("", String.valueOf(getDelayTime()));
+    }
+
     if (isSwipe()) {
       return getIdAttributeDisplayPresentation("", getSwipeDirection().name());
     }
@@ -203,7 +226,17 @@ public class TestRecorderEvent extends ElementAction {
     // TODO: Consider also matching content descriptors and parents hierarchy.
     return isTextChange() && eventToMergeWith.isTextChange()
            && getElementResourceId().equals(eventToMergeWith.getElementResourceId())
-           && getReplacementText().equals(eventToMergeWith.getElementText());
+           && getReplacementText().equals(eventToMergeWith.getElementText())
+           || isDelayedMessagePost() && eventToMergeWith.isDelayedMessagePost();
+  }
+
+  public void merge(TestRecorderEvent eventToMergeWith) {
+    if (isTextChange()) {
+      setReplacementText(eventToMergeWith.getReplacementText());
+    } else { // delayed message post
+      // TODO: Maybe sum instead of max?
+      setDelayTime(Math.max(getDelayTime(), eventToMergeWith.getDelayTime()));
+    }
   }
 
 }

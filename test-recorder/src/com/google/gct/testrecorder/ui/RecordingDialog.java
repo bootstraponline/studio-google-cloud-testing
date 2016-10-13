@@ -662,7 +662,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
           Object lastEvent = myEventListModel.lastElement();
           // If can merge with last event, replace last event with the merged one.
           if (lastEvent instanceof TestRecorderEvent && ((TestRecorderEvent)lastEvent).canMerge(event)) {
-            ((TestRecorderEvent)lastEvent).setReplacementText(event.getReplacementText());
+            ((TestRecorderEvent)lastEvent).merge(event);
             // Repaint is needed since otherwise the change would not be picked up by the renderer.
             myEventList.repaint();
           } else {

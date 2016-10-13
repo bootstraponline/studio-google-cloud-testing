@@ -16,6 +16,7 @@
 package com.google.gct.testrecorder.codegen;
 
 import com.android.SdkConstants;
+import com.android.annotations.VisibleForTesting;
 import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.ApkProviderUtil;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
@@ -103,29 +104,7 @@ public class TestCodeGenerator {
       return;
     }
 
-    // Write code to the test class file.
-    Writer writer = null;
-    try {
-      writer = new PrintWriter(testFilePath, SdkConstants.UTF_8);
-
-      VelocityEngine velocityEngine = new VelocityEngine();
-      // Suppress creation of velocity.log file.
-      velocityEngine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.NullLogChute");
-      velocityEngine.init();
-      velocityEngine.evaluate(createVelocityContext(testVirtualFile), writer, RecordingDialog.class.getName(), readTemplateFileContent());
-      writer.flush();
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to generate test class file: ", e);
-    } finally {
-      if (writer != null) {
-        try {
-          writer.close();
-        }
-        catch (Exception e) {
-          // ignore
-        }
-      }
-    }
+    writeCode(testFilePath, testVirtualFile);
 
     // TODO: Figure out why we need to do refresh two times here.
     testVirtualFile.refresh(false, true);
@@ -177,6 +156,33 @@ public class TestCodeGenerator {
     });
   }
 
+  @VisibleForTesting
+  protected void writeCode(String testFilePath, VirtualFile testVirtualFile) {
+    // Write code to the test class file.
+    Writer writer = null;
+    try {
+      writer = new PrintWriter(testFilePath, SdkConstants.UTF_8);
+
+      VelocityEngine velocityEngine = new VelocityEngine();
+      // Suppress creation of velocity.log file.
+      velocityEngine.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.NullLogChute");
+      velocityEngine.init();
+      velocityEngine.evaluate(createVelocityContext(testVirtualFile), writer, RecordingDialog.class.getName(), readTemplateFileContent());
+      writer.flush();
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to generate test class file: ", e);
+    } finally {
+      if (writer != null) {
+        try {
+          writer.close();
+        }
+        catch (Exception e) {
+          // ignore
+        }
+      }
+    }
+  }
+
   private String readTemplateFileContent() {
     File testTemplateFile = ResourceHelper.getFileForResource(this, TEST_CODE_TEMPLATE_FILE_NAME, "test_code_template_", "vm");
     try {
@@ -204,6 +210,15 @@ public class TestCodeGenerator {
     ArrayList<String> testCodeLines = new ArrayList<String>();
     int eventCount = 0;
     int assertionCount = 0;
+
+    // Remove the last sleep since it would unnecessary prolong the test execution.
+    if (!myEvents.isEmpty()) {
+      Object lastEvent = myEvents.get(myEvents.size() - 1);
+      if (lastEvent instanceof TestRecorderEvent && ((TestRecorderEvent)lastEvent).isDelayedMessagePost()) {
+        myEvents.remove(myEvents.size() - 1);
+      }
+    }
+
     for (Object event : myEvents) {
       if (event instanceof TestRecorderEvent) {
         testCodeLines.addAll(codeMapper.getTestCodeLinesForEvent((TestRecorderEvent)event));

@@ -19,6 +19,8 @@ import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
 import org.jetbrains.android.AndroidTestCase;
 
+import java.util.List;
+
 import static com.google.gct.testrecorder.event.TestRecorderEvent.SwipeDirection.Right;
 
 public class TestCodeMapperTest extends AndroidTestCase {
@@ -44,11 +46,22 @@ public class TestCodeMapperTest extends AndroidTestCase {
   public void testSwipeAction() {
     TestCodeMapper testCodeMapper = new TestCodeMapper("12345", false, myModule.getProject(), null);
 
-    TestRecorderEvent textChangeEvent = new TestRecorderEvent(TestRecorderEvent.VIEW_SWIPE, System.currentTimeMillis());
-    textChangeEvent.addElementDescriptor(new ElementDescriptor("SomeClass", -1, "", "content description", ""));
-    textChangeEvent.setSwipeDirection(Right);
+    TestRecorderEvent swipeEvent = new TestRecorderEvent(TestRecorderEvent.VIEW_SWIPE, System.currentTimeMillis());
+    swipeEvent.addElementDescriptor(new ElementDescriptor("SomeClass", -1, "", "content description", ""));
+    swipeEvent.setSwipeDirection(Right);
 
-    String espressoActionStatement = testCodeMapper.getTestCodeLinesForEvent(textChangeEvent).get(1);
+    String espressoActionStatement = testCodeMapper.getTestCodeLinesForEvent(swipeEvent).get(1);
     assertTrue(espressoActionStatement.equals("someClass.perform(swipeRight());"));
+  }
+
+  public void testDelayedMessagePost() {
+    TestCodeMapper testCodeMapper = new TestCodeMapper("12345", false, myModule.getProject(), null);
+
+    TestRecorderEvent delayedMessagePostEvent = new TestRecorderEvent(TestRecorderEvent.DELAYED_MESSAGE_POST, System.currentTimeMillis());
+    delayedMessagePostEvent.setDelayTime(1500);
+
+    List<String> generatedCodeLines = testCodeMapper.getTestCodeLinesForEvent(delayedMessagePostEvent);
+    assertEquals(1, generatedCodeLines.size());
+    assertTrue(generatedCodeLines.get(0).contains("Thread.sleep(1500);"));
   }
 }
