@@ -521,7 +521,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   }
 
   private boolean hasSetInstrumentationRunner(@NotNull AndroidModel androidModel) {
-    String testInstrumentationRunner = androidModel.defaultConfig().testInstrumentationRunner();
+    String testInstrumentationRunner = androidModel.defaultConfig().testInstrumentationRunner().value();
     return testInstrumentationRunner != null && !testInstrumentationRunner.isEmpty();
   }
 
