@@ -50,6 +50,11 @@ public class TestRecorderSettings implements PersistentStateComponent<TestRecord
   public boolean CAP_AT_NON_IDENTIFIABLE_ELEMENTS = true;
 
   /**
+   * Determines whether the value of the text attribute of UI elements should be used for matching them in Espresso statements.
+   */
+  public boolean USE_TEXT_FOR_ELEMENT_MATCHING = true;
+
+  /**
    * Determines whether the app's state should be cleared before the recording starts.
    */
   public boolean CLEAN_BEFORE_START = true;

@@ -24,6 +24,7 @@ import com.google.gct.testrecorder.event.ElementAction;
 import com.google.gct.testrecorder.event.ElementDescriptor;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
+import com.google.gct.testrecorder.settings.TestRecorderSettings;
 import com.intellij.lang.java.lexer.JavaLexer;
 import com.intellij.openapi.project.Project;
 import com.intellij.pom.java.LanguageLevel;
@@ -215,7 +216,10 @@ public class TestCodeMapper {
         matcherBuilder.addMatcher(Id, convertIdToTestCodeFormat(resourceId), false, isAssertionConditions);
       }
 
-      matcherBuilder.addMatcher(Text, elementDescriptor.getText(), true, isAssertionConditions);
+      if (TestRecorderSettings.getInstance().USE_TEXT_FOR_ELEMENT_MATCHING) {
+        matcherBuilder.addMatcher(Text, elementDescriptor.getText(), true, isAssertionConditions);
+      }
+
       matcherBuilder.addMatcher(ContentDescription, elementDescriptor.getContentDescription(), true, isAssertionConditions);
     }
 
