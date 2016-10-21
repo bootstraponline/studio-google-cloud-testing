@@ -42,6 +42,7 @@ public class TestRecorderSettingsConfigurable implements SearchableConfigurable,
   private JCheckBox myStopAppCheckbox;
   private JPanel myLaunchAndTearDownSettingsPanel;
   private JPanel myDataCollecationAndCodeGenerationSettingsPanel;
+  private JCheckBox myUseTextForElementMatchingCheckBox;
 
   public TestRecorderSettingsConfigurable() {
     mySettings = TestRecorderSettings.getInstance();
@@ -108,6 +109,7 @@ public class TestRecorderSettingsConfigurable implements SearchableConfigurable,
            || scrollDepth != null && mySettings.SCROLL_DEPTH != scrollDepth
            || assertionDepth != null && mySettings.ASSERTION_DEPTH != assertionDepth
            || mySettings.CAP_AT_NON_IDENTIFIABLE_ELEMENTS != myCapEvaluationDepthCheckBox.isSelected()
+           || mySettings.USE_TEXT_FOR_ELEMENT_MATCHING != myUseTextForElementMatchingCheckBox.isSelected()
            || mySettings.CLEAN_BEFORE_START != myCleanBeforeStartCheckbox.isSelected()
            || mySettings.CLEAN_AFTER_FINISH != myCleanAfterFinishCheckbox.isSelected()
            || mySettings.STOP_APP_AFTER_RECORDING != myStopAppCheckbox.isSelected();
@@ -131,6 +133,7 @@ public class TestRecorderSettingsConfigurable implements SearchableConfigurable,
     }
 
     mySettings.CAP_AT_NON_IDENTIFIABLE_ELEMENTS = myCapEvaluationDepthCheckBox.isSelected();
+    mySettings.USE_TEXT_FOR_ELEMENT_MATCHING = myUseTextForElementMatchingCheckBox.isSelected();
     mySettings.CLEAN_BEFORE_START = myCleanBeforeStartCheckbox.isSelected();
     mySettings.CLEAN_AFTER_FINISH = myCleanAfterFinishCheckbox.isSelected();
     mySettings.STOP_APP_AFTER_RECORDING = myStopAppCheckbox.isSelected();
@@ -142,6 +145,7 @@ public class TestRecorderSettingsConfigurable implements SearchableConfigurable,
     myScrollDepthSpinner.setValue(mySettings.SCROLL_DEPTH);
     myAssertionDepthSpinner.setValue(mySettings.ASSERTION_DEPTH);
     myCapEvaluationDepthCheckBox.setSelected(mySettings.CAP_AT_NON_IDENTIFIABLE_ELEMENTS);
+    myUseTextForElementMatchingCheckBox.setSelected(mySettings.USE_TEXT_FOR_ELEMENT_MATCHING);
     myCleanBeforeStartCheckbox.setSelected(mySettings.CLEAN_BEFORE_START);
     myCleanAfterFinishCheckbox.setSelected(mySettings.CLEAN_AFTER_FINISH);
     myStopAppCheckbox.setSelected(mySettings.STOP_APP_AFTER_RECORDING);
