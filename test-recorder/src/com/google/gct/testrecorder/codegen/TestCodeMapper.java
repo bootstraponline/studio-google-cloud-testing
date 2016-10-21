@@ -79,6 +79,11 @@ public class TestCodeMapper {
       return testCodeLines;
     }
 
+    if (event.isDelayedMessagePost()) {
+      testCodeLines.add(createSleepStatement(event.getDelayTime()));
+      return testCodeLines;
+    }
+
     String variableName = addViewPickingStatement(event, testCodeLines);
     if (event.isSwipe()) {
       testCodeLines.add(createActionStatement(variableName, "swipe" + event.getSwipeDirection().name() + "()", false));
@@ -106,6 +111,13 @@ public class TestCodeMapper {
     }
 
     return testCodeLines;
+  }
+
+  private String createSleepStatement(long sleepTime) {
+    return String.format(" // Added a sleep statement to match the app's execution delay.\n"
+                         + " // The recommended way to handle such scenarios is to use Espresso idling resources:\n "
+                         + " // https://google.github.io/android-testing-support-library/docs/espresso/idling-resource/index.html\n"
+                         + "try {\n Thread.sleep(%s);\n } catch (InterruptedException e) {\n e.printStackTrace();\n }", sleepTime);
   }
 
   @VisibleForTesting

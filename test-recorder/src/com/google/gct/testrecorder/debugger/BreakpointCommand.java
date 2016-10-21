@@ -47,18 +47,20 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.gct.testrecorder.event.TestRecorderEvent.*;
 
 public class BreakpointCommand extends DebuggerCommandImpl {
   private static final Logger LOGGER = Logger.getInstance(BreakpointCommand.class);
 
-  private final static String PARENT_NODE_CALL = ".getParent()";
+  private static final String PARENT_NODE_CALL = ".getParent()";
 
   // Some classes are loaded lazily, e.g., those that come from libraries like android.support.v4.view.ViewPager, so try several
   // times before giving up on scheduling a breakpoint in them (10 seconds).
   // TODO: Find a way to detect that the app is fully launched rather than estimating that it should start running in at most 10 seconds.
-  private final static int MAX_SCHEDULE_ATTEMPTS = 20;
-  private final static long INTER_ATTEMPTS_WAIT = 500; // milliseconds
+  private static final int MAX_SCHEDULE_ATTEMPTS = 20;
+  private static final long INTER_ATTEMPTS_WAIT = 500; // milliseconds
+  private static final int ESPRESSO_IDLE_DELAY = 15; // milliseconds
 
   private final DebugProcessImpl myDebugProcess;
   private final BreakpointDescriptor myBreakpointDescriptor;
@@ -195,6 +197,10 @@ public class BreakpointCommand extends DebuggerCommandImpl {
   private TestRecorderEvent prepareEvent(EvaluationContextImpl evalContext, NodeManagerImpl nodeManager) {
     TestRecorderEvent event = new TestRecorderEvent(myBreakpointDescriptor.eventType, System.currentTimeMillis());
 
+    if (event.isDelayedMessagePost()) {
+      return prepareDelayedMessagePostEvent(event, evalContext, nodeManager);
+    }
+
     if (event.isPressEvent()) {
       if (event.isPressBack()) {
         // The press back breakpoint corresponds to a finished input event rather than just pressed back key,
@@ -233,6 +239,37 @@ public class BreakpointCommand extends DebuggerCommandImpl {
     setScrollableState(event, evalContext, nodeManager, receiverReference + PARENT_NODE_CALL, 2);
 
     return event;
+  }
+
+  @Nullable
+  private TestRecorderEvent prepareDelayedMessagePostEvent(TestRecorderEvent event, EvaluationContextImpl evalContext,
+                                                           NodeManagerImpl nodeManager) {
+
+    Value delayMillisValue = evaluateExpression("delayMillis", evalContext, nodeManager);
+    if (delayMillisValue != null) {
+      int delayMillis = Integer.parseInt(getStringValue(delayMillisValue));
+      if (delayMillis > ESPRESSO_IDLE_DELAY) {
+        // Do not use getCanonicalName() as it will return null for local and anonymous classes (as well as arrays).
+        Value runnableClassNameValue = evaluateExpression("r.getClass().getName()", evalContext, nodeManager);
+        if (runnableClassNameValue != null && !isFrameworkClass(getStringValue(runnableClassNameValue))) {
+          event.setDelayTime(delayMillis);
+          return event;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * TODO: This check is not comprehensive.
+   */
+  private boolean isFrameworkClass(String className) {
+    if (isNullOrEmpty(className)) {
+      return false;
+    }
+
+    return className.startsWith("android.support.") || className.startsWith("android.widget.") || className.startsWith("android.view.");
   }
 
   @Nullable
