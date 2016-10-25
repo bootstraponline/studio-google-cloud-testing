@@ -77,7 +77,6 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
   private int myIgnoredTestCount = 0;
   private long myStartTime;
   private long myEndTime;
-  private GoogleCloudTestingStatisticsPanel myStatisticsPane;
 
   // custom progress
   private String myCurrentCustomProgressCategory;
@@ -144,15 +143,6 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
     myTreeView.setLargeModel(true);
     myTreeView.attachToModel(this);
     myTreeView.setTestResultsViewer(this);
-    addTestsTreeSelectionListener(new TreeSelectionListener() {
-      @Override
-      public void valueChanged(TreeSelectionEvent e) {
-        AbstractTestProxy selectedTest = getTreeView().getSelectedTest();
-        if (selectedTest instanceof GoogleCloudTestProxy) {
-          myStatisticsPane.selectProxy(((GoogleCloudTestProxy)selectedTest), this, false);
-        }
-      }
-    });
 
     final GoogleCloudTestTreeStructure structure = new GoogleCloudTestTreeStructure(myProject, myTestsRootNode);
     myTreeBuilder = new GoogleCloudTestTreeBuilder(myTreeView, structure);
@@ -165,23 +155,6 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
     //myTreeView.setRootVisible(false);
 
     return myTreeView;
-  }
-
-  @Override
-  protected JComponent createStatisticsPanel() {
-    // Statistics tab
-    final GoogleCloudTestingStatisticsPanel statisticsPane = new GoogleCloudTestingStatisticsPanel(myProject, this);
-    // handler to select in results viewer by statistics pane events
-    statisticsPane.addPropagateSelectionListener(createSelectMeListener());
-    // handler to select test statistics pane by result viewer events
-    setShowStatisticForProxyHandler(statisticsPane.createSelectMeListener());
-
-    myStatisticsPane = statisticsPane;
-    return myStatisticsPane.getContentPane();
-  }
-
-  public GoogleCloudTestingStatisticsPanel getStatisticsPane() {
-    return myStatisticsPane;
   }
 
   public void addTestsTreeSelectionListener(final TreeSelectionListener listener) {
@@ -416,7 +389,6 @@ public class GoogleCloudTestingResultsForm extends TestResultsPanel
     super.dispose();
     myShowStatisticForProxyHandler = null;
     myEventListeners.clear();
-    myStatisticsPane.doDispose();
   }
 
   @Override

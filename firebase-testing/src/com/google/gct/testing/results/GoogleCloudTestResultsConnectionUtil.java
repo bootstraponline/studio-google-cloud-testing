@@ -122,7 +122,6 @@ public class GoogleCloudTestResultsConnectionUtil {
         GoogleCloudTestingResultsForm resultsForm = consoleView.getResultsViewer();
         attachEventsProcessors(consoleView.getProperties(),
                                resultsForm,
-                               resultsForm.getStatisticsPane(),
                                processHandler,
                                testFrameworkName,
                                locator,
@@ -155,7 +154,6 @@ public class GoogleCloudTestResultsConnectionUtil {
 
   private static ProcessHandler attachEventsProcessors(@NotNull final TestConsoleProperties consoleProperties,
                                                        final GoogleCloudTestingResultsForm resultsViewer,
-                                                       final GoogleCloudTestingStatisticsPanel statisticsPane,
                                                        final ProcessHandler processHandler,
                                                        @NotNull final String testFrameworkName,
                                                        @Nullable final SMTestLocator locator,
@@ -193,7 +191,6 @@ public class GoogleCloudTestResultsConnectionUtil {
     // subscribes test runner's actions on results viewer events
     resultsViewer.addEventsListener(uiActionsHandler);
     // subscribes statistics tab viewer on event processor
-    eventsProcessor.addEventsListener(statisticsPane.createTestEventsListener());
 
     processHandler.addProcessListener(new ProcessAdapter() {
       @Override
