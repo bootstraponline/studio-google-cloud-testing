@@ -269,7 +269,8 @@ public class BreakpointCommand extends DebuggerCommandImpl {
       return false;
     }
 
-    return className.startsWith("android.support.") || className.startsWith("android.widget.") || className.startsWith("android.view.");
+    return className.startsWith("android.support.") || className.startsWith("android.widget.") || className.startsWith("android.view.")
+           || className.startsWith("android.os.");
   }
 
   @Nullable
