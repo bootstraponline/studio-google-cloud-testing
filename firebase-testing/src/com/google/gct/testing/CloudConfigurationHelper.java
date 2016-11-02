@@ -637,8 +637,6 @@ public final class CloudConfigurationHelper {
           AndroidTestRunConfiguration testRunConfiguration = runningState.getConfiguration();
           String moduleName = runningState.getFacet().getModule().getName();
           String bucketName = generateUniqueBucketName(moduleName);
-          String appPackage = runningState.getFacet().getAndroidModuleInfo().getPackage();
-          String testPackage = appPackage + ".test";
 
           if (matrixExecutionCancellator.isCancelled()) {
             return;
@@ -705,7 +703,7 @@ public final class CloudConfigurationHelper {
           TestMatrix testMatrix = CloudTestsLauncher
             .triggerTestApi(cloudProjectId, getBucketGcsPath(bucketName), getApkGcsPath(bucketName, appApkName),
                             getApkGcsPath(bucketName, testApkName), testSpecification, testRunConfiguration.INSTRUMENTATION_RUNNER_CLASS,
-                            cloudTestingConfiguration, appPackage, testPackage);
+                            cloudTestingConfiguration);
 
           if (testMatrix != null) {
             runningState.getProcessHandler().notifyTextAvailable(prepareProgressString("Validating APKs ...", "\n\n"),

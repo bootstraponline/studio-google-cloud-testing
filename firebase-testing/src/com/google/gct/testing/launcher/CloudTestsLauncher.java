@@ -115,7 +115,7 @@ public class CloudTestsLauncher {
    */
   public static @Nullable TestMatrix triggerTestApi(
     String cloudProjectId, String bucketGcsPath, String appApkGcsPath, String testApkGcsPath, String testSpecification,
-    String instrumentationTestRunner, CloudConfigurationImpl cloudTestConfiguration, String appPackage, String testPackage) {
+    String instrumentationTestRunner, CloudConfigurationImpl cloudTestConfiguration) {
 
     TestMatrix testMatrix = new TestMatrix();
 
@@ -126,8 +126,8 @@ public class CloudTestsLauncher {
     testMatrix.setTestSpecification(
       new TestSpecification().setTestTimeout(testTimeout).setAndroidInstrumentationTest(
         new AndroidInstrumentationTest().setAppApk(new FileReference().setGcsPath(appApkGcsPath))
-          .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setAppPackageId(appPackage).setTestPackageId(testPackage)
-          .setTestRunnerClass(instrumentationTestRunner).setTestTargets(Lists.newArrayList(testSpecification))));
+          .setTestApk(new FileReference().setGcsPath(testApkGcsPath)).setTestRunnerClass(instrumentationTestRunner)
+          .setTestTargets(Lists.newArrayList(testSpecification))));
 
     testMatrix.setResultStorage(new ResultStorage().setGoogleCloudStorage(new GoogleCloudStorage().setGcsPath(bucketGcsPath)));
 
