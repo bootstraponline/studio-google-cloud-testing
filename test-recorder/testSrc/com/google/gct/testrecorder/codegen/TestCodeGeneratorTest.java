@@ -30,7 +30,6 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
-import com.intellij.util.ui.UIUtil;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.android.AndroidTestCase;
 
@@ -54,7 +53,7 @@ public class TestCodeGeneratorTest extends AndroidTestCase {
     testCodeGenerator.writeCode(testFilePath, testVirtualFile);
     Project project = myModule.getProject();
 
-    testVirtualFile.refresh(true, true, () -> {
+    testVirtualFile.refresh(false, true, () -> {
       PsiDocumentManager.getInstance(project).commitAllDocuments();
 
       new OptimizeImportsProcessor(project, testClass.getContainingFile()).run();
@@ -63,7 +62,6 @@ public class TestCodeGeneratorTest extends AndroidTestCase {
       String actualTestClassContent = FileDocumentManager.getInstance().getDocument(testVirtualFile).getText();
       assertEquals(getExpectedTestClassContent(), actualTestClassContent);
     });
-    UIUtil.dispatchAllInvocationEvents();
   }
 
   private PsiClass createTestClass() {
