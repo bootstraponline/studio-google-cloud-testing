@@ -327,6 +327,9 @@ public class TestClassNameInputDialog extends DialogWrapper {
         try {
           myTestClass = JavaDirectoryService.getInstance().createClass(
             myTestClassParent, myClassName, JavaTemplateUtil.INTERNAL_CLASS_TEMPLATE_NAME, false);
+
+          // To avoid a potential concurrent modification warning.
+          PsiManager.getInstance(myProject).reloadFromDisk(myTestClass.getContainingFile());
         } catch (Exception e) {
           return e.getMessage();
         }

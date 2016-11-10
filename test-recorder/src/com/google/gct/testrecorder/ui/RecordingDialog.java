@@ -302,27 +302,31 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
         TestClassNameInputDialog chooser = new TestClassNameInputDialog(myFacet, launchedActivityName);
         chooser.show();
 
-        assert myGradleBuildModel != null;
-        AndroidModel androidModel = myGradleBuildModel.android();
-        // androidModel will be null when the Gradle experimental plugin is used and it's not possible to update the instrumentation runner.
-        // TODO: Provide an appropriate error message or some alternative way to update instrumentation runner when the Gradle experimental
-        // plugin is used.
         boolean hasAddedEspressoDependencies = false;
-        if (androidModel != null && !hasAllRequiredEspressoDependencies(androidModel)) {
-          UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
-                                         .setCategory(EventCategory.TEST_RECORDER)
-                                         .setKind(EventKind.TEST_RECORDER_MISSING_ESPRESSO_DEPENDENCIES));
+        boolean hasCustomEspressoDependency = false;
+        // Automatically check/setup Espresso dependencies for Gradle projects only.
+        if (myGradleBuildModel != null) {
+          AndroidModel androidModel = myGradleBuildModel.android();
+          // androidModel will be null when the Gradle experimental plugin is used and it's not possible to update the instrumentation runner.
+          // TODO: Provide an appropriate error message or some alternative way to update instrumentation runner when the Gradle experimental
+          // plugin is used.
+          if (androidModel != null && !hasAllRequiredEspressoDependencies(androidModel)) {
+            UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                             .setCategory(EventCategory.TEST_RECORDER)
+                                             .setKind(EventKind.TEST_RECORDER_MISSING_ESPRESSO_DEPENDENCIES));
 
-          if (Messages.showDialog(myProject,
-                                  "This app is missing some dependencies for running Espresso tests.\n" +
-                                  "Would you like to automatically add Espresso dependencies for this app?\n" +
-                                  "To complete the set up, Gradle might ask you to install the missing libraries.\n" +
-                                  "Please click on the corresponding link(s) to install them.",
-                                  "Missing Espresso dependencies",
-                                  new String[]{Messages.NO_BUTTON, Messages.YES_BUTTON}, 1, null) != 0) {
-            hasAddedEspressoDependencies = true;
-            setupEspresso();
+            if (Messages.showDialog(myProject,
+                                    "This app is missing some dependencies for running Espresso tests.\n" +
+                                    "Would you like to automatically add Espresso dependencies for this app?\n" +
+                                    "To complete the set up, Gradle might ask you to install the missing libraries.\n" +
+                                    "Please click on the corresponding link(s) to install them.",
+                                    "Missing Espresso dependencies",
+                                    new String[]{Messages.NO_BUTTON, Messages.YES_BUTTON}, 1, null) != 0) {
+              hasAddedEspressoDependencies = true;
+              setupEspresso();
+            }
           }
+          hasCustomEspressoDependency = hasCustomEspressoDependency();
         }
 
         // Get all events (UI events and assertions).
@@ -335,8 +339,8 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
         if (testClass != null) {
           doOKAction();
-          new TestCodeGenerator(
-            myFacet, testClass, events, launchedActivityName, hasCustomEspressoDependency(), hasAddedEspressoDependencies).generate();
+          new TestCodeGenerator(myFacet, testClass, events, launchedActivityName, hasCustomEspressoDependency,
+                                hasAddedEspressoDependencies).generate();
         }
       }
     });

@@ -15,27 +15,22 @@
  */
 package com.google.gct.testrecorder.ui;
 
+import com.android.annotations.VisibleForTesting;
 import com.android.tools.analytics.UsageTracker;
-import com.android.tools.idea.run.AndroidRunConfiguration;
-import com.android.tools.idea.run.AndroidRunConfigurationType;
 import com.android.tools.idea.run.AndroidSessionInfo;
-import com.android.tools.idea.run.editor.DefaultActivityLaunch;
-import com.android.tools.idea.run.editor.LaunchOptionState;
-import com.android.tools.idea.run.editor.SpecificActivityLaunch;
 import com.google.common.collect.Lists;
 import com.google.gct.testrecorder.debugger.SessionInitializer;
-import com.google.gct.testrecorder.run.TestRecorderAndroidRunConfiguration;
+import com.google.gct.testrecorder.run.TestRecorderRunConfigurationProxy;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent.EventCategory;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent.EventKind;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.RunnerAndConfigurationSettings;
+import com.intellij.execution.configurations.LocatableConfigurationBase;
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ExecutionEnvironmentBuilder;
-import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
@@ -88,10 +83,10 @@ public class TestRecorderAction extends AnAction {
       return;
     }
 
-    List<AndroidRunConfiguration> suitableRunConfigurations = getSuitableRunConfigurations();
+    List<RunConfiguration> suitableRunConfigurations = getSuitableRunConfigurations(myProject);
     if (suitableRunConfigurations.isEmpty()) {
-      String message = "Please create an Android Application configuration with a valid module and Default or Specified launch activity.";
-      Messages.showDialog(myProject, message, "No suitable Android Application configuration found", new String[]{"OK"}, 0, null);
+      String message = "Please create an Android Application or Blaze Command Run configuration with a valid module and Default or Specified launch activity.";
+      Messages.showDialog(myProject, message, "No suitable run configuration found", new String[]{"OK"}, 0, null);
       return;
     }
 
@@ -102,25 +97,20 @@ public class TestRecorderAction extends AnAction {
       RunnerAndConfigurationSettings selectedConfiguration = RunManagerEx.getInstanceEx(myProject).getSelectedConfiguration();
       if (selectedConfiguration != null && suitableRunConfigurations.contains(selectedConfiguration.getConfiguration())) {
         // If currently selected configuration is suitable, use it.
-        launchTestRecorder(event, (AndroidRunConfiguration) selectedConfiguration.getConfiguration());
+        launchTestRecorder(event, selectedConfiguration.getConfiguration());
       } else {
         // If there is more than one possible choice, ask the user to pick a configuration.
         ListPopupImpl configurationPickerPopup = new ListPopupImpl(
-          new BaseListPopupStep<AndroidRunConfiguration>("Pick configuration to launch", suitableRunConfigurations) {
+          new BaseListPopupStep<RunConfiguration>("Pick configuration to launch", suitableRunConfigurations) {
             @NotNull
             @Override
-            public String getTextFor(AndroidRunConfiguration runConfiguration) {
+            public String getTextFor(RunConfiguration runConfiguration) {
               return runConfiguration.getName();
             }
 
             @Override
-            public PopupStep onChosen(AndroidRunConfiguration runConfiguration, boolean finalChoice) {
-              return doFinalStep(new Runnable() {
-                @Override
-                public void run() {
-                  launchTestRecorder(event, runConfiguration);
-                }
-              });
+            public PopupStep onChosen(RunConfiguration runConfiguration, boolean finalChoice) {
+              return doFinalStep(() -> launchTestRecorder(event, runConfiguration));
             }
           });
 
@@ -129,8 +119,10 @@ public class TestRecorderAction extends AnAction {
     }
   }
 
-  private void launchTestRecorder(AnActionEvent event, AndroidRunConfiguration runConfiguration) {
-    TestRecorderAndroidRunConfiguration testRecorderConfiguration = new TestRecorderAndroidRunConfiguration(runConfiguration);
+  private void launchTestRecorder(AnActionEvent event, RunConfiguration configurationBase) {
+    TestRecorderRunConfigurationProxy testRecorderConfigurationProxy = TestRecorderRunConfigurationProxy.getInstance(configurationBase);
+    LocatableConfigurationBase testRecorderConfiguration = testRecorderConfigurationProxy.getTestRecorderRunConfiguration();
+
     ExecutionEnvironmentBuilder builder = ExecutionEnvironmentBuilder.createOrNull(
       testRecorderConfiguration.getProject(), DefaultDebugExecutor.getDebugExecutorInstance(), testRecorderConfiguration);
 
@@ -138,54 +130,40 @@ public class TestRecorderAction extends AnAction {
       throw new RuntimeException("Could not create execution environment builder!");
     }
 
-    Module module = testRecorderConfiguration.getConfigurationModule().getModule();
+    Module module = testRecorderConfigurationProxy.getModule();
     AndroidFacet facet = AndroidFacet.getInstance(module);
 
     if (facet == null) {
       throw new RuntimeException("Could not obtain Android facet for module: " + module.getName());
     }
 
-    LaunchOptionState launchOptionState = runConfiguration.getLaunchOptionState(runConfiguration.MODE);
-
     ExecutionEnvironment environment = builder.activeTarget().dataContext(event.getDataContext()).build();
 
     // Terminate any active Run or Debug session of the to-be-recorded run configuration.
     // Even if it is a Run session, it still needs to be terminated, since the app will have to be restarted in debug mode.
-    AndroidSessionInfo oldSessionInfo = AndroidSessionInfo.findOldSession(module.getProject(), null, runConfiguration.getUniqueID());
+    AndroidSessionInfo oldSessionInfo = AndroidSessionInfo.findOldSession(module.getProject(), null, configurationBase.getUniqueID());
     if (oldSessionInfo != null) {
       oldSessionInfo.getProcessHandler().detachProcess();
     }
 
     try {
-      environment.getRunner().execute(environment, new ProgramRunner.Callback() {
-        @Override
-        public void processStarted(RunContentDescriptor descriptor) {
-          ApplicationManager.getApplication().executeOnPooledThread(
-            new SessionInitializer(facet, environment, launchOptionState, testRecorderConfiguration.getUniqueID()));
-        }
-      });
+      environment.getRunner().execute(environment, descriptor -> ApplicationManager.getApplication().executeOnPooledThread(
+        new SessionInitializer(facet, environment, testRecorderConfigurationProxy.getLaunchActivityClass(),
+                               testRecorderConfiguration.getUniqueID())));
     } catch (Exception e) {
       String message = isEmpty(e.getMessage()) ? "Unknown error" : e.getMessage();
       Messages.showDialog(myProject, message, "Could not start debugging of the app", new String[]{"OK"}, 0, null);
     }
   }
 
-  private List<AndroidRunConfiguration> getSuitableRunConfigurations() {
-    List<AndroidRunConfiguration> suitableRunConfigurations = Lists.newLinkedList();
+  @VisibleForTesting
+  public static List<RunConfiguration> getSuitableRunConfigurations(Project project) {
+    List<RunConfiguration> suitableRunConfigurations = Lists.newLinkedList();
 
-    for (RunConfiguration runConfiguration : RunManagerEx.getInstanceEx(myProject).getAllConfigurationsList()) {
-      // Should be an Android Application configuration.
-      if (runConfiguration != null && runConfiguration.getType() instanceof AndroidRunConfigurationType) {
-        AndroidRunConfiguration androidRunConfiguration = (AndroidRunConfiguration) runConfiguration;
-        // Should have a selected module.
-        if (androidRunConfiguration.getConfigurationModule().getModule() != null) {
-          LaunchOptionState launchOptionState = androidRunConfiguration.getLaunchOptionState(androidRunConfiguration.MODE);
-
-          // The launch activity should be either Default or Specified.
-          if (launchOptionState instanceof DefaultActivityLaunch.State || launchOptionState instanceof SpecificActivityLaunch.State) {
-            suitableRunConfigurations.add(androidRunConfiguration);
-          }
-        }
+    for (RunConfiguration runConfiguration : RunManagerEx.getInstanceEx(project).getAllConfigurationsList()) {
+      TestRecorderRunConfigurationProxy runConfigurationProxy = TestRecorderRunConfigurationProxy.getInstance(runConfiguration);
+      if (runConfigurationProxy != null && runConfigurationProxy.getModule() != null && runConfigurationProxy.isLaunchActivitySupported()) {
+        suitableRunConfigurations.add(runConfiguration);
       }
     }
 

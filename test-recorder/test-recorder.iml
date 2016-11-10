@@ -41,5 +41,8 @@
     <orderEntry type="module" module-name="analytics-tracker" />
     <orderEntry type="module" module-name="analytics-protos" />
     <orderEntry type="module" module-name="testFramework" />
+    <orderEntry type="module" module-name="blaze-base" />
+    <orderEntry type="module" module-name="aswb" />
+    <orderEntry type="module" module-name="testFramework-java" scope="TEST" />
   </component>
 </module>

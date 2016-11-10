@@ -18,6 +18,7 @@ package com.google.gct.testrecorder.codegen;
 import com.android.SdkConstants;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.analytics.UsageTracker;
+import com.android.tools.idea.gradle.dsl.model.GradleBuildModel;
 import com.android.tools.idea.run.ApkProviderUtil;
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
@@ -109,11 +110,15 @@ public class TestCodeGenerator {
     // TODO: Figure out why we need to do refresh two times here.
     testVirtualFile.refresh(false, true);
     OpenFileAction.openFile(testFilePath, myProject);
+    final PsiFile testPsiFile = PsiManager.getInstance(myProject).findFile(testVirtualFile);
+    // Reformat the code immediately for non-Gradle (e.g., Blaze) projects since it takes too long to refresh asynchronously.
+    if (GradleBuildModel.get(myFacet.getModule()) == null) {
+      new ReformatCodeProcessor(myProject, testPsiFile, null, false).run();
+    }
+
     testVirtualFile.refresh(true, true, new Runnable() {
       @Override
       public void run() {
-        final PsiFile testPsiFile = PsiManager.getInstance(myProject).findFile(testVirtualFile);
-
         // Select the generated test class in the project view hierarchy tree.
         ProjectView projectView = ProjectViewImpl.getInstance(myProject);
         String currentViewId = projectView.getCurrentViewId() == null ? ProjectViewPane.ID : projectView.getCurrentViewId();
