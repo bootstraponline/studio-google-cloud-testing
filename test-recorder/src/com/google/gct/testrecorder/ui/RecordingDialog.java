@@ -17,7 +17,7 @@ package com.google.gct.testrecorder.ui;
 
 import com.android.ddmlib.IDevice;
 import com.android.tools.analytics.UsageTracker;
-import com.android.tools.idea.gradle.AndroidGradleModel;
+import com.android.tools.idea.gradle.project.model.AndroidModuleModel;
 import com.android.tools.idea.gradle.dsl.model.GradleBuildModel;
 import com.android.tools.idea.gradle.dsl.model.android.AndroidModel;
 import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencySpec;
@@ -106,7 +106,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   private IDevice myDevice;
   private String myPackageName;
   private final GradleBuildModel myGradleBuildModel;
-  private final AndroidGradleModel myAndroidGradleModel;
+  private final AndroidModuleModel myAndroidModuleModel;
 
   private boolean myAssertionMode;
   private int myAssertionIndex;
@@ -143,7 +143,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myPackageName = packageName;
     myAssertionMode = false;
     myGradleBuildModel = GradleBuildModel.get(myFacet.getModule());
-    myAndroidGradleModel = AndroidGradleModel.get(myFacet);
+    myAndroidModuleModel = AndroidModuleModel.get(myFacet);
 
     init();
 
@@ -507,17 +507,17 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
   private boolean hasCustomEspressoDependency() {
     String artifact = ESPRESSO_CORE_CUSTOM_GROUP_NAME + ":" + ESPRESSO_CORE_CUSTOM_ARTIFACT_NAME;
-    return GradleUtil.dependsOnAndroidTest(myAndroidGradleModel, artifact) || GradleUtil.dependsOn(myAndroidGradleModel, artifact);
+    return GradleUtil.dependsOnAndroidTest(myAndroidModuleModel, artifact) || GradleUtil.dependsOn(myAndroidModuleModel, artifact);
   }
 
   private boolean hasEspressoCoreDependency() {
     String artifact = ESPRESSO_CORE.getGroupId() + ":" + ESPRESSO_CORE.getArtifactId();
-    return GradleUtil.dependsOnAndroidTest(myAndroidGradleModel, artifact) || GradleUtil.dependsOn(myAndroidGradleModel, artifact);
+    return GradleUtil.dependsOnAndroidTest(myAndroidModuleModel, artifact) || GradleUtil.dependsOn(myAndroidModuleModel, artifact);
   }
 
   private boolean hasEspressoContribDependency() {
     String artifact = ESPRESSO_CONTRIB.getGroupId() + ":" + ESPRESSO_CONTRIB.getArtifactId();
-    return GradleUtil.dependsOnAndroidTest(myAndroidGradleModel, artifact) || GradleUtil.dependsOn(myAndroidGradleModel, artifact);
+    return GradleUtil.dependsOnAndroidTest(myAndroidModuleModel, artifact) || GradleUtil.dependsOn(myAndroidModuleModel, artifact);
   }
 
   private boolean hasSetInstrumentationRunner(@NotNull AndroidModel androidModel) {

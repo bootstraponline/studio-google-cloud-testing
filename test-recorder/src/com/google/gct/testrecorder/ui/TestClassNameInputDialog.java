@@ -17,7 +17,7 @@ package com.google.gct.testrecorder.ui;
 
 import com.android.builder.model.SourceProvider;
 import com.android.tools.analytics.UsageTracker;
-import com.android.tools.idea.gradle.AndroidGradleModel;
+import com.android.tools.idea.gradle.project.model.AndroidModuleModel;
 import com.android.tools.idea.gradle.testing.TestArtifactSearchScopes;
 import com.google.common.collect.Lists;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent;
@@ -159,7 +159,7 @@ public class TestClassNameInputDialog extends DialogWrapper {
   private List<String> getAndroidTestSourceRoots() {
     List<String> androidTestSourceRoots = Lists.newArrayList();
 
-    AndroidGradleModel androidModel = AndroidGradleModel.get(myFacet.getModule());
+    AndroidModuleModel androidModel = AndroidModuleModel.get(myFacet.getModule());
     if (androidModel != null) {
       for (SourceProvider sourceProvider : androidModel.getTestSourceProviders(ARTIFACT_ANDROID_TEST)) {
         for (File javaDirectory : sourceProvider.getJavaDirectories()) {

@@ -19,7 +19,7 @@ import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
 import com.android.ddmlib.IDevice;
 import com.android.tools.analytics.UsageTracker;
-import com.android.tools.idea.gradle.AndroidGradleModel;
+import com.android.tools.idea.gradle.project.model.AndroidModuleModel;
 import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
 import com.android.tools.idea.sdk.IdeSdks;
 import com.google.api.client.util.Maps;
@@ -650,7 +650,7 @@ public final class CloudConfigurationHelper {
           }
 
           // TODO: Resolve direct AndroidGradleModel dep (b/22596984)
-          AndroidGradleModel androidModel = AndroidGradleModel.get(runningState.getFacet());
+          AndroidModuleModel androidModel = AndroidModuleModel.get(runningState.getFacet());
           if (androidModel == null) {
             CloudTestingUtils.showErrorMessage(runningState.getFacet().getModule().getProject(), "Error uploading APKs",
                                                "Your project is not an idea android project!\n");
