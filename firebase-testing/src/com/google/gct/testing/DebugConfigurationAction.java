@@ -20,7 +20,7 @@ import com.android.ddmlib.IDevice;
 import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.run.TargetSelectionMode;
 import com.android.tools.idea.run.editor.DeployTargetProvider;
-import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.android.tools.idea.testartifacts.instrumented.AndroidTestRunConfiguration;
 import com.google.gct.testing.android.CloudDebuggingTargetProvider;
 import com.google.gct.testing.results.GoogleCloudTestProxy.GoogleCloudRootTestProxy;
 import com.google.gct.testing.results.GoogleCloudTestTreeView;
