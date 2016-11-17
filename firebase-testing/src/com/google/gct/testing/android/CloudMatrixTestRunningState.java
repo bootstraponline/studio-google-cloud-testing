@@ -16,8 +16,7 @@
 package com.google.gct.testing.android;
 
 import com.android.tools.idea.run.AndroidProcessText;
-import com.android.tools.idea.run.AndroidRunConfigurationBase;
-import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.android.tools.idea.testartifacts.instrumented.AndroidTestRunConfiguration;
 import com.google.gct.testing.CloudConfigurationHelper;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.ExecutionResult;

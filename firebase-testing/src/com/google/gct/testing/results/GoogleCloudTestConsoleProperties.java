@@ -16,8 +16,8 @@
 package com.google.gct.testing.results;
 
 
-import com.android.tools.idea.run.testing.AndroidTestConsoleProperties;
-import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.android.tools.idea.testartifacts.instrumented.AndroidTestConsoleProperties;
+import com.android.tools.idea.testartifacts.instrumented.AndroidTestRunConfiguration;
 import com.intellij.execution.Executor;
 import org.jetbrains.annotations.NotNull;
 

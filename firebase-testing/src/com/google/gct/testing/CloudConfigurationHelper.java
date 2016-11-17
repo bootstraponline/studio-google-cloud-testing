@@ -20,7 +20,7 @@ import com.android.builder.model.AndroidArtifactOutput;
 import com.android.ddmlib.IDevice;
 import com.android.tools.analytics.UsageTracker;
 import com.android.tools.idea.gradle.project.model.AndroidModuleModel;
-import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.android.tools.idea.testartifacts.instrumented.AndroidTestRunConfiguration;
 import com.android.tools.idea.sdk.IdeSdks;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;

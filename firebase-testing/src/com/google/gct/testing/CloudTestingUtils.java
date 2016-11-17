@@ -16,7 +16,7 @@
 package com.google.gct.testing;
 
 import com.android.tools.analytics.UsageTracker;
-import com.android.tools.idea.run.testing.AndroidTestRunConfiguration;
+import com.android.tools.idea.testartifacts.instrumented.AndroidTestRunConfiguration;
 import com.google.gct.testing.android.CloudConfiguration;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent;
 import com.intellij.icons.AllIcons;
