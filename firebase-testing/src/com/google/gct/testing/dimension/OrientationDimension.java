@@ -19,12 +19,12 @@ import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gct.testing.CloudConfigurationImpl;
-import com.google.gct.testing.launcher.CloudAuthenticator;
 import icons.AndroidIcons;
 
 import javax.swing.*;
 import java.util.List;
 
+import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
 
 public class OrientationDimension extends CloudConfigurationDimension {
 
@@ -48,7 +48,7 @@ public class OrientationDimension extends CloudConfigurationDimension {
   public static List<? extends CloudTestingType> getFullDomain() {
     if (isFullDomainMissing() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Orientation> fullDomainBuilder = new ImmutableList.Builder<Orientation>();
-      AndroidDeviceCatalog androidDeviceCatalog = CloudAuthenticator.getInstance().getAndroidDeviceCatalog();
+      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
         List<com.google.api.services.testing.model.Orientation> modelOrientations =
           androidDeviceCatalog.getRuntimeConfiguration().getOrientations();

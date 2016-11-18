@@ -18,11 +18,11 @@ package com.google.gct.testing.vnc;
 import com.glavsoft.viewer.Viewer;
 import com.glavsoft.viewer.VncKeepAliveThread;
 import com.glavsoft.viewer.cli.Parser;
-import com.google.gct.testing.launcher.CloudAuthenticator;
 
 import javax.swing.*;
 import java.io.File;
 
+import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
   private final Parser parser;
@@ -62,7 +62,7 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
 
       while (!Thread.currentThread().isInterrupted() && deviceIsReady()) {
         try {
-          CloudAuthenticator.getInstance().getTest().projects().devices().keepalive(cloudProjectId, cloudDeviceId).execute();
+          getTest().projects().devices().keepalive(cloudProjectId, cloudDeviceId).execute();
         }
         catch (Exception e) {
           e.printStackTrace();
@@ -98,7 +98,7 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
 
     try {
       // Delete the firebase device after the viewer is closed.
-      CloudAuthenticator.getInstance().getTest().projects().devices().delete(cloudProjectId, cloudDeviceId).execute();
+      getTest().projects().devices().delete(cloudProjectId, cloudDeviceId).execute();
     } catch (Exception exception) {
       exception.printStackTrace();
     }
@@ -114,7 +114,7 @@ public class VncKeepAliveThreadImpl extends VncKeepAliveThread {
 
   private boolean deviceIsReady() {
     try {
-      return CloudAuthenticator.getInstance().getTest().projects().devices().get(cloudProjectId, cloudDeviceId).execute().getState().equals("READY");
+      return getTest().projects().devices().get(cloudProjectId, cloudDeviceId).execute().getState().equals("READY");
     } catch (Exception e) {
       return true; // Do not stop the keep alive thread for intermittent connection failures.
     }
