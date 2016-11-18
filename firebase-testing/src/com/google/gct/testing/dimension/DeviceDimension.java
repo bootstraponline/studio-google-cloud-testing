@@ -20,13 +20,13 @@ import com.google.api.services.testing.model.AndroidModel;
 import com.google.common.collect.ImmutableList;
 import com.google.gct.testing.CloudConfigurationImpl;
 import com.google.gct.testing.CloudTestingUtils;
-import com.google.gct.testing.launcher.CloudAuthenticator;
 
 import javax.swing.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
 
 public class DeviceDimension extends CloudConfigurationDimension {
 
@@ -54,7 +54,7 @@ public class DeviceDimension extends CloudConfigurationDimension {
   public static List<? extends CloudTestingType> getFullDomain() {
     if (isFullDomainMissing() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Device> fullDomainBuilder = new ImmutableList.Builder<Device>();
-      AndroidDeviceCatalog androidDeviceCatalog = CloudAuthenticator.getInstance().getAndroidDeviceCatalog();
+      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
         for (AndroidModel model : androidDeviceCatalog.getModels()) {
           Map<String, String> details = new HashMap<String, String>();

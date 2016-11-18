@@ -15,10 +15,9 @@
  */
 package com.google.gct.testing;
 
-import com.google.gct.testing.launcher.CloudAuthenticator;
-
 import java.io.IOException;
 
+import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 public class CloudMatrixExecutionCancellator {
 
@@ -48,7 +47,7 @@ public class CloudMatrixExecutionCancellator {
   }
 
   private void doCancel() throws IOException {
-    CloudAuthenticator.getInstance().getTest().projects().testMatrices().cancel(cloudProjectId, testMatrixId);
+    getTest().projects().testMatrices().cancel(cloudProjectId, testMatrixId);
   }
 
   public synchronized boolean isCancelled() {
