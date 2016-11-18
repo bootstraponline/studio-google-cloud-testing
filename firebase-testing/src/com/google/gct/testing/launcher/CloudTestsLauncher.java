@@ -45,8 +45,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.google.gct.testing.CloudTestingUtils.ANDROID_STUDIO_URL_FLAG;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
 
 
 public class CloudTestsLauncher {
@@ -67,7 +65,7 @@ public class CloudTestsLauncher {
   public static Bucket createBucket(String projectId, String bucketName) {
     try {
       Bucket bucket = new Bucket().setName(bucketName).setLocation("US");
-      Storage.Buckets.Insert insertBucket = getStorage().buckets().insert(projectId, bucket);
+      Storage.Buckets.Insert insertBucket = CloudAuthenticator.getInstance().getStorage().buckets().insert(projectId, bucket);
       return insertBucket.execute();
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -90,7 +88,7 @@ public class CloudTestsLauncher {
     mediaContent.setLength(file.length());
 
     try {
-      Storage.Objects.Insert insertObject = getStorage().objects().insert(bucketName, null, mediaContent);
+      Storage.Objects.Insert insertObject = CloudAuthenticator.getInstance().getStorage().objects().insert(bucketName, null, mediaContent);
 
       // If you don't provide metadata, you will have specify the object
       // name by parameter. You will probably also want to ensure that your
@@ -149,7 +147,8 @@ public class CloudTestsLauncher {
 
     TestMatrix triggeredTestMatrix = null;
     try {
-      triggeredTestMatrix = getTest().projects().testMatrices().create(cloudProjectId, testMatrix).execute();
+      triggeredTestMatrix =
+        CloudAuthenticator.getInstance().getTest().projects().testMatrices().create(cloudProjectId, testMatrix).execute();
     } catch (Exception e) {
       String exceptionMessage = e.getMessage();
       String backendMessageHeader = "\"message\" : \"";
@@ -232,45 +231,4 @@ public class CloudTestsLauncher {
     }
   }
 
-  /**
-   * Obsolete...
-   */
-  public static void main(String str[]) {
-    if (str.length != 10) {
-      System.out.println("Please provide 10 arguments: " +
-                         "application name, " +
-                         "GCE project name, " +
-                         "Jenkins URL, " +
-                         "project ID, " +
-                         "app package, " +
-                         "test package, " +
-                         "testSpecification, " +
-                         "matrixFilter, " +
-                         "path to debug APK, " +
-                         "path to debug test APK.");
-      return;
-    }
-    String applicationName = str[0];
-    String cloudProjectName = str[1];
-    String jenkinsUrl = str[2];
-    String projectId = str[3];
-    String appPackage = str[4];
-    String testPackage = str[5];
-    String testSpecification = str[6];
-    String matrixFilter = str[7];
-    String debugApkPath = str[8];
-    String debugTestApkPath = str[9];
-    String bucketName = "build-" + applicationName.toLowerCase() + "-" + System.currentTimeMillis();
-
-    CloudTestsLauncher launcher = new CloudTestsLauncher();
-    System.out.println("Creating Cloud Storage bucket " + bucketName);
-    launcher.createBucket(projectId, bucketName);
-    System.out.println("Uploading debug APK...");
-    launcher.uploadFile(bucketName, new File(debugApkPath));
-    System.out.println("Uploading test APK...");
-    launcher.uploadFile(bucketName, new File(debugTestApkPath));
-    System.out.println("Triggering Jenkins matrix test...");
-    launcher.triggerJenkinsJob(jenkinsUrl, cloudProjectName, applicationName, bucketName, testSpecification, matrixFilter, appPackage,
-                               testPackage);
-  }
 }
