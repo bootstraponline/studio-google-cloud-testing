@@ -27,6 +27,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import com.google.gct.testing.launcher.CloudAuthenticator;
 import com.google.gct.testing.results.IGoogleCloudTestRunListener;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessOutputTypes;
@@ -38,9 +39,6 @@ import java.util.*;
 
 import static com.google.gct.testing.BucketFileMetadata.Type.*;
 import static com.google.gct.testing.CloudTestingUtils.ANDROID_STUDIO_URL_FLAG;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getToolresults;
 
 public class CloudResultsLoader {
   public static final String INFRASTRUCTURE_FAILURE_PREFIX = "Infrastructure Failure:";
@@ -132,7 +130,7 @@ public class CloudResultsLoader {
     try {
       do {
         //Retrieve the Get object in each iteration to avoid exceptions while updating request headers with a different range.
-        Storage.Objects.Get getObject = getStorage().objects().get(bucketName, fileMetadata.getPath());
+        Storage.Objects.Get getObject = CloudAuthenticator.getInstance().getStorage().objects().get(bucketName, fileMetadata.getPath());
         getObject.getMediaHttpDownloader().setDirectDownloadEnabled(true);
         getObject.setRequestHeaders(new HttpHeaders().setRange(String.format("bytes=%d-%d", currentStart, currentStart + chunkSize - 1)));
         getObject.executeMediaAndDownloadTo(out);
@@ -161,7 +159,7 @@ public class CloudResultsLoader {
     newDataReceived = false;
     try {
       if (testMatrixId == null) { // The obsolete logic kept for handling fake buckets.
-        Storage.Objects.List objects = getStorage().objects().list(bucketName);
+        Storage.Objects.List objects = CloudAuthenticator.getInstance().getStorage().objects().list(bucketName);
         List<StorageObject> storageObjects = objects.execute().getItems();
 
         Iterable<BucketFileMetadata> files =
@@ -192,7 +190,7 @@ public class CloudResultsLoader {
   private void updateResultsFromApi(Map<String, ConfigurationResult> results) {
     TestMatrix testMatrix = null;
     try {
-       testMatrix = getTest().projects().testMatrices().get(cloudProjectId, testMatrixId).execute();
+       testMatrix = CloudAuthenticator.getInstance().getTest().projects().testMatrices().get(cloudProjectId, testMatrixId).execute();
     } catch (Exception e) {
       if (consecutivePollFailuresCount == 2) { // Give up on the 3rd failure in a row.
         for (String configurationInstance : allConfigurationInstances) {
@@ -275,7 +273,7 @@ public class CloudResultsLoader {
         result.setComplete(true);
         ToolResultsStep toolResultsStep = testExecution.getToolResultsStep();
         try {
-          Step step = getToolresults().projects().histories().executions().steps()
+          Step step = CloudAuthenticator.getInstance().getToolresults().projects().histories().executions().steps()
             .get(toolResultsStep.getProjectId(), toolResultsStep.getHistoryId(), toolResultsStep.getExecutionId(),
                  toolResultsStep.getStepId()).execute();
 
@@ -355,7 +353,7 @@ public class CloudResultsLoader {
 
   private void loadResultFiles(Map<String, ConfigurationResult> results) {
     try {
-      Storage.Objects.List objects = getStorage().objects().list(bucketName);
+      Storage.Objects.List objects = CloudAuthenticator.getInstance().getStorage().objects().list(bucketName);
       List<StorageObject> storageObjects = objects.execute().getItems();
 
       Iterable<BucketFileMetadata> files = Iterables.transform(storageObjects, TO_BUCKET_FILE);
@@ -384,7 +382,7 @@ public class CloudResultsLoader {
     }
     List<StorageObject> storageObjects = null;
     try {
-      Storage.Objects.List objects = getStorage().objects().list(bucketName);
+      Storage.Objects.List objects = CloudAuthenticator.getInstance().getStorage().objects().list(bucketName);
       storageObjects = objects.execute().getItems();
     }
     catch (IOException e) {

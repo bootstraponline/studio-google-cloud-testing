@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.gct.testing.CloudConfigurationImpl;
+import com.google.gct.testing.launcher.CloudAuthenticator;
 import com.intellij.openapi.vfs.VirtualFile;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
@@ -33,7 +34,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
 
 public class LanguageDimension extends CloudConfigurationDimension {
 
@@ -123,7 +123,7 @@ public class LanguageDimension extends CloudConfigurationDimension {
   public static List<Language> getFullDomain() {
     if (isFullDomainMissing() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       ImmutableList.Builder<Language> fullDomainBuilder = new ImmutableList.Builder<Language>();
-      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
+      AndroidDeviceCatalog androidDeviceCatalog = CloudAuthenticator.getInstance().getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
         for (Locale locale : androidDeviceCatalog.getRuntimeConfiguration().getLocales()) {
           Language language = new Language(locale.getId(), locale.getName(), locale.getRegion(), false);

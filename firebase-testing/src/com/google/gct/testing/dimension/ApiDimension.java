@@ -18,7 +18,6 @@ package com.google.gct.testing.dimension;
 import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.api.services.testing.model.AndroidVersion;
 import com.google.api.services.testing.model.Date;
-import com.google.api.services.testing.model.Distribution;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
@@ -26,39 +25,17 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import com.google.gct.testing.CloudConfigurationImpl;
+import com.google.gct.testing.launcher.CloudAuthenticator;
 import icons.AndroidIcons;
 import org.jetbrains.android.facet.AndroidFacet;
 
 import javax.swing.*;
 import java.util.*;
 
-import static com.google.gct.testing.launcher.CloudAuthenticator.getAndroidDeviceCatalog;
 
 public class ApiDimension extends CloudConfigurationDimension {
 
   public static final String DISPLAY_NAME = "Platform";
-
-  //public static final ApiLevel KITKAT_19 =
-  //  new ApiLevel("KitKat", "4.4.3", 19, ImmutableMap.of("Release date", "October 2013", "Market share", "13.6%"));
-  //public static final ApiLevel JELLY_BEAN_18 =
-  //  new ApiLevel("Jelly Bean", "4.3.1", 18, ImmutableMap.of("Release date", "July 2013", "Market share", "10.3%"));
-  //public static final ApiLevel JELLY_BEAN_17 =
-  //  new ApiLevel("Jelly Bean", "4.2.2", 17, ImmutableMap.of("Release date", "November 2012", "Market share", "19.1%"));
-  //public static final ApiLevel JELLY_BEAN_16 =
-  //  new ApiLevel("Jelly Bean", "4.1.2", 16, ImmutableMap.of("Release date", "July 2012", "Market share", "29.0%"));
-  //public static final ApiLevel ICE_CREAM_SANDWICH_15 =
-  //  new ApiLevel("Ice Cream Sandwich", "4.0.4", 15, ImmutableMap.of("Release date", "December 2011", "Market share", "12.3% (all Ice Cream Sandwich)"));
-  //public static final ApiLevel ICE_CREAM_SANDWICH_14 =
-  //  new ApiLevel("Ice Cream Sandwich", "4.0.2", 14, ImmutableMap.of("Release date", "October 2011", "Market share", "12.3% (all Ice Cream Sandwich)"));
-  //public static final ApiLevel GINGERBREAD_10 =
-  //  new ApiLevel("Gingerbread", "2.3.7", 10, ImmutableMap.of("Release date", "February 2011", "Market share", "14.9% (all Gingerbread)"));
-  //public static final ApiLevel GINGERBREAD_9 =
-  //  new ApiLevel("Gingerbread", "2.3.2", 9, ImmutableMap.of("Release date", "December 2010", "Market share", "14.9% (all Gingerbread)"));
-  //public static final ApiLevel FROYO_8 =
-    //  new ApiLevel("Froyo", "2.2.3", 8, ImmutableMap.of("Release date", "May 2010", "Market share", "0.8%"));
-  //
-  //private static final Set<ApiLevel> BACKEND_SUPPORTED_API_VERSIONS =
-  //  ImmutableSet.of(KITKAT_19, JELLY_BEAN_18, JELLY_BEAN_17, JELLY_BEAN_16, ICE_CREAM_SANDWICH_15, ICE_CREAM_SANDWICH_14);
 
   private static ImmutableList<ApiLevel> FULL_DOMAIN;
   private static ApiLevel defaultApi;
@@ -104,7 +81,7 @@ public class ApiDimension extends CloudConfigurationDimension {
   public static List<? extends CloudTestingType> getFullDomain() {
     if (isFullDomainMissing() || shouldPollDiscoveryTestApi(DISPLAY_NAME)) {
       List<ApiLevel> apiLevels = new LinkedList<ApiLevel>();
-      AndroidDeviceCatalog androidDeviceCatalog = getAndroidDeviceCatalog();
+      AndroidDeviceCatalog androidDeviceCatalog = CloudAuthenticator.getInstance().getAndroidDeviceCatalog();
       if (androidDeviceCatalog != null) {
         for (AndroidVersion version : androidDeviceCatalog.getVersions()) {
           Map<String, String> details = new HashMap<String, String>();
