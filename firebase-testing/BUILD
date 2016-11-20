@@ -15,7 +15,7 @@ iml_module(
         "//tools:idea.platform-impl_and_others[module]",
         "//tools/idea/.idea/libraries:Guava",
         "//tools/idea/.idea/libraries:guava-tools",
-        "//tools/adt/idea:android[module]",
+        "//tools/adt/idea/android[module]",
         "//tools:idea.smRunner[module]",
         "//tools:idea.lang-api[module]",
         "//tools/idea/.idea/libraries:JUnit4",
