@@ -76,7 +76,7 @@ public class CloudTestingUtils {
     try {
       CLOUD_DEVICE_ICON = new ImageIcon(ImageIO.read(CloudTestingUtils.class.getResourceAsStream("CloudDevice.png")));
     } catch (Exception e) { // If something goes wrong, just use the default device icon.
-      CLOUD_DEVICE_ICON = AndroidIcons.Views.DeviceScreen;
+      CLOUD_DEVICE_ICON = AndroidIcons.NeleIcons.DeviceScreen;
     }
   }
 
