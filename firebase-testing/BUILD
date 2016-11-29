@@ -31,7 +31,7 @@ iml_module(
         "//tools/studio/google/cloud/testing/firebase-testing/lib:google-api-services-toolresults-v1beta3-rev20151013-1.20.0",
         "//tools/idea/.idea/libraries:swingx",
         "//tools/idea/java/execution/openapi:execution-openapi[module]",
-        "//tools/analytics-library:analytics-tracker[module]",
-        "//tools/analytics-library:analytics-protos[module]",
+        "//tools/analytics-library/tracker:analytics-tracker[module]",
+        "//tools/analytics-library/protos:analytics-protos[module]",
     ],
 )
