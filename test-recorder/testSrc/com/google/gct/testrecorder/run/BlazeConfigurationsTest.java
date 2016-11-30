@@ -19,12 +19,12 @@ import com.google.common.base.Predicate;
 import com.google.gct.testrecorder.ui.TestRecorderAction;
 import com.google.idea.blaze.android.run.binary.BlazeAndroidBinaryRunConfigurationHandler;
 import com.google.idea.blaze.android.run.binary.BlazeAndroidBinaryRunConfigurationState;
-import com.google.idea.blaze.base.ideinfo.RuleIdeInfo;
+import com.google.idea.blaze.base.ideinfo.TargetIdeInfo;
 import com.google.idea.blaze.base.model.primitives.Kind;
 import com.google.idea.blaze.base.model.primitives.Label;
 import com.google.idea.blaze.base.run.BlazeCommandRunConfiguration;
 import com.google.idea.blaze.base.run.BlazeCommandRunConfigurationType;
-import com.google.idea.blaze.base.run.rulefinder.RuleFinder;
+import com.google.idea.blaze.base.run.targetfinder.TargetFinder;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.impl.RunManagerImpl;
@@ -67,10 +67,10 @@ public class BlazeConfigurationsTest extends IdeaTestCase {
   private void addConfigurationsForProject(Project project) {
     MutablePicoContainer applicationContainer = (MutablePicoContainer) ApplicationManager.getApplication().getPicoContainer();
 
-    String componentKey = RuleFinder.class.getName();
+    String componentKey = TargetFinder.class.getName();
     // Unregister the default rule finder.
     applicationContainer.unregisterComponent(componentKey);
-    applicationContainer.registerComponentInstance(componentKey, new MockRuleFinder());
+    applicationContainer.registerComponentInstance(componentKey, new MockTargetFinder());
 
     String modulePath = myModule.getModuleFilePath();
     String blazeConfigurationModulePath = modulePath.substring(0, modulePath.lastIndexOf('/')) + "/label.android_binary_rule.iml";
@@ -95,16 +95,16 @@ public class BlazeConfigurationsTest extends IdeaTestCase {
     runManager.addConfiguration(runManager.createConfiguration(blazeAndroidTestConfiguration, configurationFactory), true);
   }
 
-  private static class MockRuleFinder extends RuleFinder {
+  private static class MockTargetFinder extends TargetFinder {
     @Override
-    public List<RuleIdeInfo> findRules(Project project, Predicate<RuleIdeInfo> predicate) {
+    public List<TargetIdeInfo> findTargets(Project project, Predicate<TargetIdeInfo> predicate) {
       return null;
     }
 
     @Override
-    public RuleIdeInfo ruleForTarget(Project project, final Label target) {
-      RuleIdeInfo.Builder builder = RuleIdeInfo.builder().setLabel(target);
-      if (target.ruleName().toString().equals("android_binary_rule")) {
+    public TargetIdeInfo targetForLabel(Project project, final Label label) {
+      TargetIdeInfo.Builder builder = TargetIdeInfo.builder().setLabel(label);
+      if (label.targetName().toString().equals("android_binary_rule")) {
         builder.setKind(Kind.ANDROID_BINARY);
       } else {
         builder.setKind(Kind.ANDROID_TEST);
