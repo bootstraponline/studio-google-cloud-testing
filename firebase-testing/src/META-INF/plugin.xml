@@ -17,7 +17,7 @@
 
   <depends>org.jetbrains.android</depends>
   <depends>com.google.gct.login</depends>
-  <depends>com.google.gct</depends>
+  <depends>com.google.gct.core</depends>
 
   <extensions defaultExtensionNs="com.intellij">
     <projectConfigurable instance="com.google.gct.testing.config.GoogleCloudTestingDeveloperConfigurable"/>

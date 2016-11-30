@@ -15,6 +15,7 @@
  */
 package com.google.gct.testing;
 
+import com.android.annotations.VisibleForTesting;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
 import com.android.ddmlib.IDevice;
@@ -25,7 +26,6 @@ import com.android.tools.idea.sdk.IdeSdks;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.api.services.storage.Storage;
-import com.google.api.services.storage.model.Buckets;
 import com.google.api.services.storage.model.StorageObject;
 import com.google.api.services.testing.model.AndroidDevice;
 import com.google.api.services.testing.model.Device;
@@ -77,9 +77,6 @@ import java.net.InetAddress;
 import java.util.*;
 
 import static com.google.gct.testing.CloudTestingUtils.checkJavaVersion;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getStorage;
-import static com.google.gct.testing.launcher.CloudAuthenticator.getTest;
-import static com.google.gct.testing.launcher.CloudTestsLauncher.createBucket;
 import static com.jcraft.jsch.KeyPair.RSA;
 
 public final class CloudConfigurationHelper {
@@ -127,7 +124,7 @@ public final class CloudConfigurationHelper {
   @NotNull
   public static List<? extends CloudConfiguration> getCloudConfigurations(@NotNull AndroidFacet facet, @NotNull final CloudConfiguration.Kind configurationKind) {
     try {
-      CloudAuthenticator.prepareCredential();
+      CloudAuthenticator.getInstance().prepareCredential();
     } catch(Exception e) {
       return Lists.newArrayList();
     }
@@ -144,7 +141,8 @@ public final class CloudConfigurationHelper {
                                                getDefaultConfigurations(facet, configurationKind)));
   }
 
-  private static List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, CloudConfiguration.Kind kind) {
+  @VisibleForTesting
+  public static List<? extends CloudConfiguration> getDefaultConfigurations(AndroidFacet facet, CloudConfiguration.Kind kind) {
     if (kind == CloudConfiguration.Kind.SINGLE_DEVICE) {
       CloudConfigurationImpl defaultConfiguration =
         new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_DEVICE_CONFIGURATION_ID, "", CloudConfiguration.Kind.SINGLE_DEVICE, AndroidIcons.Display, facet);
@@ -185,27 +183,22 @@ public final class CloudConfigurationHelper {
     defaultConfiguration.languageDimension.enableDefault();
     defaultConfiguration.orientationDimension.enableAll();
     defaultConfiguration.setNonEditable();
-    return ImmutableList.of(defaultConfiguration);
 
-    // TODO: For now, do not offer the default "all" configurations as there are too many of them.
-    //CloudConfigurationImpl allConfiguration =
-    //  new CloudConfigurationImpl(CloudConfigurationImpl.ALL_CONFIGURATION_ID, "All Compatible", MATRIX, AndroidIcons.Display, facet);
-    //allConfiguration.deviceDimension.enableAll();
-    //allConfiguration.apiDimension.enableAll();
-    //allConfiguration.languageDimension.enableAll();
-    //allConfiguration.orientationDimension.enableAll();
-    //allConfiguration.setNonEditable();
-    //return ImmutableList.of(allConfiguration);
-    //TODO: For now, there are no default configurations to store/read from the persistent storage (i.e., an xml file).
-    //List<CloudPersistentConfiguration> myCloudPersistentConfigurations =
-    //  CloudDefaultPersistentConfigurations.getInstance(facet.getModule()).getState().myCloudPersistentConfigurations;
-    //return ImmutableList.copyOf(deserializeConfigurations(myCloudPersistentConfigurations, false, facet));
+    CloudConfigurationImpl defaultSparkConfiguration =
+      new CloudConfigurationImpl(CloudConfigurationImpl.DEFAULT_FREE_TIER_MATRIX_CONFIGURATION_ID, "Sample Spark configuration", CloudConfiguration.Kind.MATRIX, AndroidIcons.Display, facet);
+    defaultSparkConfiguration.deviceDimension.enable(DeviceDimension.getFullDomain(), Arrays.asList("Nexus9", "shamu"));
+    defaultSparkConfiguration.apiDimension.enable(ApiDimension.getFullDomain(), Arrays.asList("22", "23"));
+    defaultSparkConfiguration.languageDimension.enableDefault();
+    defaultSparkConfiguration.orientationDimension.enableDefault();
+    defaultSparkConfiguration.setNonEditable();
+
+    return ImmutableList.of(defaultSparkConfiguration, defaultConfiguration);
   }
 
   @NotNull
   public static List<? extends CloudConfiguration> getAllCloudConfigurations(@NotNull AndroidFacet facet) {
     try {
-      CloudAuthenticator.prepareCredential();
+      CloudAuthenticator.getInstance().prepareCredential();
     } catch(Exception e) {
       return Lists.newArrayList();
     }
@@ -279,56 +272,16 @@ public final class CloudConfigurationHelper {
   }
 
   @Nullable
-  public static String openCloudProjectConfigurationDialog(@NotNull Project project, @Nullable String projectId) {
-    CloudProjectChooserDialog dialog = new CloudProjectChooserDialog(project, projectId);
-
-    dialog.show();
-
-    if (dialog.isOK()) {
-      return dialog.getSelectedProject();
-    }
-    return null;
-  }
-
-  private static boolean validateCloudProject(@NotNull Project project, @NotNull String cloudProjectId) {
-    // Check that the user is authorized into the cloud.
-    Buckets buckets = null;
-    String message = null;
+  private static String getDefaultBucketName(@NotNull Project project, @NotNull String cloudProjectId) {
     try {
-      buckets = getStorage().buckets().list(cloudProjectId).execute();
-    } catch (Exception e) {
-      message = e.getMessage();
-      // ignore
-    } finally {
-      if (buckets == null) {
-        CloudTestingUtils
-          .showErrorMessage(project, "Firebase test configuration is invalid",
-                            "Failed to authorize to Cloud project! Please select a project you are authorized to use.\n"
-                            + "Exception while performing a pre-trigger sanity check\n\n" + message);
-        return false;
-      }
-    }
-
-    // Check that the specified cloud project has billing enabled.
-    String checkBucketName = generateUniqueBucketName("check-billing");
-    try {
-      createBucket(cloudProjectId, checkBucketName);
+      return CloudAuthenticator.getInstance().getToolresults().projects().initializeSettings(cloudProjectId).execute().getDefaultBucket();
     } catch (Exception e) {
       CloudTestingUtils
         .showErrorMessage(project, "Firebase test configuration is invalid",
-                          "Please enable billing in your Cloud project.\n"
-                          + "Exception while performing a pre-trigger sanity check\n\n" + e.getMessage());
-      return false;
+                          "Failed to get the default bucket name! Please select a project you are authorized to use.\n"
+                          + "Exception while getting the default bucket name\n\n" + e.getMessage());
+      return null;
     }
-
-    // Cleanup
-    try {
-      getStorage().buckets().delete(checkBucketName).execute();
-    } catch (Exception e) {
-      // ignore
-    }
-
-    return true;
   }
 
   public static void launchCloudDevice(int selectedConfigurationId, @NotNull String cloudProjectId, @NotNull AndroidFacet facet) {
@@ -375,7 +328,8 @@ public final class CloudConfigurationHelper {
 
     Device createdDevice = null;
     try {
-      createdDevice = getTest().projects().devices().create(cloudProjectId, device).setSshPublicKey(publicKey).execute();
+      createdDevice =
+        CloudAuthenticator.getInstance().getTest().projects().devices().create(cloudProjectId, device).setSshPublicKey(publicKey).execute();
     } catch (Exception e) {
       CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
                                                                                  "Exception while launching a firebase device\n\n" +
@@ -398,7 +352,7 @@ public final class CloudConfigurationHelper {
       @Override
       public void viewerClosed() {
         try {
-          getTest().projects().devices().delete(cloudProjectId, deviceId).execute();
+          CloudAuthenticator.getInstance().getTest().projects().devices().delete(cloudProjectId, deviceId).execute();
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -422,7 +376,7 @@ public final class CloudConfigurationHelper {
             return;
           }
         }
-        createdDevice = getTest().projects().devices().get(cloudProjectId, deviceId).execute();
+        createdDevice = CloudAuthenticator.getInstance().getTest().projects().devices().get(cloudProjectId, deviceId).execute();
         System.out.println("Polling for device... (time: " + System.currentTimeMillis() + ", status: " + createdDevice.getState() + ")");
         if (createdDevice.getState().equals("DEVICE_ERROR")) {
           CloudTestingUtils.showErrorMessage(null, "Error launching a firebase device", "Failed to launch a firebase device!\n" +
@@ -560,7 +514,9 @@ public final class CloudConfigurationHelper {
 
     Project project = runningState.getFacet().getModule().getProject();
 
-    if (!validateCloudProject(project, cloudProjectId)) {
+    String bucketName = getDefaultBucketName(project, cloudProjectId);
+
+    if (bucketName == null) {
       // Cloud project is invalid, nothing to do.
       return null;
     }
@@ -592,7 +548,7 @@ public final class CloudConfigurationHelper {
     GoogleCloudTestingDeveloperConfigurable.GoogleCloudTestingDeveloperState googleCloudTestingDeveloperState =
       GoogleCloudTestingDeveloperSettings.getInstance(project).getState();
     if (!googleCloudTestingDeveloperState.shouldUseFakeBucket) {
-      performTestsInCloud(cloudConfiguration, cloudProjectId, runningState, cloudResultParser, matrixExecutionCancellator);
+      performTestsInCloud(cloudConfiguration, cloudProjectId, bucketName, runningState, cloudResultParser, matrixExecutionCancellator);
     }
     else {
       String testRunId = TEST_RUN_ID_PREFIX + googleCloudTestingDeveloperState.fakeBucketName + System.currentTimeMillis();
@@ -610,7 +566,7 @@ public final class CloudConfigurationHelper {
     final String publicBucketName = "cloud-testing-plugin-enablement";
     final String triggerFileName = isDebugging ? "DEBUGGING_ENABLED" : "TESTING_ENABLED";
     try {
-      Storage.Objects.List objects = CloudAuthenticator.getPublicStorage().objects().list(publicBucketName);
+      Storage.Objects.List objects = CloudAuthenticator.getInstance().getPublicStorage().objects().list(publicBucketName);
       List<StorageObject> storageObjects = objects.execute().getItems();
       if (storageObjects != null) {
         for (StorageObject storageObject : storageObjects) {
@@ -626,7 +582,8 @@ public final class CloudConfigurationHelper {
   }
 
   private static void performTestsInCloud(final CloudConfigurationImpl cloudTestingConfiguration, final String cloudProjectId,
-                                          final CloudMatrixTestRunningState runningState, final GoogleCloudTestingResultParser cloudResultParser,
+                                          final String bucketName, final CloudMatrixTestRunningState runningState,
+                                          final GoogleCloudTestingResultParser cloudResultParser,
                                           final CloudMatrixExecutionCancellator matrixExecutionCancellator) {
     if (cloudTestingConfiguration != null && cloudTestingConfiguration.getDeviceConfigurationCount() > 0) {
       final List<String> expectedConfigurationInstances =
@@ -635,15 +592,12 @@ public final class CloudConfigurationHelper {
         @Override
         public void run() {
           AndroidTestRunConfiguration testRunConfiguration = runningState.getConfiguration();
-          String moduleName = runningState.getFacet().getModule().getName();
-          String bucketName = generateUniqueBucketName(moduleName);
 
           if (matrixExecutionCancellator.isCancelled()) {
             return;
           }
           runningState.getProcessHandler().notifyTextAvailable(
-            prepareProgressString("Creating Cloud Storage Bucket " + bucketName + " ...", ""), ProcessOutputTypes.STDOUT);
-          createBucket(cloudProjectId, bucketName);
+            prepareProgressString("Using Cloud Storage Bucket " + bucketName + " ...", ""), ProcessOutputTypes.STDOUT);
 
           if (matrixExecutionCancellator.isCancelled()) {
             return;
@@ -726,92 +680,6 @@ public final class CloudConfigurationHelper {
                  : progressMessage + "\n" + suffix;
         }
       }).start();
-    }
-  }
-
-  private static String generateUniqueBucketName(String moduleName) {
-    final String characters = "abcdefghijklmnopqrstuvwxyz";
-    final int suffixLength = 4;
-    final Random randomGenerator = new Random();
-
-    StringBuilder suffix = new StringBuilder(suffixLength);
-    for (int i = 0; i < suffixLength; i++) {
-      suffix.append(characters.charAt(randomGenerator.nextInt(characters.length())));
-    }
-
-    return "as-build_" + moduleName.toLowerCase() + "_" + System.currentTimeMillis() + "_" + suffix;
-  }
-
-  //private String listAllApks(List<String> apkPaths) {
-  //  List<String> allApks = new ArrayList<String>();
-  //  for (String apkPath : apkPaths) {
-  //    allApks.addAll(Arrays.asList(new File(apkPath).list(new FilenameFilter() {
-  //      @Override
-  //      public boolean accept(File dir, String name) {
-  //        return name.endsWith(".apk");
-  //      }
-  //    })));
-  //  }
-  //  String apkList = "";
-  //  for (String apk : allApks) {
-  //    apkList += apk + "\n";
-  //  }
-  //  return apkList;
-  //}
-  //
-  //private File findAppropriateApk(List<String> apkPaths, final boolean isTestApk) {
-  //  List<File> allApkFiles = new ArrayList<File>();
-  //  for (String apkPath : apkPaths) {
-  //    allApkFiles.addAll(Arrays.asList(new File(apkPath).listFiles(new FilenameFilter() {
-  //      @Override
-  //      public boolean accept(File dir, String name) {
-  //        return name.endsWith(".apk") && (isTestApk ? name.contains("-test") : !name.contains("-test"));
-  //      }
-  //    })));
-  //  }
-  //  if (allApkFiles.size() == 0) {
-  //    return null;
-  //  }
-  //
-  //  return Collections.max(allApkFiles, new Comparator<File>() {
-  //    @Override
-  //    public int compare(File file1, File file2) {
-  //      return (int)(file1.lastModified() - file2.lastModified());
-  //    }
-  //  });
-  //}
-
-  //private File findAppropriateApk(String apkPath, String moduleName, final boolean isTestApk) {
-  //  File apkFolder = new File(apkPath);
-  //  HashSet<String> apks = Sets.newHashSet(apkFolder.list());
-  //  String[] buildTypes = new String[] {"release", "debug"};
-  //  String[] alignments = new String[] {"", "-unaligned"};
-  //  String[] variations = new String[] {"full-", "", "x86-"}; // We do not support 'arm' and 'e2e' at the moment.
-  //
-  //  for (String buildType : buildTypes) {
-  //    for (String alignment : alignments) {
-  //      for (String variation : variations) {
-  //        String fileName = moduleName + "-" + variation + buildType + (isTestApk ? "-test" : "") + alignment + ".apk";
-  //        if (apks.contains(fileName)) {
-  //          return new File(apkFolder, fileName);
-  //        }
-  //      }
-  //    }
-  //  }
-  //  return null;
-  //}
-
-  //private List<String> getApkPaths(AndroidRunningState runningState) {
-  //  String buildPath = runningState.getFacet().getModule().getModuleFile().getParent().getPath() + "/build";
-  //  List<String> apkPaths = new LinkedList<String>();
-  //  addPathIfExists(apkPaths, buildPath + "/apk/");
-  //  addPathIfExists(apkPaths, buildPath + "/outputs/apk/");
-  //  return apkPaths;
-  //}
-
-  private static void addPathIfExists(List<String> apkPaths, String apkPath) {
-    if (new File(apkPath).exists()) {
-      apkPaths.add(apkPath);
     }
   }
 

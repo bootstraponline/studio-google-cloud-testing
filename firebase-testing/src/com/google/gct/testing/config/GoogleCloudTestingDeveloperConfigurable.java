@@ -144,7 +144,7 @@ public class GoogleCloudTestingDeveloperConfigurable implements OptionalConfigur
     state.backendUrl = getTestBackendUrl();
     state.customUrl = customUrlField.getText();
     getSavedSettings().loadState(state);
-    CloudAuthenticator.recreateTestAndToolResults(getTestBackendUrl(), getToolResultsBackendUrl());
+    CloudAuthenticator.getInstance().recreateTestAndToolResults(getTestBackendUrl(), getToolResultsBackendUrl());
   }
 
   @Override
@@ -154,7 +154,7 @@ public class GoogleCloudTestingDeveloperConfigurable implements OptionalConfigur
     useFakeBucketCheckbox.setSelected(state == null ? false : state.shouldUseFakeBucket);
     setBackendOption(BackendOption.values()[state == null ? 0 : state.backendOption]);
     customUrlField.setText(state == null ? "" : state.customUrl);
-    CloudAuthenticator.recreateTestAndToolResults(getTestBackendUrl(), getToolResultsBackendUrl());
+    CloudAuthenticator.getInstance().recreateTestAndToolResults(getTestBackendUrl(), getToolResultsBackendUrl());
   }
 
   private BackendOption getBackendOption() {

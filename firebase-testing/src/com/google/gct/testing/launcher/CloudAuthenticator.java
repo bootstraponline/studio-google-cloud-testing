@@ -19,68 +19,83 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.repackaged.com.google.common.annotations.VisibleForTesting;
 import com.google.api.services.storage.Storage;
 import com.google.api.services.testing.Testing;
 import com.google.api.services.testing.model.AndroidDeviceCatalog;
 import com.google.api.services.toolresults.Toolresults;
 import com.google.gct.login.GoogleLogin;
 import com.google.gct.testing.CloudTestingUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class CloudAuthenticator {
 
   private static final String APPLICATION_NAME = "GCTL";
 
+  private static CloudAuthenticator instance;
+
   /** Global instance of the HTTP transport. */
-  private static HttpTransport httpTransport;
-
-  private static Credential credential;
-
-  private static Storage storage;
-
-  private static Testing test;
-
-  private static Toolresults toolresults;
-
-  private static long lastDiscoveryServiceInvocationTimestamp = -1;
+  private HttpTransport myHttpTransport;
+  private Credential myCredential;
+  private Storage myStorage;
+  private Testing myTest;
+  private Toolresults myToolresults;
+  private long myLastDiscoveryServiceInvocationTimestamp = -1;
 
 
-  public static Storage getPublicStorage() {
-    if (httpTransport == null) {
-      httpTransport = createHttpTransport();
+  @NotNull
+  public static CloudAuthenticator getInstance() {
+    if (instance == null) {
+      instance = new CloudAuthenticator();
+    }
+    return instance;
+  }
+
+  /**
+   * Should be used in tests only!
+   */
+  @VisibleForTesting
+  public static void setInstance(CloudAuthenticator testInstance) {
+    instance = testInstance;
+  }
+
+  public Storage getPublicStorage() {
+    if (myHttpTransport == null) {
+      myHttpTransport = createHttpTransport();
     }
     // A storage accessible to anyone without authentication and authorization (null credential).
-    return new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), null).setApplicationName(APPLICATION_NAME).build();
+    return new Storage.Builder(myHttpTransport, JacksonFactory.getDefaultInstance(), null).setApplicationName(APPLICATION_NAME).build();
   }
 
-  public static Storage getStorage() {
+  public Storage getStorage() {
     prepareCredential();
-    if (storage == null) {
-      storage =
-        new Storage.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME).build();
+    if (myStorage == null) {
+      myStorage =
+        new Storage.Builder(myHttpTransport, JacksonFactory.getDefaultInstance(), myCredential).setApplicationName(APPLICATION_NAME).build();
     }
-    return storage;
+    return myStorage;
   }
 
-  public static void recreateTestAndToolResults(String testBackendUrl, String toolResultsBackendUrl) {
+  public void recreateTestAndToolResults(String testBackendUrl, String toolResultsBackendUrl) {
     prepareCredential();
-    test =
-      new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME)
+    myTest =
+      new Testing.Builder(myHttpTransport, JacksonFactory.getDefaultInstance(), myCredential).setApplicationName(APPLICATION_NAME)
         .setRootUrl(testBackendUrl).build();
-    toolresults =
-      new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME)
+    myToolresults =
+      new Toolresults.Builder(myHttpTransport, JacksonFactory.getDefaultInstance(), myCredential).setApplicationName(APPLICATION_NAME)
         .setRootUrl(toolResultsBackendUrl).build();
   }
 
-  public static Testing getTest() {
+  public Testing getTest() {
     prepareCredential();
-    if (test == null) {
-      test =
-        new Testing.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME).build();
+    if (myTest == null) {
+      myTest =
+        new Testing.Builder(myHttpTransport, JacksonFactory.getDefaultInstance(), myCredential).setApplicationName(APPLICATION_NAME).build();
     }
-    return test;
+    return myTest;
   }
 
-  public static AndroidDeviceCatalog getAndroidDeviceCatalog() {
+  public AndroidDeviceCatalog getAndroidDeviceCatalog() {
     long currentTimestamp = System.currentTimeMillis();
     try {
       AndroidDeviceCatalog catalog = getTest().testEnvironmentCatalog().get("ANDROID").execute().getAndroidDeviceCatalog();
@@ -94,41 +109,41 @@ public class CloudAuthenticator {
       showDeviceCatalogError("Exception while getting Android device catalog\n\n" + e.getMessage(), currentTimestamp);
       return null;
     } finally {
-      lastDiscoveryServiceInvocationTimestamp = currentTimestamp;
+      myLastDiscoveryServiceInvocationTimestamp = currentTimestamp;
     }
   }
 
-  private static void showDeviceCatalogError(String errorMessageSuffix, long currentTimestamp) {
+  private void showDeviceCatalogError(String errorMessageSuffix, long currentTimestamp) {
     // The error should be reported just once per burst of invocations.
-    if (currentTimestamp - lastDiscoveryServiceInvocationTimestamp > 1000l) { // If more than a second has passed.
+    if (currentTimestamp - myLastDiscoveryServiceInvocationTimestamp > 1000l) { // If more than a second has passed.
       CloudTestingUtils.showErrorMessage(null, "Error retrieving android device catalog",
                                          "Failed to retrieve available firebase devices! Please try again later.\n" + errorMessageSuffix);
     }
   }
 
-  public static Toolresults getToolresults() {
+  public Toolresults getToolresults() {
     prepareCredential();
-    if (toolresults == null) {
-      toolresults =
-        new Toolresults.Builder(httpTransport, JacksonFactory.getDefaultInstance(), credential).setApplicationName(APPLICATION_NAME)
+    if (myToolresults == null) {
+      myToolresults =
+        new Toolresults.Builder(myHttpTransport, JacksonFactory.getDefaultInstance(), myCredential).setApplicationName(APPLICATION_NAME)
           .build();
     }
-    return toolresults;
+    return myToolresults;
   }
 
-  public static void prepareCredential() {
-    if (httpTransport == null) {
-      httpTransport = createHttpTransport();
+  public void prepareCredential() {
+    if (myHttpTransport == null) {
+      myHttpTransport = createHttpTransport();
     }
-    if (credential == null) {
+    if (myCredential == null) {
       if (!authorize()) {
         throw new RuntimeException("Failed to authorize to Google Cloud!");
       }
-      credential = GoogleLogin.getInstance().getCredential();
+      myCredential = GoogleLogin.getInstance().getCredential();
     }
   }
 
-  private static HttpTransport createHttpTransport() {
+  private HttpTransport createHttpTransport() {
     try {
       return GoogleNetHttpTransport.newTrustedTransport();
     } catch (Exception e) {
