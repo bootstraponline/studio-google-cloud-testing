@@ -17,10 +17,10 @@ package com.google.gct.testrecorder.ui;
 
 import com.android.ddmlib.IDevice;
 import com.android.tools.analytics.UsageTracker;
-import com.android.tools.idea.gradle.project.model.AndroidModuleModel;
 import com.android.tools.idea.gradle.dsl.model.GradleBuildModel;
 import com.android.tools.idea.gradle.dsl.model.android.AndroidModel;
 import com.android.tools.idea.gradle.dsl.model.dependencies.ArtifactDependencySpec;
+import com.android.tools.idea.gradle.project.model.AndroidModuleModel;
 import com.android.tools.idea.gradle.project.sync.GradleSyncInvoker;
 import com.android.tools.idea.gradle.util.GradleUtil;
 import com.android.uiautomator.UiAutomatorModel;
@@ -36,7 +36,7 @@ import com.google.gct.testrecorder.settings.TestRecorderSettings;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent.EventCategory;
 import com.google.wireless.android.sdk.stats.AndroidStudioEvent.EventKind;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -49,15 +49,12 @@ import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.android.facet.AndroidFacet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -101,10 +98,11 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   private static final String RECORDING_DIALOG_TITLE = "Record Your Test";
   private static final String DEFAULT_MESSAGE = "Select an element from screenshot";
 
-  private Project myProject;
-  private AndroidFacet myFacet;
-  private IDevice myDevice;
-  private String myPackageName;
+  private final Project myProject;
+  private final AndroidFacet myFacet;
+  private final IDevice myDevice;
+  private final String myPackageName;
+  private final String myLaunchedActivityName;
   private final GradleBuildModel myGradleBuildModel;
   private final AndroidModuleModel myAndroidModuleModel;
 
@@ -131,9 +129,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
   private JButton mySaveAssertionButton;
   private JButton myCancelButton;
   private JButton mySaveAssertionAndAddAnotherButton;
-  private JButton myCompleteRecordingButton;
   private JPanel myRecordingPanel;
-  private JEditorPane myDisclaimerPane;
 
   public RecordingDialog(AndroidFacet facet, IDevice device, String packageName, String launchedActivityName) {
     super(facet.getModule().getProject());
@@ -141,6 +137,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myFacet = facet;
     myDevice = device;
     myPackageName = packageName;
+    myLaunchedActivityName = launchedActivityName;
     myAssertionMode = false;
     myGradleBuildModel = GradleBuildModel.get(myFacet.getModule());
     myAndroidModuleModel = AndroidModuleModel.get(myFacet);
@@ -149,7 +146,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
     setTitle(RECORDING_DIALOG_TITLE);
 
-    getRootPane().setDefaultButton(myCompleteRecordingButton);
+    getRootPane().setDefaultButton(getButton(getOKAction()));
 
     // TODO: Make it visible when we add the required functionality.
     myTakeScreenshotButton.setVisible(false);
@@ -166,7 +163,7 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
           @Override
           public void onSuccess(BufferedImage initialImage, UiAutomatorModel model) {
             myAssertionMode = true;
-            getRootPane().setDefaultButton(mySaveAssertionButton);
+            getRootPane().setDefaultButton(mySaveAssertionAndAddAnotherButton);
             BasicTreeNode root = model.getXmlRootNode();
             BufferedImage preparedImage = rotateImage(initialImage, getRotation(root));
             myScreenshotPanel.updateScreenShot(preparedImage, model);
@@ -293,62 +290,71 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
         }
       }
     });
+  }
 
-    myCompleteRecordingButton.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        // Show the test class name input dialog before (potentially) setting up Espresso dependencies,
-        // which might confuse Gradle about the location of android tests.
-        TestClassNameInputDialog chooser = new TestClassNameInputDialog(myFacet, launchedActivityName);
-        chooser.show();
+  @NotNull
+  @Override
+  protected String getHelpId() {
+    return "https://developer.android.com/r/studio-ui/test-recorder.html";
+  }
 
-        boolean hasAddedEspressoDependencies = false;
-        boolean hasCustomEspressoDependency = false;
-        // Automatically check/setup Espresso dependencies for Gradle projects only.
-        if (myGradleBuildModel != null) {
-          AndroidModel androidModel = myGradleBuildModel.android();
-          // androidModel will be null when the Gradle experimental plugin is used and it's not possible to update the instrumentation runner.
-          // TODO: Provide an appropriate error message or some alternative way to update instrumentation runner when the Gradle experimental
-          // plugin is used.
-          if (androidModel != null && !hasAllRequiredEspressoDependencies(androidModel)) {
-            UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
-                                             .setCategory(EventCategory.TEST_RECORDER)
-                                             .setKind(EventKind.TEST_RECORDER_MISSING_ESPRESSO_DEPENDENCIES));
+  @Override
+  protected void doHelpAction() {
+    BrowserUtil.browse(getHelpId());
+  }
 
-            if (Messages.showDialog(myProject,
-                                    "This app is missing some dependencies for running Espresso tests.\n" +
-                                    "Would you like to automatically add Espresso dependencies for this app?\n" +
-                                    "To complete the set up, Gradle might ask you to install the missing libraries.\n" +
-                                    "Please click on the corresponding link(s) to install them.",
-                                    "Missing Espresso dependencies",
-                                    new String[]{Messages.NO_BUTTON, Messages.YES_BUTTON}, 1, null) != 0) {
-              hasAddedEspressoDependencies = true;
-              setupEspresso();
-            }
-          }
-          hasCustomEspressoDependency = hasCustomEspressoDependency();
-        }
+  @Override
+  protected void doOKAction() {
+    // Show the test class name input dialog before (potentially) setting up Espresso dependencies,
+    // which might confuse Gradle about the location of android tests.
+    TestClassNameInputDialog chooser = new TestClassNameInputDialog(myFacet, myLaunchedActivityName);
+    chooser.show();
 
-        // Get all events (UI events and assertions).
-        ArrayList<Object> events = new ArrayList<Object>();
-        for (int i = 0; i < myEventListModel.size(); i++) {
-          events.add(myEventListModel.get(i));
-        }
+    boolean hasAddedEspressoDependencies = false;
+    boolean hasCustomEspressoDependency = false;
+    // Automatically check/setup Espresso dependencies for Gradle projects only.
+    if (myGradleBuildModel != null) {
+      AndroidModel androidModel = myGradleBuildModel.android();
+      // androidModel will be null when the Gradle experimental plugin is used and it's not possible to update the instrumentation runner.
+      // TODO: Provide an appropriate error message or some alternative way to update instrumentation runner when the Gradle experimental
+      // plugin is used.
+      if (androidModel != null && !hasAllRequiredEspressoDependencies(androidModel)) {
+        UsageTracker.getInstance().log(AndroidStudioEvent.newBuilder()
+                                         .setCategory(EventCategory.TEST_RECORDER)
+                                         .setKind(EventKind.TEST_RECORDER_MISSING_ESPRESSO_DEPENDENCIES));
 
-        PsiClass testClass = chooser.getTestClass();
-
-        if (testClass != null) {
-          doOKAction();
-          new TestCodeGenerator(myFacet, testClass, events, launchedActivityName, hasCustomEspressoDependency,
-                                hasAddedEspressoDependencies).generate();
+        if (Messages.showDialog(myProject,
+                                "This app is missing some dependencies for running Espresso tests.\n" +
+                                "Would you like to automatically add Espresso dependencies for this app?\n" +
+                                "To complete the set up, Gradle might ask you to install the missing libraries.\n" +
+                                "Please click on the corresponding link(s) to install them.",
+                                "Missing Espresso dependencies",
+                                new String[]{Messages.NO_BUTTON, Messages.YES_BUTTON}, 1, null) != 0) {
+          hasAddedEspressoDependencies = true;
+          setupEspresso();
         }
       }
-    });
+      hasCustomEspressoDependency = hasCustomEspressoDependency();
+    }
+
+    // Get all events (UI events and assertions).
+    ArrayList<Object> events = new ArrayList<Object>();
+    for (int i = 0; i < myEventListModel.size(); i++) {
+      events.add(myEventListModel.get(i));
+    }
+
+    PsiClass testClass = chooser.getTestClass();
+
+    if (testClass != null) {
+      super.doOKAction();
+      new TestCodeGenerator(myFacet, testClass, events, myLaunchedActivityName, hasCustomEspressoDependency,
+                            hasAddedEspressoDependencies).generate();
+    }
   }
 
   private void exitAssertionMode(boolean shouldAddAssertion) {
     myAssertionMode = false;
-    getRootPane().setDefaultButton(myCompleteRecordingButton);
+    getRootPane().setDefaultButton(getButton(getOKAction()));
     // Display button panel.
     CardLayout cardLayout = (CardLayout) myAssertionPanel.getLayout();
     cardLayout.show(myAssertionPanel, "myButtonsPanel");
@@ -440,47 +446,6 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
     myScreenshotPanel = new ScreenshotPanel(this);
     myScreenshotPanel.setPreferredSize(new Dimension(0, 0));
     myScreenshotPanel.setVisible(false);
-
-    myDisclaimerPane = new JEditorPane(
-      UIUtil.HTML_MIME, "<html><a href='https://developer.android.com/r/studio-ui/test-recorder.html'>Espresso Test Recorder</a> is currently in beta. "
-                        + "Please <a href='https://code.google.com/p/android/issues/entry?template=Espresso%20Test%20Recorder%20Bug'>report any issues</a>.</html>");
-
-    myDisclaimerPane.setFont(myDisclaimerPane.getFont().deriveFont(12f));
-    linkifyEditorPane(myDisclaimerPane, myScreenshotPanel.getBackground());
-  }
-
-  private void linkifyEditorPane(@NotNull JEditorPane editorPane, @NotNull Color backgroundColor) {
-    editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
-    editorPane.setEditable(false);
-    editorPane.setBackground(backgroundColor);
-    editorPane.addHyperlinkListener(getHyperlinkListener());
-  }
-
-  private HyperlinkListener getHyperlinkListener() {
-    return new HyperlinkListener() {
-      @Override
-      public void hyperlinkUpdate(final HyperlinkEvent linkEvent) {
-        if (linkEvent.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-          ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
-            @Override
-            public void run() {
-              try {
-                Desktop.getDesktop().browse(linkEvent.getURL().toURI());
-              }
-              catch (Exception e) {
-                // ignore
-              }
-            }
-          });
-        }
-      }
-    };
-  }
-
-  @Nullable
-  @Override
-  protected JComponent createSouthPanel() {
-    return null;
   }
 
   @Nullable
@@ -602,7 +567,9 @@ public class RecordingDialog extends DialogWrapper implements TestRecorderEventL
 
     if (!className.isEmpty() || !resourceId.isEmpty() || !text.isEmpty() || !contentDescription.isEmpty() || childPosition != -1) {
       assertion.addElementDescriptor(new ElementDescriptor(className, childPosition, resourceId, contentDescription, text));
-      addElementDescriptors(assertion, (UiNode)node.getParent());
+      if (node.getParent() instanceof UiNode) {
+        addElementDescriptors(assertion, (UiNode)node.getParent());
+      }
     }
   }
 

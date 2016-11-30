@@ -73,8 +73,6 @@ public class TestClassNameInputDialog extends DialogWrapper {
 
     setTitle("Pick a test class name for your test");
 
-    setOKButtonText("Save");
-
     prepareEnvironment();
 
     SwingUtilities.invokeLater(new Runnable(){
@@ -83,13 +81,6 @@ public class TestClassNameInputDialog extends DialogWrapper {
         updateOKButton();
       }
     });
-  }
-
-  @Override
-  @NotNull
-  protected Action[] createActions() {
-    // Put "Save" button on the right regardless of Mac or not.
-    return new Action[]{getCancelAction(), getOKAction()};
   }
 
   private void prepareEnvironment() {
