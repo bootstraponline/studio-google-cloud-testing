@@ -11,9 +11,6 @@ iml_module(
         "//tools/adt/idea/android/testData",
         "//tools/base/templates",
     ],
-    test_runtime_deps = [
-        "//tools/adt/idea/android-plugin",
-    ],
     test_srcs = ["testSrc"],
     test_tags = ["managed"],
     # do not sort: must match IML order
@@ -42,8 +39,9 @@ iml_module(
         "//tools/analytics-library/tracker:analytics-tracker[module]",
         "//tools/analytics-library/protos:analytics-protos[module]",
         "//tools:idea.compiler-impl_and_others[module]",
-        "//tools/adt/idea/android-test-framework:android-test-framework[module, test]",
+        "//tools/adt/idea/android-test-framework[module, test]",
         "//tools/idea/.idea/libraries:mockito[test]",
         "//tools/base/testutils:studio.testutils[module, test]",
+        "//tools/adt/idea/android-plugin[module, test]",
     ],
 )
