@@ -17,8 +17,6 @@ package com.google.gct.testrecorder.run;
 
 import com.android.annotations.Nullable;
 import com.android.tools.idea.run.AndroidRunConfiguration;
-import com.google.idea.blaze.android.run.binary.BlazeAndroidBinaryRunConfigurationHandler;
-import com.google.idea.blaze.base.run.BlazeCommandRunConfiguration;
 import com.intellij.execution.configurations.LocatableConfigurationBase;
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.openapi.module.Module;
@@ -30,11 +28,6 @@ public interface TestRecorderRunConfigurationProxy {
   static TestRecorderRunConfigurationProxy getInstance(@Nullable RunConfiguration configurationBase) {
     if (configurationBase instanceof AndroidRunConfiguration) {
       return new TestRecorderAndroidRunConfigurationProxy((AndroidRunConfiguration)configurationBase);
-    }
-
-    if (configurationBase instanceof BlazeCommandRunConfiguration
-        && ((BlazeCommandRunConfiguration)configurationBase).getHandler() instanceof BlazeAndroidBinaryRunConfigurationHandler) {
-      return new TestRecorderBlazeCommandRunConfigurationProxy((BlazeCommandRunConfiguration)configurationBase);
     }
 
     return null;

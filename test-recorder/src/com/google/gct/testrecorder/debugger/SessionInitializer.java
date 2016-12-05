@@ -29,7 +29,6 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.gct.testrecorder.settings.TestRecorderSettings;
 import com.google.gct.testrecorder.ui.RecordingDialog;
-import com.google.idea.blaze.android.run.runner.BlazeAndroidRunConfigurationRunner;
 import com.intellij.debugger.DebuggerManagerEx;
 import com.intellij.debugger.DefaultDebugEnvironment;
 import com.intellij.debugger.engine.*;
@@ -383,11 +382,8 @@ public class SessionInitializer implements Runnable {
   }
 
   private void assignDeviceAndClearAppData() {
-    AndroidRunConfigContext androidRunConfigContext = myEnvironment.getCopyableUserData(AndroidRunConfigContext.KEY);
     List<ListenableFuture<IDevice>> listenableFutures =
-      androidRunConfigContext == null
-      ? myEnvironment.getCopyableUserData(BlazeAndroidRunConfigurationRunner.DEVICE_SESSION_KEY).deviceFutures.get()
-      : androidRunConfigContext.getTargetDevices().get();
+      myEnvironment.getCopyableUserData(AndroidRunConfigContext.KEY).getTargetDevices().get();
 
     if (listenableFutures.size() != 1) {
       throw new RuntimeException("Test Recorder should be launched on a single device!");
