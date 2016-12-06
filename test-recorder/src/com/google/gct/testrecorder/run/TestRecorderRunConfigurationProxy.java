@@ -16,18 +16,24 @@
 package com.google.gct.testrecorder.run;
 
 import com.android.annotations.Nullable;
-import com.android.tools.idea.run.AndroidRunConfiguration;
 import com.intellij.execution.configurations.LocatableConfigurationBase;
 import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 import org.jetbrains.annotations.NotNull;
 
 public interface TestRecorderRunConfigurationProxy {
+  ExtensionPointName<TestRecorderRunConfigurationProxyProvider> EP_NAME =
+    ExtensionPointName.create("com.google.gct.testrecorder.run.testRecorderRunConfigurationProxyProvider");
+
 
   @Nullable
-  static TestRecorderRunConfigurationProxy getInstance(@Nullable RunConfiguration configurationBase) {
-    if (configurationBase instanceof AndroidRunConfiguration) {
-      return new TestRecorderAndroidRunConfigurationProxy((AndroidRunConfiguration)configurationBase);
+  static TestRecorderRunConfigurationProxy getInstance(@Nullable RunConfiguration runConfiguration) {
+    for (TestRecorderRunConfigurationProxyProvider proxyProvider : EP_NAME.getExtensions()) {
+      TestRecorderRunConfigurationProxy proxy = proxyProvider.getProxy(runConfiguration);
+      if (proxy != null) {
+        return proxy;
+      }
     }
 
     return null;

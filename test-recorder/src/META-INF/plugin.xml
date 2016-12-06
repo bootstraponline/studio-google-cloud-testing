@@ -46,4 +46,13 @@
 
   </extensions>
 
+  <extensions defaultExtensionNs="com.google.gct.testrecorder.run">
+    <testRecorderRunConfigurationProxyProvider implementation="com.google.gct.testrecorder.run.TestRecorderAndroidRunConfigurationProxyProvider" />
+  </extensions>
+
+  <extensionPoints>
+    <extensionPoint qualifiedName="com.google.gct.testrecorder.run.testRecorderRunConfigurationProxyProvider"
+                    interface="com.google.gct.testrecorder.run.TestRecorderRunConfigurationProxyProvider" />
+  </extensionPoints>
+
 </idea-plugin>
