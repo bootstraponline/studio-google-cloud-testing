@@ -148,8 +148,7 @@ public class TestRecorderAction extends AnAction {
 
     try {
       environment.getRunner().execute(environment, descriptor -> ApplicationManager.getApplication().executeOnPooledThread(
-        new SessionInitializer(facet, environment, testRecorderConfigurationProxy.getLaunchActivityClass(),
-                               testRecorderConfiguration.getUniqueID())));
+        new SessionInitializer(facet, environment, testRecorderConfigurationProxy, testRecorderConfiguration.getUniqueID())));
     } catch (Exception e) {
       String message = isEmpty(e.getMessage()) ? "Unknown error" : e.getMessage();
       Messages.showDialog(myProject, message, "Could not start debugging of the app", new String[]{"OK"}, 0, null);

@@ -16,11 +16,16 @@
 package com.google.gct.testrecorder.run;
 
 import com.android.annotations.Nullable;
+import com.android.ddmlib.IDevice;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.intellij.execution.configurations.LocatableConfigurationBase;
 import com.intellij.execution.configurations.RunConfiguration;
+import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public interface TestRecorderRunConfigurationProxy {
   ExtensionPointName<TestRecorderRunConfigurationProxyProvider> EP_NAME =
@@ -47,4 +52,7 @@ public interface TestRecorderRunConfigurationProxy {
   boolean isLaunchActivitySupported();
 
   String getLaunchActivityClass();
+
+  @Nullable
+  List<ListenableFuture<IDevice>> getDeviceFutures(ExecutionEnvironment environment);
 }

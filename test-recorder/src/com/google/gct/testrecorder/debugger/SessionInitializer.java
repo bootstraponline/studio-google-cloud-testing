@@ -19,7 +19,6 @@ import com.android.SdkConstants;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
-import com.android.tools.idea.run.AndroidRunConfigContext;
 import com.android.tools.idea.run.AndroidSessionInfo;
 import com.android.tools.idea.run.ApkProviderUtil;
 import com.android.tools.idea.run.activity.ActivityLocatorUtils;
@@ -27,6 +26,7 @@ import com.android.tools.idea.run.activity.DefaultActivityLocator;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.gct.testrecorder.run.TestRecorderRunConfigurationProxy;
 import com.google.gct.testrecorder.settings.TestRecorderSettings;
 import com.google.gct.testrecorder.ui.RecordingDialog;
 import com.intellij.debugger.DebuggerManagerEx;
@@ -78,7 +78,7 @@ public class SessionInitializer implements Runnable {
   private final AndroidFacet myFacet;
   private final Project myProject;
   private final ExecutionEnvironment myEnvironment;
-  private final String myLaunchActivityClass;
+  private final TestRecorderRunConfigurationProxy myTestRecorderConfigurationProxy;
   private final int myConfigurationId;
   private IDevice myDevice;
   private String myPackageName;
@@ -87,11 +87,12 @@ public class SessionInitializer implements Runnable {
   private volatile RecordingDialog myRecordingDialog;
   private volatile boolean myFailedToStart;
 
-  public SessionInitializer(AndroidFacet facet, ExecutionEnvironment environment, String launchActivityClass, int configurationId) {
+  public SessionInitializer(AndroidFacet facet, ExecutionEnvironment environment,
+                            TestRecorderRunConfigurationProxy testRecorderConfigurationProxy, int configurationId) {
     myFacet = facet;
     myProject = myFacet.getModule().getProject();
     myEnvironment = environment;
-    myLaunchActivityClass = launchActivityClass;
+    myTestRecorderConfigurationProxy = testRecorderConfigurationProxy;
     myConfigurationId = configurationId;
     // TODO: Although more robust than android.view.View#performClick() breakpoint, this might miss "contrived" clicks,
     // originating from the View object itself (e.g., as a result of processing a touch event).
@@ -225,8 +226,8 @@ public class SessionInitializer implements Runnable {
    */
   @NotNull
   private String detectLaunchedActivityName() {
-    if (!Strings.isNullOrEmpty(myLaunchActivityClass)) {
-      return myLaunchActivityClass;
+    if (!Strings.isNullOrEmpty(myTestRecorderConfigurationProxy.getLaunchActivityClass())) {
+      return myTestRecorderConfigurationProxy.getLaunchActivityClass();
     }
 
     return DumbService.getInstance(myProject).runReadActionInSmartMode(new Computable<String>() {
@@ -382,10 +383,9 @@ public class SessionInitializer implements Runnable {
   }
 
   private void assignDeviceAndClearAppData() {
-    List<ListenableFuture<IDevice>> listenableFutures =
-      myEnvironment.getCopyableUserData(AndroidRunConfigContext.KEY).getTargetDevices().get();
+    List<ListenableFuture<IDevice>> listenableFutures = myTestRecorderConfigurationProxy.getDeviceFutures(myEnvironment);
 
-    if (listenableFutures.size() != 1) {
+    if (listenableFutures == null || listenableFutures.size() != 1) {
       throw new RuntimeException("Test Recorder should be launched on a single device!");
     }
 

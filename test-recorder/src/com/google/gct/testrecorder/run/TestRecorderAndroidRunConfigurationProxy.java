@@ -15,13 +15,21 @@
  */
 package com.google.gct.testrecorder.run;
 
+import com.android.annotations.Nullable;
+import com.android.ddmlib.IDevice;
+import com.android.tools.idea.run.AndroidRunConfigContext;
 import com.android.tools.idea.run.AndroidRunConfiguration;
+import com.android.tools.idea.run.DeviceFutures;
 import com.android.tools.idea.run.editor.DefaultActivityLaunch;
 import com.android.tools.idea.run.editor.LaunchOptionState;
 import com.android.tools.idea.run.editor.SpecificActivityLaunch;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.intellij.execution.configurations.LocatableConfigurationBase;
+import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.openapi.module.Module;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public class TestRecorderAndroidRunConfigurationProxy implements TestRecorderRunConfigurationProxy {
 
@@ -59,5 +67,19 @@ public class TestRecorderAndroidRunConfigurationProxy implements TestRecorderRun
     }
 
     return "";
+  }
+
+  @Nullable
+  @Override
+  public List<ListenableFuture<IDevice>> getDeviceFutures(ExecutionEnvironment environment) {
+    AndroidRunConfigContext context = environment.getCopyableUserData(AndroidRunConfigContext.KEY);
+    if (context != null) {
+      DeviceFutures targetDevices = context.getTargetDevices();
+      if (targetDevices != null) {
+        return targetDevices.get();
+      }
+    }
+
+    return null;
   }
 }
