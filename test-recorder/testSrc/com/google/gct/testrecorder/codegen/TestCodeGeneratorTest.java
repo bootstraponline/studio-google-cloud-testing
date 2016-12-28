@@ -141,18 +141,18 @@ public class TestCodeGeneratorTest extends AndroidTestCase {
     textChangeEvent.addElementDescriptor(new ElementDescriptor("ElementClass", 1, "resourceId4", "content description 3", "original text"));
     textChangeEvent.addElementDescriptor(new ElementDescriptor("ParentClass1", 0, "parentResourceId5", "", ""));
     textChangeEvent.addElementDescriptor(new ElementDescriptor("ParentClass2", 2, "parentResourceId6", "parent content description 2", ""));
-    textChangeEvent.setReplacementText("replacement text");
+    textChangeEvent.setReplacementText("replacement \n\ntext\n");
     events.add(textChangeEvent);
 
     TestRecorderAssertion assertion2 = new TestRecorderAssertion(TEXT_IS);
-    assertion2.addElementDescriptor(new ElementDescriptor("ElementClass", 1, "resourceId4", "content description 3", "replacement text"));
+    assertion2.addElementDescriptor(new ElementDescriptor("ElementClass", 1, "resourceId4", "content description 3", "replacement \n\ntext\n"));
     assertion2.addElementDescriptor(new ElementDescriptor("ParentClass1", 0, "parentResourceId5", "", ""));
     assertion2.addElementDescriptor(new ElementDescriptor("ParentClass2", 2, "parentResourceId6", "parent content description 2", ""));
-    assertion2.setText("replacement text");
+    assertion2.setText("replacement \n\ntext\n");
     events.add(assertion2);
 
     TestRecorderEvent pressEditorActionEvent = new TestRecorderEvent(TestRecorderEvent.PRESS_EDITOR_ACTION, System.currentTimeMillis());
-    pressEditorActionEvent.addElementDescriptor(new ElementDescriptor("ElementClass", 1, "resourceId4", "content description 3", "replacement text"));
+    pressEditorActionEvent.addElementDescriptor(new ElementDescriptor("ElementClass", 1, "resourceId4", "content description 3", "replacement \n\ntext\n"));
     pressEditorActionEvent.addElementDescriptor(new ElementDescriptor("ParentClass1", 0, "parentResourceId5", "", ""));
     pressEditorActionEvent.addElementDescriptor(new ElementDescriptor("ParentClass2", 2, "parentResourceId6", "parent content description 2", ""));
     events.add(pressEditorActionEvent);

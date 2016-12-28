@@ -18,6 +18,7 @@ package com.google.gct.testrecorder.event;
 import com.android.utils.Pair;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.intellij.openapi.util.text.StringUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -107,7 +108,7 @@ public abstract class ElementAction {
   protected String getDisplayText() {
     String text = getElementText();
     if (!text.isEmpty()) {
-      return getIdAttributeDisplayPresentation("text", text);
+      return getIdAttributeDisplayPresentation("text", StringUtil.escapeStringCharacters(text));
     }
     return "";
   }

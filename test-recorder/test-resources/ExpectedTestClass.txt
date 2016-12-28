@@ -96,10 +96,10 @@ public class MyTest {
                                                 0)),
                                 1),
                         isDisplayed()));
-        elementClass6.perform(replaceText("replacement text"), closeSoftKeyboard());
+        elementClass6.perform(replaceText("replacement \n\ntext\n"), closeSoftKeyboard());
 
         ViewInteraction elementClass7 = onView(
-                allOf(withId(resourceId4), withText("replacement text"), withContentDescription("content description 3"),
+                allOf(withId(resourceId4), withText("replacement \n\ntext\n"), withContentDescription("content description 3"),
                         childAtPosition(
                                 allOf(withId(parentResourceId5),
                                         childAtPosition(
@@ -107,10 +107,10 @@ public class MyTest {
                                                 0)),
                                 1),
                         isDisplayed()));
-        elementClass7.check(matches(withText("replacement text")));
+        elementClass7.check(matches(withText("replacement \n\ntext\n")));
 
         ViewInteraction elementClass8 = onView(
-                allOf(withId(resourceId4), withText("replacement text"), withContentDescription("content description 3"),
+                allOf(withId(resourceId4), withText("replacement \n\ntext\n"), withContentDescription("content description 3"),
                         childAtPosition(
                                 allOf(withId(parentResourceId5),
                                         childAtPosition(

@@ -36,10 +36,10 @@ public class TestCodeMapperTest extends AndroidTestCase {
 
     TestRecorderEvent textChangeEvent = new TestRecorderEvent(TestRecorderEvent.TEXT_CHANGE, System.currentTimeMillis());
     textChangeEvent.addElementDescriptor(new ElementDescriptor("SomeClass", -1, "", "content description", ""));
-    textChangeEvent.setReplacementText("my text");
+    textChangeEvent.setReplacementText("my text\n");
 
     String espressoActionStatement = testCodeMapper.getTestCodeLinesForEvent(textChangeEvent).get(1);
-    assertTrue(espressoActionStatement.contains("replaceText(\"my text\")"));
+    assertTrue(espressoActionStatement.contains("replaceText(\"my text\\n\")"));
     assertTrue(espressoActionStatement.contains("closeSoftKeyboard()"));
   }
 

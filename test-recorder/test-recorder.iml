@@ -17,7 +17,6 @@
     <orderEntry type="library" name="Velocity" level="project" />
     <orderEntry type="module" module-name="java-impl" />
     <orderEntry type="module" module-name="openapi" />
-    <orderEntry type="library" name="Groovy-Eclipse-Batch" level="project" />
     <orderEntry type="module" module-name="debugger-impl" />
     <orderEntry type="module" module-name="xdebugger-impl" />
     <orderEntry type="library" name="commons-io-2.4" level="project" />

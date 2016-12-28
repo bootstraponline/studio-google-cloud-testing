@@ -102,10 +102,10 @@ public class TestCodeMapper {
       if (myIsUsingCustomEspresso) {
         testCodeLines.add(createActionStatement(variableName, "clearText()", event.canScrollTo()));
         testCodeLines.add(createActionStatement(
-          variableName, "typeText(\"" + event.getReplacementText() + "\"), closeSoftKeyboard()", false));
+          variableName, "typeText(" + boxString(event.getReplacementText()) + "), closeSoftKeyboard()", false));
       } else {
         testCodeLines.add(createActionStatement(
-          variableName, "replaceText(\"" + event.getReplacementText() + "\"), closeSoftKeyboard()", event.canScrollTo()));
+          variableName, "replaceText(" + boxString(event.getReplacementText()) + "), closeSoftKeyboard()", event.canScrollTo()));
       }
     } else {
       throw new RuntimeException("Unsupported event type: " + event.getEventType());
@@ -145,7 +145,7 @@ public class TestCodeMapper {
       testCodeLines.add(variableName + ".check(matches(isDisplayed()));");
     } else if (TEXT_IS.equals(rule)) {
       String text = assertion.getText();
-      testCodeLines.add(variableName + ".check(matches(withText(\"" + text + "\")));");
+      testCodeLines.add(variableName + ".check(matches(withText(" + boxString(text) + ")));");
     } else {
       throw new RuntimeException("Unsupported assertion rule: " + rule);
     }

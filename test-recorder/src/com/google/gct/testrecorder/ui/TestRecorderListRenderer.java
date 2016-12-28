@@ -17,7 +17,7 @@ package com.google.gct.testrecorder.ui;
 
 import com.google.gct.testrecorder.event.TestRecorderAssertion;
 import com.google.gct.testrecorder.event.TestRecorderEvent;
-import groovy.json.StringEscapeUtils;
+import com.intellij.openapi.util.text.StringUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -47,7 +47,7 @@ public class TestRecorderListRenderer extends DefaultListCellRenderer {
       TestRecorderEvent event = (TestRecorderEvent) value;
       if (event.isTextChange()) {
         renderString = String.format(TEXT_CHANGE_EVENT_FORMAT, outerDivTextColor, event.getRendererString(),
-                                     StringEscapeUtils.escapeJava(event.getReplacementText()));
+                                     StringUtil.escapeStringCharacters(event.getReplacementText()));
       } else if (event.isPressEvent()) {
         renderString = String.format(PRESS_EVENT_FORMAT, outerDivTextColor, event.getRendererString());
       } else if (event.isViewLongClick()) {
@@ -68,7 +68,7 @@ public class TestRecorderListRenderer extends DefaultListCellRenderer {
         renderString = String.format(ASSERTION_FORMAT_ONE_LINE, outerDivTextColor, assertion.getRendererString(), assertion.getRule());
       } else {
         renderString = String.format(ASSERTION_FORMAT_MULTI_LINE, outerDivTextColor, assertion.getRendererString(), assertion.getRule(),
-                                     StringEscapeUtils.escapeJava(assertedText));
+                                     StringUtil.escapeStringCharacters(assertedText));
       }
     } else {
       throw new RuntimeException("Unsupported Test Recorder entity: " + value.toString());
